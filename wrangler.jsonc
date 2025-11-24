@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // Application name for Cloudflare Workers
+  "name": "gaeats-app",
+
+  // Compatibility date - determines which Workers runtime features are available
+  "compatibility_date": "2025-04-04",
+
+  // Main entry point for the Worker
+  "main": "./workers/app.ts",
+
+  // Environment variables (non-secret values only)
+  // Use `wrangler secret put <KEY>` for sensitive values like DATABASE_URL
+  "vars": {
+    // Example public variable
+    "ENVIRONMENT": "development"
+  }
+
+  // Secrets Configuration (set via CLI):
+  // Run: wrangler secret put DATABASE_URL
+  // Then paste your Prisma Accelerate connection string:
+  // prisma://accelerate.prisma-data.net/?api_key=YOUR_API_KEY
+
+  // Note: For local development, secrets are read from .dev.vars file
+  // Create .dev.vars with: DATABASE_URL="your-local-connection-string"
+}

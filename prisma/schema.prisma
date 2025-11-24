@@ -1,0 +1,93 @@
+// Prisma Schema for GA Eats - Fly-in Dining Discovery Platform
+// learn more: https://pris.ly/d/prisma-schema
+
+/**
+ * Generator Configuration
+ * - Optimized for Cloudflare Workers runtime
+ * - Outputs to app/generated/prisma for easy imports
+ * - Enables PostgreSQL extensions preview feature for PostGIS support
+ */
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../app/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+/**
+ * Database Configuration
+ * - Uses PostgreSQL with PostGIS extension for geospatial queries
+ * - Connection URLs configured in prisma.config.ts (Prisma v7)
+ */
+datasource db {
+  provider   = "postgresql"
+  extensions = [postgis(version: "3.4")]
+}
+
+/**
+ * Airport Model
+ * Represents public-use airports where pilots can land
+ *
+ * Fields:
+ * - id: Unique identifier
+ * - code: IATA/ICAO airport code (e.g., "KSFO", "SFO")
+ * - name: Full airport name
+ * - city: City name
+ * - state: State/Province code (e.g., "CA")
+ * - country: Country code (e.g., "US")
+ * - location: PostGIS geography point (latitude, longitude) using SRID 4326 (WGS 84)
+ * - createdAt: Timestamp of record creation
+ * - updatedAt: Timestamp of last update
+ */
+model Airport {
+  id        Int                                   @id @default(autoincrement())
+  code      String                                @unique @db.VarChar(10)
+  name      String                                @db.VarChar(255)
+  city      String                                @db.VarChar(100)
+  state     String?                               @db.VarChar(10)
+  country   String                                @default("US") @db.VarChar(10)
+  location  Unsupported("geography(Point, 4326)") // PostGIS geography type for efficient distance calculations
+  createdAt DateTime                              @default(now()) @db.Timestamptz
+  updatedAt DateTime                              @updatedAt @db.Timestamptz
+
+  @@index([location], type: Gist) // Spatial index for fast geospatial queries
+  @@map("airports")
+}
+
+/**
+ * Restaurant Model
+ * Represents restaurants near airports, filtered by quality (rating > 4.0)
+ *
+ * Fields:
+ * - id: Unique identifier
+ * - googlePlaceId: Google Places API place ID for future updates
+ * - name: Restaurant name
+ * - description: Short description or notes
+ * - cuisine: Type of cuisine (e.g., "American", "Italian")
+ * - rating: Google Maps rating (1.0 to 5.0, only restaurants > 4.0 stored)
+ * - address: Full street address
+ * - city: City name
+ * - state: State/Province code
+ * - country: Country code
+ * - location: PostGIS geography point (latitude, longitude) using SRID 4326 (WGS 84)
+ * - createdAt: Timestamp of record creation
+ * - updatedAt: Timestamp of last update
+ */
+model Restaurant {
+  id            Int                                   @id @default(autoincrement())
+  googlePlaceId String?                               @unique @db.VarChar(255)
+  name          String                                @db.VarChar(255)
+  description   String?                               @db.Text
+  cuisine       String?                               @db.VarChar(100)
+  rating        Float                                 @default(0.0) @db.DoublePrecision
+  address       String                                @db.VarChar(500)
+  city          String                                @db.VarChar(100)
+  state         String?                               @db.VarChar(10)
+  country       String                                @default("US") @db.VarChar(10)
+  location      Unsupported("geography(Point, 4326)") // PostGIS geography type for efficient distance calculations
+  createdAt     DateTime                              @default(now()) @db.Timestamptz
+  updatedAt     DateTime                              @updatedAt @db.Timestamptz
+
+  @@index([location], type: Gist) // Spatial index for fast geospatial queries
+  @@index([rating]) // Index on rating for filtering high-quality restaurants
+  @@map("restaurants")
+}
