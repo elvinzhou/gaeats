@@ -1,6 +1,6 @@
 /**
  * Environment Types for GA Eats
- * Extends the auto-generated Env interface with custom environment variables
+ * Extends the Cloudflare Workers Env interface with custom environment variables
  */
 
 declare global {

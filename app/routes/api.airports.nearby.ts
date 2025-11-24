@@ -34,16 +34,19 @@
  * }
  */
 
-import type { Route } from "./+types/api.airports.nearby";
-import { json } from "react-router";
-import { createPrismaClient } from "~/utils/db.server";
+import { prisma } from "~/utils/db.server";
 import { findAirportsNearby } from "~/utils/geospatial.server";
+
+interface LoaderArgs {
+  request: Request;
+  context: { cloudflare: { env: Env } };
+}
 
 /**
  * Loader function - handles GET requests
  * Validates query parameters and returns airport data
  */
-export async function loader({ request, context }: Route.LoaderArgs) {
+export async function loader({ request, context }: LoaderArgs) {
   // Parse query parameters from URL
   const url = new URL(request.url);
   const lat = parseFloat(url.searchParams.get("lat") || "");
@@ -53,7 +56,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   // Validate required parameters
   if (isNaN(lat) || isNaN(lng)) {
-    return json(
+    return Response.json(
       {
         error: "Invalid parameters",
         message: "Both 'lat' and 'lng' query parameters are required and must be valid numbers",
@@ -65,7 +68,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   // Validate parameter ranges
   if (lat < -90 || lat > 90) {
-    return json(
+    return Response.json(
       {
         error: "Invalid latitude",
         message: "Latitude must be between -90 and 90",
@@ -75,7 +78,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   if (lng < -180 || lng > 180) {
-    return json(
+    return Response.json(
       {
         error: "Invalid longitude",
         message: "Longitude must be between -180 and 180",
@@ -85,7 +88,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   if (distance <= 0 || distance > 1000) {
-    return json(
+    return Response.json(
       {
         error: "Invalid distance",
         message: "Distance must be between 0 and 1000 kilometers",
@@ -95,19 +98,19 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   try {
-    // Create Prisma client with Accelerate extension
-    const prisma = createPrismaClient(context.cloudflare.env.DATABASE_URL);
+    // Get singleton Prisma client with Accelerate extension
+    const db = prisma;
 
     // Find airports using PostGIS geospatial queries
     const airports = await findAirportsNearby(
-      prisma,
+      db,
       { latitude: lat, longitude: lng },
       distance,
       limit
     );
 
     // Return JSON response with search metadata
-    return json({
+    return Response.json({
       airports,
       search: {
         latitude: lat,
@@ -121,7 +124,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     // Log error and return 500 response
     console.error("Error fetching airports:", error);
 
-    return json(
+    return Response.json(
       {
         error: "Database error",
         message: "Failed to fetch airports. Please try again later.",

@@ -79,16 +79,22 @@ export default function Home() {
         {/* Quick Links */}
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-semibold mb-4">Get Started</h2>
-          <div className="space-x-4">
+          <div className="flex justify-center gap-4">
+            <Link
+              to="/map"
+              className="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition font-semibold text-lg"
+            >
+              🗺️ Open Interactive Map
+            </Link>
             <Link
               to="/api/restaurants/nearby?lat=37.7749&lng=-122.4194&distance=5"
-              className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
+              className="inline-block bg-gray-200 text-gray-800 px-6 py-4 rounded-lg hover:bg-gray-300 transition"
             >
-              View Example API Response
+              📊 View API Example
             </Link>
           </div>
           <p className="text-sm text-gray-500 mt-4">
-            Map interface coming soon. For now, explore the API endpoints.
+            🎉 New! Interactive map with Google Maps, satellite view, and multi-modal directions.
           </p>
         </div>
 
@@ -100,7 +106,8 @@ export default function Home() {
             <li>✅ Prisma v7 with Prisma Accelerate & Postgres</li>
             <li>✅ PostGIS for efficient geospatial queries</li>
             <li>✅ Edge caching with TTL & SWR strategies</li>
-            <li>🔄 Leaflet map integration (pending)</li>
+            <li>✅ Google Maps with satellite view & street view</li>
+            <li>✅ Multi-modal directions (walk, bike, transit, drive)</li>
             <li>🔄 Background sync worker (pending)</li>
           </ul>
         </div>

@@ -30,21 +30,25 @@
  * }
  */
 
-import type { Route } from "./+types/api.airports.$code";
-import { json } from "react-router";
-import { createPrismaClient } from "~/utils/db.server";
+import { prisma } from "~/utils/db.server";
 import { findRestaurantsNearAirport } from "~/utils/geospatial.server";
+
+interface LoaderArgs {
+  params: { code: string };
+  request: Request;
+  context: { cloudflare: { env: Env } };
+}
 
 /**
  * Loader function - handles GET requests
  * Fetches airport details and nearby restaurants
  */
-export async function loader({ params, request, context }: Route.LoaderArgs) {
+export async function loader({ params, request, context }: LoaderArgs) {
   const { code } = params;
 
   // Validate airport code parameter
   if (!code || code.trim().length === 0) {
-    return json(
+    return Response.json(
       {
         error: "Invalid airport code",
         message: "Airport code is required",
@@ -61,7 +65,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 
   // Validate parameters
   if (distance <= 0 || distance > 100) {
-    return json(
+    return Response.json(
       {
         error: "Invalid distance",
         message: "Distance must be between 0 and 100 kilometers",
@@ -71,11 +75,11 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   }
 
   try {
-    // Create Prisma client
-    const prisma = createPrismaClient(context.cloudflare.env.DATABASE_URL);
+    // Get singleton Prisma client
+    const db = prisma;
 
     // First, get the airport details
-    const airportResult = await prisma.$queryRaw<Array<{
+    const airportResult = await db.$queryRaw<Array<{
       id: number;
       code: string;
       name: string;
@@ -105,7 +109,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 
     // Check if airport exists
     if (!airportResult || airportResult.length === 0) {
-      return json(
+      return Response.json(
         {
           error: "Airport not found",
           message: `No airport found with code: ${code}`,
@@ -119,14 +123,14 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 
     // Find restaurants near this airport
     const restaurants = await findRestaurantsNearAirport(
-      prisma,
+      db,
       code,
       distance,
       minRating
     );
 
     // Return combined response
-    return json({
+    return Response.json({
       airport: {
         code: airport.code,
         name: airport.name,
@@ -146,7 +150,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   } catch (error) {
     console.error(`Error fetching airport ${code}:`, error);
 
-    return json(
+    return Response.json(
       {
         error: "Database error",
         message: "Failed to fetch airport data. Please try again later.",
