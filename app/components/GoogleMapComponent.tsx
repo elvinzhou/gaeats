@@ -82,7 +82,7 @@ export default function GoogleMapComponent({
   useEffect(() => {
     if (!apiKey || apiKey === "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
       console.error(
-        "Google Maps API key is missing! Please set VITE_GOOGLE_MAPS_API_KEY in your .env file"
+        "Google Maps API key is missing! Please set VITE_GOOGLE_MAPS_API_KEY in your .env file",
       );
     }
   }, [apiKey]);
@@ -92,7 +92,8 @@ export default function GoogleMapComponent({
 
     const matchingPoi = pois.find(
       (poi) =>
-        poi.id === initialSelectedPoi.id && poi.type === initialSelectedPoi.type
+        poi.id === initialSelectedPoi.id &&
+        poi.type === initialSelectedPoi.type,
     );
 
     if (matchingPoi) {
@@ -168,7 +169,7 @@ export default function GoogleMapComponent({
             {selectedPOI && (
               <DirectionsRenderer
                 destination={selectedPOI.position}
-                travelMode={searchParams.get("mode") as any || "DRIVING"}
+                travelMode={(searchParams.get("mode") as any) || "DRIVING"}
               />
             )}
           </Map>
@@ -197,7 +198,8 @@ export default function GoogleMapComponent({
                 {selectedPOI.title}
               </h3>
               <p className="mt-1 text-sm text-stone-600">
-                Open the airport page for nearby restaurants, attractions, and access notes.
+                Open the airport page for nearby restaurants, attractions, and
+                access notes.
               </p>
               <Link
                 to={`/airports/${(selectedPOI.data as Airport).code}`}

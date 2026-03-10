@@ -305,28 +305,12 @@ export default function AirportDetailRoute({ loaderData }: Route.ComponentProps)
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-4 text-sm text-stone-600">
                   <div>
                     <div className="font-medium text-stone-800">Last-mile summary</div>
-                    <div>{formatRouteSummary(poi, poi.distance)}</div>
+                    <div>{formatRouteSummary(poi.routeMetrics, poi.distance)}</div>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {/* Display Badge for the Reachability computed in phase 2 */}
-                    {poi.walkingMinutes != null && poi.walkingMinutes <= 20 && (
-                      <span className="rounded-full bg-emerald-100 text-emerald-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide">
-                        Walkable
-                      </span>
-                    )}
-                    {poi.bikingMinutes != null && poi.bikingMinutes <= 30 && (
-                      <span className="rounded-full bg-teal-100 text-teal-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide">
-                        Bikeable
-                      </span>
-                    )}
-                    {poi.transitMinutes != null && poi.transitMinutes <= 40 && (
-                      <span className="rounded-full bg-blue-100 text-blue-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide">
-                        Transit
-                      </span>
-                    )}
                     <Link
-                      to={`/map?lat=${airport.latitude}&lng=${airport.longitude}&radius=${distance}&poiId=${poi.id}&poiType=${poi.type.toLowerCase()}&mode=${poi.preferredMode || 'DRIVING'}`}
+                      to={`/map?lat=${airport.latitude}&lng=${airport.longitude}&radius=${distance}&poiId=${poi.id}&poiType=${poi.type.toLowerCase()}`}
                       className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-800 transition-colors hover:border-stone-400 hover:bg-stone-100"
                     >
                       Open on map
@@ -462,22 +446,28 @@ function formatFreshness(value: Date | null) {
 }
 
 function formatRouteSummary(
-  poi: any,
+  metrics: AirportPoiMetrics | null,
   fallbackDistance: number
 ) {
-  const options = [
-    poi.walkingMinutes ? `${poi.walkingMinutes} min walk` : null,
-    poi.bikingMinutes ? `${poi.bikingMinutes} min bike` : null,
-    poi.transitMinutes ? `${poi.transitMinutes} min transit` : null,
-    poi.drivingMinutes ? `${poi.drivingMinutes} min drive` : null,
-  ].filter(Boolean);
-
-  if (options.length === 0) {
+  if (!metrics) {
     return `Straight-line distance ${formatDistanceLocal(fallbackDistance)}. Route timing not calculated yet.`;
   }
 
-  const preferredMode = poi.preferredMode
-    ? `Preferred: ${formatMode(poi.preferredMode)}. `
+  const options = [
+    metrics.walkingMinutes ? `${metrics.walkingMinutes} min walk` : null,
+    metrics.bikingMinutes ? `${metrics.bikingMinutes} min bike` : null,
+    metrics.transitMinutes ? `${metrics.transitMinutes} min transit` : null,
+    metrics.drivingMinutes ? `${metrics.drivingMinutes} min drive` : null,
+  ].filter(Boolean);
+
+  if (options.length === 0) {
+    return `Straight-line distance ${formatDistanceLocal(
+      metrics.straightLineDistanceMeters ?? fallbackDistance
+    )}. Route timing not calculated yet.`;
+  }
+
+  const preferredMode = metrics.preferredMode
+    ? `Preferred: ${formatMode(metrics.preferredMode)}. `
     : "";
 
   return `${preferredMode}${options.join(" · ")}`;
