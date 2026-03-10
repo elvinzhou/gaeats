@@ -3,13 +3,17 @@
  * These match the Prisma schema but are simplified for client-side use
  */
 
-export interface Restaurant {
+export interface Poi {
   id: number;
-  googlePlaceId: string | null;
+  externalSourceId: string | null;
+  type: "RESTAURANT" | "ATTRACTION";
   name: string;
+  category: string | null;
+  subcategory: string | null;
   description: string | null;
   cuisine: string | null;
-  rating: number;
+  externalRating: number | null;
+  pilotRating: number | null;
   address: string;
   city: string;
   state: string | null;

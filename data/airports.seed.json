@@ -1,0 +1,40 @@
+[
+  {
+    "code": "KPAO",
+    "faaCode": "PAO",
+    "icaoCode": "KPAO",
+    "name": "Palo Alto Airport",
+    "city": "Palo Alto",
+    "state": "CA",
+    "country": "US",
+    "latitude": 37.4611,
+    "longitude": -122.115,
+    "fboName": "Palo Alto Airport Administration",
+    "notes": "Bay Area sample airport for initial GA Eats sync development."
+  },
+  {
+    "code": "KSQL",
+    "faaCode": "SQL",
+    "icaoCode": "KSQL",
+    "name": "San Carlos Airport",
+    "city": "San Carlos",
+    "state": "CA",
+    "country": "US",
+    "latitude": 37.5119,
+    "longitude": -122.2495,
+    "fboName": "San Carlos Flight Center",
+    "notes": "Useful for validating airport-to-POI coverage in the Peninsula."
+  },
+  {
+    "code": "KHAF",
+    "faaCode": "HAF",
+    "icaoCode": "KHAF",
+    "name": "Half Moon Bay Airport",
+    "city": "Half Moon Bay",
+    "state": "CA",
+    "country": "US",
+    "latitude": 37.5134,
+    "longitude": -122.5009,
+    "notes": "Good test case for coastal airport reachability."
+  }
+]

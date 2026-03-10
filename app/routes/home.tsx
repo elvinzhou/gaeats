@@ -3,15 +3,23 @@
  *
  * This is the main landing page for the GA Eats application.
  * It will eventually include:
- * - Leaflet map showing airports and restaurants
- * - Search interface for finding fly-in dining locations
- * - Filter controls for distance, rating, cuisine type
+ * - Airport-first search and discovery
+ * - Last-mile access-aware POI discovery
+ * - Filters for distance, mode, rating, and category
  *
  * For now, it serves as a placeholder with basic information.
  */
 
 import type { Route } from "./+types/home";
-import { Link } from "react-router";
+import { Form, Link } from "react-router";
+
+interface AirportSearchResult {
+  code: string;
+  name: string;
+  city: string;
+  state: string | null;
+  country: string;
+}
 
 /**
  * Meta tags for SEO and social sharing
@@ -22,16 +30,53 @@ export function meta({}: Route.MetaArgs) {
     {
       name: "description",
       content:
-        "Discover the best fly-in dining locations. Find top-rated restaurants near airports across the country.",
+        "Discover worthwhile restaurants and attractions near general aviation airports across the country.",
     },
   ];
+}
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const { prisma } = await import("~/utils/db.server");
+  const url = new URL(request.url);
+  const query = url.searchParams.get("q")?.trim() ?? "";
+
+  if (query.length < 2) {
+    return { query, results: [] as AirportSearchResult[] };
+  }
+
+  const likeQuery = `%${query}%`;
+  const codePrefix = `${query.toUpperCase()}%`;
+
+  const results = await prisma.$queryRaw<AirportSearchResult[]>`
+    SELECT
+      code,
+      name,
+      city,
+      state,
+      country
+    FROM "airports"
+    WHERE UPPER(code) LIKE ${codePrefix}
+      OR name ILIKE ${likeQuery}
+      OR city ILIKE ${likeQuery}
+    ORDER BY
+      CASE
+        WHEN UPPER(code) = UPPER(${query}) THEN 0
+        WHEN UPPER(code) LIKE ${codePrefix} THEN 1
+        WHEN name ILIKE ${likeQuery} THEN 2
+        ELSE 3
+      END,
+      name ASC
+    LIMIT 8
+  `;
+
+  return { query, results };
 }
 
 /**
  * Home page component
  * Displays welcome information and navigation links
  */
-export default function Home() {
+export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-100 to-white">
       <div className="container mx-auto px-4 py-16">
@@ -41,37 +86,97 @@ export default function Home() {
             GA Eats
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            The premier fly-in dining discovery engine for general aviation pilots.
-            Find great food worth the flight.
+            Airport-first discovery for general aviation pilots.
+            Find worthwhile restaurants and attractions you can actually reach after landing.
           </p>
         </header>
+
+        <section className="mx-auto mb-16 max-w-4xl rounded-3xl bg-white p-6 shadow-lg ring-1 ring-black/5">
+          <div className="mb-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-gray-500">
+              Airport Search
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-gray-900">
+              Search by airport code, name, or city
+            </h2>
+          </div>
+
+          <Form method="get" className="flex flex-col gap-3 sm:flex-row">
+            <input
+              type="search"
+              name="q"
+              defaultValue={loaderData.query}
+              placeholder="Try KPAO, Palo Alto, or San Carlos"
+              className="flex-1 rounded-2xl border border-gray-300 px-4 py-3 text-base text-gray-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            />
+            <button
+              type="submit"
+              className="rounded-2xl bg-stone-950 px-6 py-3 text-base font-semibold text-white transition hover:bg-stone-800"
+            >
+              Search Airports
+            </button>
+          </Form>
+
+          {loaderData.query.length >= 2 && (
+            <div className="mt-6">
+              <div className="mb-3 text-sm text-gray-600">
+                {loaderData.results.length > 0
+                  ? `Showing ${loaderData.results.length} airport result(s) for "${loaderData.query}"`
+                  : `No airports found for "${loaderData.query}"`}
+              </div>
+
+              <div className="grid gap-3">
+                {loaderData.results.map((airport) => (
+                  <Link
+                    key={airport.code}
+                    to={`/airports/${airport.code}`}
+                    className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-left transition hover:border-gray-300 hover:bg-white hover:shadow-sm"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="text-lg font-semibold text-gray-900">
+                          {airport.code}
+                        </div>
+                        <div className="text-sm text-gray-700">{airport.name}</div>
+                      </div>
+                      <div className="rounded-full bg-white px-3 py-1 text-sm font-medium text-gray-600 ring-1 ring-gray-200">
+                        {airport.city}
+                        {airport.state ? `, ${airport.state}` : ""}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
 
         {/* Feature Cards */}
         <div className="grid md:grid-3 gap-8 max-w-4xl mx-auto mb-16">
           {/* Feature 1: Quality First */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="text-4xl mb-4">⭐</div>
-            <h3 className="text-xl font-semibold mb-2">Quality First</h3>
+            <h3 className="text-xl font-semibold mb-2">Trusted Defaults</h3>
             <p className="text-gray-600">
-              Only restaurants rated 4.0+ stars. We filter for quality so you don't have to.
+              Start with strong public data from sources like Google Maps, then layer pilot intel on top.
             </p>
           </div>
 
           {/* Feature 2: Transportation-Aware */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="text-4xl mb-4">🚗</div>
-            <h3 className="text-xl font-semibold mb-2">Transportation-Aware</h3>
+            <h3 className="text-xl font-semibold mb-2">Last-Mile Aware</h3>
             <p className="text-gray-600">
-              Know before you go: walkable, crew car available, or shuttle service.
+              Know whether a stop is walkable, bikeable, transit-friendly, rideshare-possible, or shuttle-supported.
             </p>
           </div>
 
           {/* Feature 3: Pilot-Verified */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="text-4xl mb-4">✈️</div>
-            <h3 className="text-xl font-semibold mb-2">Pilot-Verified</h3>
+            <h3 className="text-xl font-semibold mb-2">Pilot Overlay</h3>
             <p className="text-gray-600">
-              Community-driven intel from pilots who've been there.
+              Pilot reviews and access confirmations improve rankings without being required for baseline coverage.
             </p>
           </div>
         </div>
@@ -87,14 +192,20 @@ export default function Home() {
               🗺️ Open Interactive Map
             </Link>
             <Link
-              to="/api/restaurants/nearby?lat=37.7749&lng=-122.4194&distance=5"
+              to="/airports/KSFO"
+              className="inline-block bg-white text-gray-900 px-6 py-4 rounded-lg hover:bg-gray-100 transition border border-gray-300"
+            >
+              ✈️ View Airport Page
+            </Link>
+            <Link
+              to="/api/pois/nearby?lat=37.7749&lng=-122.4194&distance=5&type=RESTAURANT"
               className="inline-block bg-gray-200 text-gray-800 px-6 py-4 rounded-lg hover:bg-gray-300 transition"
             >
-              📊 View API Example
+              📊 View POI API
             </Link>
           </div>
           <p className="text-sm text-gray-500 mt-4">
-            🎉 New! Interactive map with Google Maps, satellite view, and multi-modal directions.
+            Interactive map with airport and POI discovery, public ratings, and multi-modal directions.
           </p>
         </div>
 
@@ -103,12 +214,12 @@ export default function Home() {
           <h3 className="font-semibold text-blue-900 mb-2">🏗️ Architecture</h3>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>✅ React Router v7 with Cloudflare Workers</li>
-            <li>✅ Prisma v7 with Prisma Accelerate & Postgres</li>
+            <li>✅ Prisma v7 with Supabase Postgres</li>
             <li>✅ PostGIS for efficient geospatial queries</li>
-            <li>✅ Edge caching with TTL & SWR strategies</li>
-            <li>✅ Google Maps with satellite view & street view</li>
+            <li>✅ Canonical POI model for restaurants and attractions</li>
+            <li>✅ Google Maps with satellite view and directions</li>
             <li>✅ Multi-modal directions (walk, bike, transit, drive)</li>
-            <li>🔄 Background sync worker (pending)</li>
+            <li>🔄 Access confidence and sync pipeline (pending)</li>
           </ul>
         </div>
       </div>

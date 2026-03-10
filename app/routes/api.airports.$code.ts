@@ -1,9 +1,9 @@
 /**
- * API Route: Airport Details with Nearby Restaurants
+ * API Route: Airport Details with Nearby POIs
  * GET /api/airports/:code
  *
- * Returns detailed information about a specific airport and all restaurants
- * within a specified radius.
+ * Returns detailed information about a specific airport and nearby POIs within
+ * a specified radius.
  *
  * Path Parameters:
  * - code (required): IATA/ICAO airport code (e.g., "KSFO", "SFO")
@@ -12,8 +12,11 @@
  * - distance (optional): Search radius in kilometers (default: 5.0)
  * - minRating (optional): Minimum rating filter (default: 4.0)
  *
+ * Query Parameters:
+ * - type (optional): `RESTAURANT` or `ATTRACTION` (default: `RESTAURANT`)
+ *
  * Example:
- * GET /api/airports/KSFO?distance=10&minRating=4.5
+ * GET /api/airports/KSFO?distance=10&minRating=4.5&type=ATTRACTION
  *
  * Response:
  * {
@@ -25,13 +28,14 @@
  *     "latitude": 37.6213,
  *     "longitude": -122.3790
  *   },
- *   "restaurants": [...],
+ *   "pois": [...],
  *   "count": 15
  * }
  */
 
 import { prisma } from "~/utils/db.server";
-import { findRestaurantsNearAirport } from "~/utils/geospatial.server";
+import { findPoisNearAirport } from "~/utils/geospatial.server";
+import { getAirportSummaryByCode } from "~/utils/postgis.server";
 
 interface LoaderArgs {
   params: { code: string };
@@ -41,7 +45,7 @@ interface LoaderArgs {
 
 /**
  * Loader function - handles GET requests
- * Fetches airport details and nearby restaurants
+ * Fetches airport details and nearby POIs
  */
 export async function loader({ params, request, context }: LoaderArgs) {
   const { code } = params;
@@ -62,6 +66,7 @@ export async function loader({ params, request, context }: LoaderArgs) {
   const url = new URL(request.url);
   const distance = parseFloat(url.searchParams.get("distance") || "5.0");
   const minRating = parseFloat(url.searchParams.get("minRating") || "4.0");
+  const requestedType = url.searchParams.get("type") || "RESTAURANT";
 
   // Validate parameters
   if (distance <= 0 || distance > 100) {
@@ -74,41 +79,25 @@ export async function loader({ params, request, context }: LoaderArgs) {
     );
   }
 
+  if (requestedType !== "RESTAURANT" && requestedType !== "ATTRACTION") {
+    return Response.json(
+      {
+        error: "Invalid type",
+        message: "Type must be either 'RESTAURANT' or 'ATTRACTION'",
+      },
+      { status: 400 }
+    );
+  }
+
   try {
     // Get singleton Prisma client
     const db = prisma;
 
     // First, get the airport details
-    const airportResult = await db.$queryRaw<Array<{
-      id: number;
-      code: string;
-      name: string;
-      city: string;
-      state: string | null;
-      country: string;
-      latitude: number;
-      longitude: number;
-      createdAt: Date;
-      updatedAt: Date;
-    }>>`
-      SELECT
-        id,
-        code,
-        name,
-        city,
-        state,
-        country,
-        ST_Y(location::geometry) as latitude,
-        ST_X(location::geometry) as longitude,
-        "createdAt",
-        "updatedAt"
-      FROM "airports"
-      WHERE UPPER(code) = UPPER(${code})
-      LIMIT 1
-    `;
+    const airport = await getAirportSummaryByCode(db, code);
 
     // Check if airport exists
-    if (!airportResult || airportResult.length === 0) {
+    if (!airport) {
       return Response.json(
         {
           error: "Airport not found",
@@ -119,12 +108,11 @@ export async function loader({ params, request, context }: LoaderArgs) {
       );
     }
 
-    const airport = airportResult[0];
-
-    // Find restaurants near this airport
-    const restaurants = await findRestaurantsNearAirport(
+    // Find POIs near this airport
+    const pois = await findPoisNearAirport(
       db,
       code,
+      requestedType,
       distance,
       minRating
     );
@@ -140,12 +128,13 @@ export async function loader({ params, request, context }: LoaderArgs) {
         latitude: airport.latitude,
         longitude: airport.longitude,
       },
-      restaurants,
+      pois,
       search: {
         radiusKm: distance,
         minRating,
+        type: requestedType,
       },
-      count: restaurants.length,
+      count: pois.length,
     });
   } catch (error) {
     console.error(`Error fetching airport ${code}:`, error);

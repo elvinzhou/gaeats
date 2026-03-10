@@ -3,14 +3,28 @@
 
 /**
  * Generator Configuration
- * - Optimized for Cloudflare Workers runtime
- * - Outputs to app/generated/prisma for easy imports
- * - Enables PostgreSQL extensions preview feature for PostGIS support
+ * - Uses the Prisma v7 TypeScript generator
+ * - Targets the Cloudflare Workers/workerd runtime
+ * - Outputs to app/generated/prisma for app-local imports
  */
 generator client {
-  provider        = "prisma-client-js"
-  output          = "../app/generated/prisma"
-  previewFeatures = ["postgresqlExtensions"]
+  provider               = "prisma-client"
+  output                 = "../app/generated/prisma"
+  runtime                = "workerd"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "js"
+  previewFeatures        = ["postgresqlExtensions"]
+}
+
+generator scriptClient {
+  provider               = "prisma-client"
+  output                 = "../scripts/generated/prisma"
+  runtime                = "nodejs"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+  previewFeatures        = ["postgresqlExtensions"]
 }
 
 /**
@@ -23,10 +37,84 @@ datasource db {
   extensions = [postgis(version: "3.4")]
 }
 
+enum PoiType {
+  RESTAURANT
+  ATTRACTION
+}
+
+enum ExternalSource {
+  GOOGLE_MAPS
+  YELP
+  MANUAL
+  CLAIMED_LISTING
+  IMPORT
+}
+
+enum AccessMode {
+  WALKING
+  BIKING
+  TRANSIT
+  RIDESHARE
+  CREW_CAR
+  COURTESY_SHUTTLE
+  RESTAURANT_SHUTTLE
+  DRIVING
+}
+
+enum AvailabilityStatus {
+  YES
+  NO
+  LIMITED
+  UNKNOWN
+}
+
+enum ConfidenceLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum AccessSourceType {
+  AIRPORT
+  FBO
+  RESTAURANT
+  PILOT_REVIEW
+  CLAIMED_LISTING
+  INFERRED
+  MANUAL
+}
+
+enum VerificationMethod {
+  OPERATOR_CONFIRMATION
+  PUBLISHED_SOURCE
+  PILOT_CONFIRMATION
+  CLAIMED_LISTING_UPDATE
+  INFERENCE
+  MANUAL
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+enum ClaimStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  REVOKED
+}
+
+enum AirportSource {
+  FAA
+  MANUAL
+}
+
 /**
  * Airport Model
  * Represents public-use airports where pilots can land
- *
  * Fields:
  * - id: Unique identifier
  * - code: IATA/ICAO airport code (e.g., "KSFO", "SFO")
@@ -39,55 +127,229 @@ datasource db {
  * - updatedAt: Timestamp of last update
  */
 model Airport {
-  id        Int                                   @id @default(autoincrement())
-  code      String                                @unique @db.VarChar(10)
-  name      String                                @db.VarChar(255)
-  city      String                                @db.VarChar(100)
-  state     String?                               @db.VarChar(10)
-  country   String                                @default("US") @db.VarChar(10)
-  location  Unsupported("geography(Point, 4326)") // PostGIS geography type for efficient distance calculations
-  createdAt DateTime                              @default(now()) @db.Timestamptz
-  updatedAt DateTime                              @updatedAt @db.Timestamptz
+  id             Int                                   @id @default(autoincrement())
+  code           String                                @unique @db.VarChar(10)
+  faaCode        String?                               @unique @db.VarChar(10)
+  icaoCode       String?                               @unique @db.VarChar(10)
+  iataCode       String?                               @unique @db.VarChar(10)
+  source         AirportSource                         @default(MANUAL)
+  sourceDataset  String?                               @db.VarChar(255)
+  sourceRecordUpdatedAt DateTime?                      @db.Timestamptz
+  sourceRefreshedAt DateTime?                          @db.Timestamptz
+  name           String                                @db.VarChar(255)
+  city           String                                @db.VarChar(100)
+  state          String?                               @db.VarChar(10)
+  country        String                                @default("US") @db.VarChar(10)
+  fboName        String?                               @db.VarChar(255)
+  fboPhone       String?                               @db.VarChar(50)
+  fboWebsite     String?                               @db.VarChar(500)
+  notes          String?                               @db.Text
+  lastVerifiedAt DateTime?                             @db.Timestamptz
+  lastPoiSyncAt  DateTime?                             @db.Timestamptz
+  nextPoiSyncAt  DateTime?                             @db.Timestamptz
+  syncPriority   Int                                   @default(100)
+  location       Unsupported("geography(Point, 4326)") // PostGIS geography type for efficient distance calculations
+  createdAt      DateTime                              @default(now()) @db.Timestamptz
+  updatedAt      DateTime                              @updatedAt @db.Timestamptz
+
+  accessFacts   AirportAccessFact[]
+  poiLinks      AirportPoi[]
+  pilotReviews  PilotReview[]
+  accessReports PilotAccessReport[]
 
   @@index([location], type: Gist) // Spatial index for fast geospatial queries
+  @@index([nextPoiSyncAt, syncPriority])
   @@map("airports")
 }
 
 /**
- * Restaurant Model
- * Represents restaurants near airports, filtered by quality (rating > 4.0)
- *
- * Fields:
- * - id: Unique identifier
- * - googlePlaceId: Google Places API place ID for future updates
- * - name: Restaurant name
- * - description: Short description or notes
- * - cuisine: Type of cuisine (e.g., "American", "Italian")
- * - rating: Google Maps rating (1.0 to 5.0, only restaurants > 4.0 stored)
- * - address: Full street address
- * - city: City name
- * - state: State/Province code
- * - country: Country code
- * - location: PostGIS geography point (latitude, longitude) using SRID 4326 (WGS 84)
- * - createdAt: Timestamp of record creation
- * - updatedAt: Timestamp of last update
+ * Point of interest target model for MVP.
+ * This is the canonical listing model for both restaurants and attractions.
  */
-model Restaurant {
-  id            Int                                   @id @default(autoincrement())
-  googlePlaceId String?                               @unique @db.VarChar(255)
-  name          String                                @db.VarChar(255)
-  description   String?                               @db.Text
-  cuisine       String?                               @db.VarChar(100)
-  rating        Float                                 @default(0.0) @db.DoublePrecision
-  address       String                                @db.VarChar(500)
-  city          String                                @db.VarChar(100)
-  state         String?                               @db.VarChar(10)
-  country       String                                @default("US") @db.VarChar(10)
-  location      Unsupported("geography(Point, 4326)") // PostGIS geography type for efficient distance calculations
-  createdAt     DateTime                              @default(now()) @db.Timestamptz
-  updatedAt     DateTime                              @updatedAt @db.Timestamptz
+model Poi {
+  id                  Int                                   @id @default(autoincrement())
+  source              ExternalSource
+  externalSourceId    String?                               @db.VarChar(255)
+  type                PoiType
+  name                String                                @db.VarChar(255)
+  category            String?                               @db.VarChar(100)
+  subcategory         String?                               @db.VarChar(100)
+  cuisine             String?                               @db.VarChar(100)
+  description         String?                               @db.Text
+  address             String                                @db.VarChar(500)
+  city                String                                @db.VarChar(100)
+  state               String?                               @db.VarChar(10)
+  country             String                                @default("US") @db.VarChar(10)
+  priceLevel          Int?
+  externalRating      Float?                                @db.DoublePrecision
+  externalReviewCount Int?
+  pilotRating         Float?                                @db.DoublePrecision
+  pilotReviewCount    Int                                   @default(0)
+  url                 String?                               @db.VarChar(500)
+  phone               String?                               @db.VarChar(50)
+  hoursJson           Json?
+  active              Boolean                               @default(true)
+  lastSyncedAt        DateTime?                             @db.Timestamptz
+  location            Unsupported("geography(Point, 4326)") // PostGIS geography type for efficient distance calculations
+  createdAt           DateTime                              @default(now()) @db.Timestamptz
+  updatedAt           DateTime                              @updatedAt @db.Timestamptz
 
-  @@index([location], type: Gist) // Spatial index for fast geospatial queries
-  @@index([rating]) // Index on rating for filtering high-quality restaurants
-  @@map("restaurants")
+  airportLinks  AirportPoi[]
+  accessFacts   PoiAccessFact[]
+  pilotReviews  PilotReview[]
+  accessReports PilotAccessReport[]
+  listingClaims ListingClaim[]
+
+  @@unique([source, externalSourceId])
+  @@index([type])
+  @@index([externalRating])
+  @@index([pilotRating])
+  @@index([location], type: Gist)
+  @@map("pois")
+}
+
+/**
+ * Join model between airports and points of interest.
+ * Stores route-derived last-mile estimates and the derived reachability summary
+ * that powers ranking for "practical after landing" results.
+ */
+model AirportPoi {
+  id                         Int              @id @default(autoincrement())
+  airportId                  Int
+  poiId                      Int
+  straightLineDistanceMeters Float?           @db.DoublePrecision
+  walkingMinutes             Int?
+  bikingMinutes              Int?
+  transitMinutes             Int?
+  drivingMinutes             Int?
+  preferredMode              AccessMode?
+  accessConfidence           ConfidenceLevel?
+  reachabilityScore          Float?           @db.DoublePrecision
+  needsCrewCar               Boolean?
+  needsRideshare             Boolean?
+  accessSummary              String?          @db.Text
+  lastCalculatedAt           DateTime?        @db.Timestamptz
+  createdAt                  DateTime         @default(now()) @db.Timestamptz
+  updatedAt                  DateTime         @updatedAt @db.Timestamptz
+
+  airport Airport @relation(fields: [airportId], references: [id], onDelete: Cascade)
+  poi     Poi     @relation(fields: [poiId], references: [id], onDelete: Cascade)
+
+  @@unique([airportId, poiId])
+  @@index([preferredMode])
+  @@index([reachabilityScore])
+  @@map("airport_pois")
+}
+
+model AirportAccessFact {
+  id                 Int                 @id @default(autoincrement())
+  airportId          Int
+  mode               AccessMode
+  status             AvailabilityStatus  @default(UNKNOWN)
+  confidence         ConfidenceLevel     @default(LOW)
+  sourceType         AccessSourceType
+  sourceDetail       String?             @db.Text
+  sourceUrl          String?             @db.VarChar(500)
+  note               String?             @db.Text
+  lastVerifiedAt     DateTime?           @db.Timestamptz
+  verificationMethod VerificationMethod?
+  createdAt          DateTime            @default(now()) @db.Timestamptz
+  updatedAt          DateTime            @updatedAt @db.Timestamptz
+
+  airport Airport @relation(fields: [airportId], references: [id], onDelete: Cascade)
+
+  @@unique([airportId, mode])
+  @@index([status, confidence])
+  @@index([lastVerifiedAt])
+  @@map("airport_access_facts")
+}
+
+model PoiAccessFact {
+  id                 Int                 @id @default(autoincrement())
+  poiId              Int
+  mode               AccessMode
+  status             AvailabilityStatus  @default(UNKNOWN)
+  confidence         ConfidenceLevel     @default(LOW)
+  sourceType         AccessSourceType
+  sourceDetail       String?             @db.Text
+  sourceUrl          String?             @db.VarChar(500)
+  note               String?             @db.Text
+  lastVerifiedAt     DateTime?           @db.Timestamptz
+  verificationMethod VerificationMethod?
+  createdAt          DateTime            @default(now()) @db.Timestamptz
+  updatedAt          DateTime            @updatedAt @db.Timestamptz
+
+  poi Poi @relation(fields: [poiId], references: [id], onDelete: Cascade)
+
+  @@unique([poiId, mode])
+  @@index([status, confidence])
+  @@index([lastVerifiedAt])
+  @@map("poi_access_facts")
+}
+
+model PilotReview {
+  id               Int              @id @default(autoincrement())
+  airportId        Int?
+  poiId            Int
+  rating           Int
+  title            String?          @db.VarChar(255)
+  body             String?          @db.Text
+  tags             String[]
+  visitedAt        DateTime?        @db.Timestamptz
+  moderationStatus ModerationStatus @default(PENDING)
+  createdAt        DateTime         @default(now()) @db.Timestamptz
+  updatedAt        DateTime         @updatedAt @db.Timestamptz
+
+  airport Airport? @relation(fields: [airportId], references: [id], onDelete: SetNull)
+  poi     Poi      @relation(fields: [poiId], references: [id], onDelete: Cascade)
+
+  @@index([poiId, moderationStatus])
+  @@index([airportId, moderationStatus])
+  @@map("pilot_reviews")
+}
+
+/**
+ * Lightweight confirmations for operational access details.
+ * These records are intended to fight stale airport/FBO transport data with
+ * low-effort pilot feedback such as "crew car worked" or "no rideshare found".
+ */
+model PilotAccessReport {
+  id               Int                @id @default(autoincrement())
+  airportId        Int
+  poiId            Int?
+  mode             AccessMode
+  status           AvailabilityStatus
+  confidence       ConfidenceLevel?
+  note             String?            @db.Text
+  happenedAt       DateTime?          @db.Timestamptz
+  moderationStatus ModerationStatus   @default(PENDING)
+  createdAt        DateTime           @default(now()) @db.Timestamptz
+  updatedAt        DateTime           @updatedAt @db.Timestamptz
+
+  airport Airport @relation(fields: [airportId], references: [id], onDelete: Cascade)
+  poi     Poi?    @relation(fields: [poiId], references: [id], onDelete: SetNull)
+
+  @@index([airportId, mode, moderationStatus])
+  @@index([poiId, mode, moderationStatus])
+  @@map("pilot_access_reports")
+}
+
+model ListingClaim {
+  id                Int         @id @default(autoincrement())
+  poiId             Int
+  claimantName      String      @db.VarChar(255)
+  claimantEmail     String      @db.VarChar(255)
+  claimantPhone     String?     @db.VarChar(50)
+  businessName      String?     @db.VarChar(255)
+  website           String?     @db.VarChar(500)
+  status            ClaimStatus @default(PENDING)
+  verificationNotes String?     @db.Text
+  createdAt         DateTime    @default(now()) @db.Timestamptz
+  updatedAt         DateTime    @updatedAt @db.Timestamptz
+
+  poi Poi @relation(fields: [poiId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([claimantEmail])
+  @@map("listing_claims")
 }
