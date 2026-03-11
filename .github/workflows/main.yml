@@ -1,0 +1,29 @@
+name: CI Checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Ensures the workflow can access all commit history, which might be needed for some test tools
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Specify your required Node.js version
+          cache: 'npm' # Caches dependencies for faster subsequent runs
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run tests
+        run: pnpm run test # Executes the 'test' script defined in your package.json
