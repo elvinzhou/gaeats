@@ -10,4 +10,9 @@
   "triggers": {
     "crons": ["0 3 * * *"]
   }
+  // Secrets Configuration (set via CLI):
+  // Run: wrangler secret put DATABASE_URL
+  // Then paste your Supabase Postgres connection string.
+  // Note: For local development, secrets are read from .dev.vars file
+  // Create .dev.vars with: DATABASE_URL="your-local-connection-string"
 }

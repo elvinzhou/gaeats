@@ -12,10 +12,8 @@ Update CLAUDE.MD as needed.
 ##Technology Stack
 - **Frontend**: React Router v7 (framework mode)
 - **Runtime**: Cloudflare Workers (edge deployment)
-- **Database**: Supabase Postgres with PostGIS extension
-- **ORM**: Prisma v7
-- **Database**: Supabase Postgres with PostGIS extension
-- **ORM**: Prisma v7
+- **Database**: Prisma Postgres with PostGIS extension
+- **ORM**: Prisma v7 with Accelerate for edge caching
 - **Maps**: Google Maps JavaScript API via @vis.gl/react-google-maps
 - **Testing**: Vitest with unit tests
 - **Styling**: Tailwind CSS v4
@@ -25,4 +23,4 @@ Update CLAUDE.MD as needed.
 - Supports satellite view, hybrid view, and street view
 - Multi-modal directions: walking, biking, transit, driving
 - Turn-by-turn navigation with step-by-step instructions
-- API Key configured via VITE_GOOGLE_MAPS_API_KEY environment variable
+- API Key configured via VITE_GOOGLE_MAPS_API_KEY environment variable 
