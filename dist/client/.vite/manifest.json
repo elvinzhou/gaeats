@@ -1,0 +1,96 @@
+{
+  "_chunk-LFPYN7LY-BX4uKIqs.js": {
+    "file": "assets/chunk-LFPYN7LY-BX4uKIqs.js",
+    "name": "chunk-LFPYN7LY"
+  },
+  "_index-CcAW2gI9.js": {
+    "file": "assets/index-CcAW2gI9.js",
+    "name": "index",
+    "imports": [
+      "_chunk-LFPYN7LY-BX4uKIqs.js"
+    ]
+  },
+  "app/components/GoogleMapComponent.tsx": {
+    "file": "assets/GoogleMapComponent-DAAeZLkG.js",
+    "name": "GoogleMapComponent",
+    "src": "app/components/GoogleMapComponent.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chunk-LFPYN7LY-BX4uKIqs.js",
+      "_index-CcAW2gI9.js"
+    ]
+  },
+  "app/root.tsx?__react-router-build-client-route": {
+    "file": "assets/root-Cpeue2hA.js",
+    "name": "root",
+    "src": "app/root.tsx?__react-router-build-client-route",
+    "isEntry": true,
+    "imports": [
+      "_chunk-LFPYN7LY-BX4uKIqs.js"
+    ],
+    "css": [
+      "assets/root-u2SAh_hX.css"
+    ]
+  },
+  "app/routes/airports.$code.tsx?__react-router-build-client-route": {
+    "file": "assets/airports._code-l0sNRNKZ.js",
+    "name": "airports._code",
+    "src": "app/routes/airports.$code.tsx?__react-router-build-client-route",
+    "isEntry": true
+  },
+  "app/routes/api.airports.$code.ts?__react-router-build-client-route": {
+    "file": "assets/api.airports._code-l0sNRNKZ.js",
+    "name": "api.airports._code",
+    "src": "app/routes/api.airports.$code.ts?__react-router-build-client-route",
+    "isEntry": true
+  },
+  "app/routes/api.airports.nearby.ts?__react-router-build-client-route": {
+    "file": "assets/api.airports.nearby-l0sNRNKZ.js",
+    "name": "api.airports.nearby",
+    "src": "app/routes/api.airports.nearby.ts?__react-router-build-client-route",
+    "isEntry": true
+  },
+  "app/routes/api.pois.nearby.ts?__react-router-build-client-route": {
+    "file": "assets/api.pois.nearby-l0sNRNKZ.js",
+    "name": "api.pois.nearby",
+    "src": "app/routes/api.pois.nearby.ts?__react-router-build-client-route",
+    "isEntry": true
+  },
+  "app/routes/api.restaurants.nearby.ts?__react-router-build-client-route": {
+    "file": "assets/api.restaurants.nearby-l0sNRNKZ.js",
+    "name": "api.restaurants.nearby",
+    "src": "app/routes/api.restaurants.nearby.ts?__react-router-build-client-route",
+    "isEntry": true
+  },
+  "app/routes/home.tsx?__react-router-build-client-route": {
+    "file": "assets/home-D6DQ5KPY.js",
+    "name": "home",
+    "src": "app/routes/home.tsx?__react-router-build-client-route",
+    "isEntry": true,
+    "imports": [
+      "_chunk-LFPYN7LY-BX4uKIqs.js"
+    ]
+  },
+  "app/routes/map.tsx?__react-router-build-client-route": {
+    "file": "assets/map-DZwAQKEz.js",
+    "name": "map",
+    "src": "app/routes/map.tsx?__react-router-build-client-route",
+    "isEntry": true,
+    "imports": [
+      "_chunk-LFPYN7LY-BX4uKIqs.js"
+    ],
+    "dynamicImports": [
+      "app/components/GoogleMapComponent.tsx"
+    ]
+  },
+  "node_modules/.pnpm/@react-router+dev@7.9.6_@types+node@22.19.15_jiti@2.6.1_lightningcss@1.31.1_react-route_22db3ced222bdb99d0c9b89e3d8c610e/node_modules/@react-router/dev/dist/config/defaults/entry.client.tsx": {
+    "file": "assets/entry.client-D_Rqgf_4.js",
+    "name": "entry.client",
+    "src": "node_modules/.pnpm/@react-router+dev@7.9.6_@types+node@22.19.15_jiti@2.6.1_lightningcss@1.31.1_react-route_22db3ced222bdb99d0c9b89e3d8c610e/node_modules/@react-router/dev/dist/config/defaults/entry.client.tsx",
+    "isEntry": true,
+    "imports": [
+      "_chunk-LFPYN7LY-BX4uKIqs.js",
+      "_index-CcAW2gI9.js"
+    ]
+  }
+}

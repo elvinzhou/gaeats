@@ -12,7 +12,7 @@ export default defineConfig({
     tsconfigPaths(),
   ],
   ssr: {
-    noExternal: true,
+    noExternal: process.env.NODE_ENV === 'production' ? true : undefined,
   },
   build: {
     rollupOptions: {
