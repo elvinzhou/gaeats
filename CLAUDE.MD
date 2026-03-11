@@ -12,8 +12,8 @@ Update CLAUDE.MD as needed.
 ##Technology Stack
 - **Frontend**: React Router v7 (framework mode)
 - **Runtime**: Cloudflare Workers (edge deployment)
-- **Database**: Supabase Postgres with PostGIS extension
-- **ORM**: Prisma v7
+- **Database**: Prisma Postgres with PostGIS extension
+- **ORM**: Prisma v7 with Accelerate for edge caching
 - **Maps**: Google Maps JavaScript API via @vis.gl/react-google-maps
 - **Testing**: Vitest with unit tests
 - **Styling**: Tailwind CSS v4

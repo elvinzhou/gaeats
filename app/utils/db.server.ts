@@ -15,18 +15,8 @@
  * ```
  */
 
-import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "~/generated/prisma/client";
-
-export type AppPrismaClient = ReturnType<typeof createPrismaClient>;
-
-function createPrismaClient() {
-  const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL!,
-  });
-
-  return new PrismaClient({ adapter });
-}
+import { withAccelerate } from "@prisma/extension-accelerate";
 
 /**
  * Singleton Prisma Client instance

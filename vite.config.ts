@@ -11,4 +11,15 @@ export default defineConfig({
     reactRouter(),
     tsconfigPaths(),
   ],
+  ssr: {
+    noExternal: true,
+  },
+  build: {
+    rollupOptions: {
+      external: ["@prisma/adapter-pg", "pg", "events", "util", "net", "path", "fs", "tls", "dns", "crypto", "stream", "string_decoder"],
+    }
+  },
+  optimizeDeps: {
+    exclude: ["@prisma/adapter-pg", "pg"]
+  }
 });

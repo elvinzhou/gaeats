@@ -1,15 +1,10 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // Application name for Cloudflare Workers
   "name": "gaeats-app",
-  // Compatibility date - determines which Workers runtime features are available
   "compatibility_date": "2025-04-04",
-  // Main entry point for the Worker
+  "compatibility_flags": ["nodejs_compat"],
   "main": "./workers/app.ts",
-  // Environment variables (non-secret values only)
-  // Use `wrangler secret put <KEY>` for sensitive values like DATABASE_URL
   "vars": {
-    // Example public variable
     "ENVIRONMENT": "development"
   },
   "triggers": {
