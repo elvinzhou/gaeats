@@ -34,7 +34,7 @@
  */
 
 import { prisma } from "~/utils/db.server";
-import { findPoisNearAirport } from "~/utils/geospatial.server";
+import { findPoisNearby } from "~/utils/geospatial.server";
 import { getAirportSummaryByCode } from "~/utils/postgis.server";
 
 interface LoaderArgs {
@@ -109,10 +109,10 @@ export async function loader({ params, request, context }: LoaderArgs) {
     }
 
     // Find POIs near this airport
-    const pois = await findPoisNearAirport(
+    const pois = await findPoisNearby(
       db,
-      code,
-      requestedType,
+      airport,
+      requestedType as "RESTAURANT" | "ATTRACTION",
       distance,
       minRating
     );
