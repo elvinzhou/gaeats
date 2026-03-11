@@ -14,6 +14,8 @@ Update CLAUDE.MD as needed.
 - **Runtime**: Cloudflare Workers (edge deployment)
 - **Database**: Supabase Postgres with PostGIS extension
 - **ORM**: Prisma v7
+- **Database**: Supabase Postgres with PostGIS extension
+- **ORM**: Prisma v7
 - **Maps**: Google Maps JavaScript API via @vis.gl/react-google-maps
 - **Testing**: Vitest with unit tests
 - **Styling**: Tailwind CSS v4

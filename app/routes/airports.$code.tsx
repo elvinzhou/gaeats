@@ -1,7 +1,10 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/airports.$code";
 import { prisma } from "~/utils/db.server";
-import { getAirportDetailByCode, type AirportDetailRow } from "~/utils/postgis.server";
+import {
+  getAirportDetailByCode,
+  type AirportDetailRow,
+} from "~/utils/postgis.server";
 
 type PoiType = "RESTAURANT" | "ATTRACTION";
 
@@ -41,7 +44,7 @@ export function meta({ data }: Route.MetaArgs) {
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
-  const { findPoisNearby } = await import("~/utils/geospatial.server");
+  const { findPoisNearAirport } = await import("~/utils/geospatial.server");
   const code = params.code?.trim();
 
   if (!code) {
@@ -53,15 +56,30 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   const minRating = clampNumber(url.searchParams.get("minRating"), 4, 0, 5);
   const requestedType = parseType(url.searchParams.get("type"));
 
-  const airport: AirportDetailRow | null = await getAirportDetailByCode(prisma, code);
+  const airport: AirportDetailRow | null = await getAirportDetailByCode(
+    prisma,
+    code,
+  );
 
   if (!airport) {
     throw new Response("Airport not found", { status: 404 });
   }
 
   const [restaurants, attractions, accessFacts] = await Promise.all([
-    findPoisNearby(prisma, airport, "RESTAURANT", distance, minRating),
-    findPoisNearby(prisma, airport, "ATTRACTION", distance, minRating),
+    findPoisNearAirport(
+      prisma,
+      airport.code,
+      "RESTAURANT",
+      distance,
+      minRating,
+    ),
+    findPoisNearAirport(
+      prisma,
+      airport.code,
+      "ATTRACTION",
+      distance,
+      minRating,
+    ),
     prisma.airportAccessFact.findMany({
       where: { airportId: airport.id },
       orderBy: [{ confidence: "asc" }, { mode: "asc" }],
@@ -95,7 +113,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   });
 
   const metricsByPoiId = new Map<number, AirportPoiMetrics>(
-    airportPoiMetrics.map((metric) => [metric.poiId, metric])
+    airportPoiMetrics.map((metric) => [metric.poiId, metric]),
   );
 
   return {
@@ -115,11 +133,21 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   };
 }
 
-export default function AirportDetailRoute({ loaderData }: Route.ComponentProps) {
-  const { airport, selectedType, distance, minRating, restaurants, attractions, accessFacts } =
-    loaderData;
+export default function AirportDetailRoute({
+  loaderData,
+}: Route.ComponentProps) {
+  const {
+    airport,
+    selectedType,
+    distance,
+    minRating,
+    restaurants,
+    attractions,
+    accessFacts,
+  } = loaderData;
 
-  const selectedPois = selectedType === "RESTAURANT" ? restaurants : attractions;
+  const selectedPois =
+    selectedType === "RESTAURANT" ? restaurants : attractions;
 
   return (
     <main className="min-h-screen bg-stone-50 text-stone-900">
@@ -163,7 +191,7 @@ export default function AirportDetailRoute({ loaderData }: Route.ComponentProps)
                       key={fact.mode}
                       className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${accessBadgeClass(
                         fact.status,
-                        fact.confidence
+                        fact.confidence,
                       )}`}
                       title={fact.note ?? undefined}
                     >
@@ -184,8 +212,14 @@ export default function AirportDetailRoute({ loaderData }: Route.ComponentProps)
                 Planning Snapshot
               </h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                <MetricCard label="Restaurants" value={String(restaurants.length)} />
-                <MetricCard label="Attractions" value={String(attractions.length)} />
+                <MetricCard
+                  label="Restaurants"
+                  value={String(restaurants.length)}
+                />
+                <MetricCard
+                  label="Attractions"
+                  value={String(attractions.length)}
+                />
                 <MetricCard label="Radius" value={`${distance} km`} />
                 <MetricCard label="Min Rating" value={minRating.toFixed(1)} />
               </div>
@@ -194,9 +228,13 @@ export default function AirportDetailRoute({ loaderData }: Route.ComponentProps)
                   <div className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-400">
                     FBO
                   </div>
-                  <div className="mt-2 text-lg font-medium">{airport.fboName}</div>
+                  <div className="mt-2 text-lg font-medium">
+                    {airport.fboName}
+                  </div>
                   {airport.fboPhone && (
-                    <div className="mt-1 text-sm text-stone-300">{airport.fboPhone}</div>
+                    <div className="mt-1 text-sm text-stone-300">
+                      {airport.fboPhone}
+                    </div>
                   )}
                   {airport.fboWebsite && (
                     <a
@@ -216,9 +254,12 @@ export default function AirportDetailRoute({ loaderData }: Route.ComponentProps)
       <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Nearby POIs</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Nearby POIs
+            </h2>
             <p className="text-sm text-stone-600">
-              Start with public ratings, then layer in last-mile and pilot access context.
+              Start with public ratings, then layer in last-mile and pilot
+              access context.
             </p>
           </div>
 
@@ -247,15 +288,20 @@ export default function AirportDetailRoute({ loaderData }: Route.ComponentProps)
             <div className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">
               Airport Notes
             </div>
-            <p className="mt-3 text-sm leading-6 text-stone-700">{airport.notes}</p>
+            <p className="mt-3 text-sm leading-6 text-stone-700">
+              {airport.notes}
+            </p>
           </div>
         )}
 
         {selectedPois.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-stone-300 bg-white p-10 text-center">
-            <h3 className="text-xl font-semibold">No {selectedType.toLowerCase()}s found</h3>
+            <h3 className="text-xl font-semibold">
+              No {selectedType.toLowerCase()}s found
+            </h3>
             <p className="mt-2 text-sm text-stone-600">
-              Try a wider radius or lower rating threshold once filters are exposed in the UI.
+              Try a wider radius or lower rating threshold once filters are
+              exposed in the UI.
             </p>
           </div>
         ) : (
@@ -304,13 +350,31 @@ export default function AirportDetailRoute({ loaderData }: Route.ComponentProps)
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-4 text-sm text-stone-600">
                   <div>
-                    <div className="font-medium text-stone-800">Last-mile summary</div>
-                    <div>{formatRouteSummary(poi.routeMetrics, poi.distance)}</div>
+                    <div className="font-medium text-stone-800">
+                      Last-mile summary
+                    </div>
+                    <div>{formatRouteSummary(poi, poi.distance)}</div>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
+                    {/* Display Badge for the Reachability computed in phase 2 */}
+                    {poi.walkingMinutes != null && poi.walkingMinutes <= 20 && (
+                      <span className="rounded-full bg-emerald-100 text-emerald-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide">
+                        Walkable
+                      </span>
+                    )}
+                    {poi.bikingMinutes != null && poi.bikingMinutes <= 30 && (
+                      <span className="rounded-full bg-teal-100 text-teal-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide">
+                        Bikeable
+                      </span>
+                    )}
+                    {poi.transitMinutes != null && poi.transitMinutes <= 40 && (
+                      <span className="rounded-full bg-blue-100 text-blue-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide">
+                        Transit
+                      </span>
+                    )}
                     <Link
-                      to={`/map?lat=${airport.latitude}&lng=${airport.longitude}&radius=${distance}&poiId=${poi.id}&poiType=${poi.type.toLowerCase()}`}
+                      to={`/map?lat=${airport.latitude}&lng=${airport.longitude}&radius=${distance}&poiId=${poi.id}&poiType=${poi.type.toLowerCase()}&mode=${poi.preferredMode || "DRIVING"}`}
                       className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-800 transition-colors hover:border-stone-400 hover:bg-stone-100"
                     >
                       Open on map
@@ -318,10 +382,11 @@ export default function AirportDetailRoute({ loaderData }: Route.ComponentProps)
                     {poi.routeMetrics?.accessConfidence && (
                       <span
                         className={`rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-wide ${confidencePillClass(
-                          poi.routeMetrics.accessConfidence
+                          poi.routeMetrics.accessConfidence,
                         )}`}
                       >
-                        {poi.routeMetrics.accessConfidence.toLowerCase()} confidence
+                        {poi.routeMetrics.accessConfidence.toLowerCase()}{" "}
+                        confidence
                       </span>
                     )}
                   </div>
@@ -368,7 +433,9 @@ function TypeLink({
     <Link
       to={`/airports/${airportCode}?type=${nextType}&distance=${distance}&minRating=${minRating}`}
       className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-        isActive ? "bg-stone-950 text-white" : "text-stone-600 hover:text-stone-900"
+        isActive
+          ? "bg-stone-950 text-white"
+          : "text-stone-600 hover:text-stone-900"
       }`}
     >
       {label} ({count})
@@ -380,7 +447,7 @@ function clampNumber(
   value: string | null,
   fallback: number,
   min: number,
-  max: number
+  max: number,
 ) {
   const parsed = Number.parseFloat(value ?? "");
 
@@ -405,7 +472,7 @@ function formatStatus(status: string) {
 
 function accessBadgeClass(
   status: AccessFact["status"],
-  confidence: AccessFact["confidence"]
+  confidence: AccessFact["confidence"],
 ) {
   if (status === "YES" && confidence === "HIGH") {
     return "bg-emerald-100 text-emerald-800";
@@ -436,7 +503,7 @@ function formatFreshness(value: Date | null) {
   }
 
   const ageDays = Math.floor(
-    (Date.now() - new Date(value).getTime()) / (1000 * 60 * 60 * 24)
+    (Date.now() - new Date(value).getTime()) / (1000 * 60 * 60 * 24),
   );
 
   if (ageDays <= 90) return "fresh";
@@ -445,36 +512,27 @@ function formatFreshness(value: Date | null) {
   return "old";
 }
 
-function formatRouteSummary(
-  metrics: AirportPoiMetrics | null,
-  fallbackDistance: number
-) {
-  if (!metrics) {
-    return `Straight-line distance ${formatDistanceLocal(fallbackDistance)}. Route timing not calculated yet.`;
-  }
-
+function formatRouteSummary(poi: any, fallbackDistance: number) {
   const options = [
-    metrics.walkingMinutes ? `${metrics.walkingMinutes} min walk` : null,
-    metrics.bikingMinutes ? `${metrics.bikingMinutes} min bike` : null,
-    metrics.transitMinutes ? `${metrics.transitMinutes} min transit` : null,
-    metrics.drivingMinutes ? `${metrics.drivingMinutes} min drive` : null,
+    poi.walkingMinutes ? `${poi.walkingMinutes} min walk` : null,
+    poi.bikingMinutes ? `${poi.bikingMinutes} min bike` : null,
+    poi.transitMinutes ? `${poi.transitMinutes} min transit` : null,
+    poi.drivingMinutes ? `${poi.drivingMinutes} min drive` : null,
   ].filter(Boolean);
 
   if (options.length === 0) {
-    return `Straight-line distance ${formatDistanceLocal(
-      metrics.straightLineDistanceMeters ?? fallbackDistance
-    )}. Route timing not calculated yet.`;
+    return `Straight-line distance ${formatDistanceLocal(fallbackDistance)}. Route timing not calculated yet.`;
   }
 
-  const preferredMode = metrics.preferredMode
-    ? `Preferred: ${formatMode(metrics.preferredMode)}. `
+  const preferredMode = poi.preferredMode
+    ? `Preferred: ${formatMode(poi.preferredMode)}. `
     : "";
 
   return `${preferredMode}${options.join(" · ")}`;
 }
 
 function confidencePillClass(
-  confidence: NonNullable<AirportPoiMetrics["accessConfidence"]>
+  confidence: NonNullable<AirportPoiMetrics["accessConfidence"]>,
 ) {
   switch (confidence) {
     case "HIGH":

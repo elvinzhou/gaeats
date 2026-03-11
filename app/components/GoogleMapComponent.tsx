@@ -25,6 +25,7 @@ import {
 import { DirectionsRenderer } from "./DirectionsRenderer";
 import { DirectionsPanel } from "./DirectionsPanel";
 import type { Poi, Airport } from "~/types/models";
+import type { Poi, Airport } from "~/types/models";
 
 /**
  * Point of Interest type
@@ -34,6 +35,8 @@ export interface POI {
   id: number;
   position: { lat: number; lng: number };
   title: string;
+  type: "restaurant" | "attraction" | "airport";
+  data: Poi | Airport;
   type: "restaurant" | "attraction" | "airport";
   data: Poi | Airport;
 }
@@ -55,6 +58,8 @@ interface GoogleMapComponentProps {
   pois: POI[];
   /** Optional POI to preselect on first render */
   initialSelectedPoi?: { id: number; type: POI["type"] } | null;
+  /** Optional POI to preselect on first render */
+  initialSelectedPoi?: { id: number; type: POI["type"] } | null;
 }
 
 /**
@@ -65,6 +70,7 @@ export default function GoogleMapComponent({
   center = { lat: 39.8283, lng: -98.5795 }, // Center of USA
   zoom = 5,
   pois,
+  initialSelectedPoi = null,
   initialSelectedPoi = null,
 }: GoogleMapComponentProps) {
   const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
@@ -107,6 +113,26 @@ export default function GoogleMapComponent({
     return showAirports;
   });
 
+  useEffect(() => {
+    if (!initialSelectedPoi) return;
+
+    const matchingPoi = pois.find(
+      (poi) =>
+        poi.id === initialSelectedPoi.id &&
+        poi.type === initialSelectedPoi.type,
+    );
+
+    if (matchingPoi) {
+      setSelectedPOI(matchingPoi);
+    }
+  }, [initialSelectedPoi, pois]);
+
+  const visiblePois = pois.filter((poi) => {
+    if (poi.type === "restaurant") return showRestaurants;
+    if (poi.type === "attraction") return showAttractions;
+    return showAirports;
+  });
+
   return (
     <APIProvider apiKey={apiKey || ""}>
       <div className="flex h-screen w-full">
@@ -123,6 +149,7 @@ export default function GoogleMapComponent({
           >
             {/* Render POI Markers */}
             {visiblePois.map((poi) => (
+            {visiblePois.map((poi) => (
               <AdvancedMarker
                 key={poi.id}
                 position={poi.position}
@@ -132,6 +159,8 @@ export default function GoogleMapComponent({
                 title={poi.title}
               >
                 <Pin
+                  background={getMarkerColors(poi.type).background}
+                  borderColor={getMarkerColors(poi.type).border}
                   background={getMarkerColors(poi.type).background}
                   borderColor={getMarkerColors(poi.type).border}
                   glyphColor="white"
@@ -149,9 +178,19 @@ export default function GoogleMapComponent({
                 <div className="p-2">
                   <h3 className="font-semibold">{hoveredPOI.title}</h3>
                   {hoveredPOI.type !== "airport" && (
+                  {hoveredPOI.type !== "airport" && (
                     <p className="text-sm text-gray-600">
                       ⭐ {(hoveredPOI.data as Poi).externalRating ?? "N/A"}/5.0
+                      ⭐ {(hoveredPOI.data as Poi).externalRating ?? "N/A"}/5.0
                     </p>
+                  )}
+                  {hoveredPOI.type === "airport" && (
+                    <Link
+                      to={`/airports/${(hoveredPOI.data as Airport).code}`}
+                      className="mt-2 inline-block text-sm font-medium text-blue-700 hover:text-blue-900"
+                    >
+                      Open airport page
+                    </Link>
                   )}
                   {hoveredPOI.type === "airport" && (
                     <Link
@@ -210,6 +249,36 @@ export default function GoogleMapComponent({
             </div>
           )}
 
+          <LayerControls
+            showRestaurants={showRestaurants}
+            showAttractions={showAttractions}
+            showAirports={showAirports}
+            onToggleRestaurants={() => setShowRestaurants((value) => !value)}
+            onToggleAttractions={() => setShowAttractions((value) => !value)}
+            onToggleAirports={() => setShowAirports((value) => !value)}
+          />
+
+          {selectedPOI?.type === "airport" && (
+            <div className="absolute bottom-6 right-6 z-10 max-w-sm rounded-2xl bg-white p-4 shadow-lg ring-1 ring-stone-200">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                Airport Detail
+              </div>
+              <h3 className="mt-2 text-lg font-semibold text-stone-900">
+                {selectedPOI.title}
+              </h3>
+              <p className="mt-1 text-sm text-stone-600">
+                Open the airport page for nearby restaurants, attractions, and
+                access notes.
+              </p>
+              <Link
+                to={`/airports/${(selectedPOI.data as Airport).code}`}
+                className="mt-3 inline-flex rounded-full bg-stone-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-stone-800"
+              >
+                View airport page
+              </Link>
+            </div>
+          )}
+
           {/* Legend */}
           <div className="absolute bottom-6 left-6 rounded-lg bg-white p-4 shadow-lg">
             <h3 className="mb-2 font-semibold">Legend</h3>
@@ -217,6 +286,10 @@ export default function GoogleMapComponent({
               <div className="flex items-center gap-2">
                 <div className="h-4 w-4 rounded-full bg-[#FF6B6B]"></div>
                 <span className="text-sm">Restaurants</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-[#F4A261]"></div>
+                <span className="text-sm">Attractions</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-4 w-4 rounded-full bg-[#F4A261]"></div>
@@ -239,6 +312,86 @@ export default function GoogleMapComponent({
         )}
       </div>
     </APIProvider>
+  );
+}
+
+function getMarkerColors(type: POI["type"]) {
+  switch (type) {
+    case "restaurant":
+      return { background: "#FF6B6B", border: "#C92A2A" };
+    case "attraction":
+      return { background: "#F4A261", border: "#C46A24" };
+    case "airport":
+      return { background: "#4ECDC4", border: "#0CA39A" };
+  }
+}
+
+function LayerControls({
+  showRestaurants,
+  showAttractions,
+  showAirports,
+  onToggleRestaurants,
+  onToggleAttractions,
+  onToggleAirports,
+}: {
+  showRestaurants: boolean;
+  showAttractions: boolean;
+  showAirports: boolean;
+  onToggleRestaurants: () => void;
+  onToggleAttractions: () => void;
+  onToggleAirports: () => void;
+}) {
+  return (
+    <div className="absolute left-4 top-4 z-10 rounded-lg bg-white p-2 shadow-lg">
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        Layers
+      </div>
+      <div className="flex flex-col gap-2">
+        <LayerToggle
+          label="Restaurants"
+          active={showRestaurants}
+          colorClass="bg-[#FF6B6B]"
+          onClick={onToggleRestaurants}
+        />
+        <LayerToggle
+          label="Attractions"
+          active={showAttractions}
+          colorClass="bg-[#F4A261]"
+          onClick={onToggleAttractions}
+        />
+        <LayerToggle
+          label="Airports"
+          active={showAirports}
+          colorClass="bg-[#4ECDC4]"
+          onClick={onToggleAirports}
+        />
+      </div>
+    </div>
+  );
+}
+
+function LayerToggle({
+  label,
+  active,
+  colorClass,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  colorClass: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
+        active ? "bg-gray-100 text-gray-900" : "bg-white text-gray-500"
+      }`}
+    >
+      <span className={`h-3 w-3 rounded-full ${colorClass}`}></span>
+      <span>{label}</span>
+    </button>
   );
 }
 
