@@ -1,11 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { loader } from "../api.airports.nearby";
-import * as geospatialServer from "~/utils/geospatial.server";
 
-// Mock the geospatial module
+// Mock the db module to prevent importing Prisma client before loader is imported
+vi.mock("~/utils/db.server", () => ({
+  prisma: {},
+}));
+
+// Mock the geospatial module before loader is imported
 vi.mock("~/utils/geospatial.server", () => ({
   findAirportsNearby: vi.fn(),
 }));
+
+import { loader } from "../api.airports.nearby";
+import * as geospatialServer from "~/utils/geospatial.server";
 
 describe("API Route: /api/airports/nearby", () => {
   beforeEach(() => {
