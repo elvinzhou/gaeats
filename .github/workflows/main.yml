@@ -17,8 +17,8 @@ jobs:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Specify your required Node.js version
-          cache: 'pnpm' # Caches dependencies for faster subsequent runs
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Run Tests
