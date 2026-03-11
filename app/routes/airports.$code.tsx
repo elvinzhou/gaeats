@@ -41,7 +41,7 @@ export function meta({ data }: Route.MetaArgs) {
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
-  const { findPoisNearAirport } = await import("~/utils/geospatial.server");
+  const { findPoisNearby } = await import("~/utils/geospatial.server");
   const code = params.code?.trim();
 
   if (!code) {
@@ -60,8 +60,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   }
 
   const [restaurants, attractions, accessFacts] = await Promise.all([
-    findPoisNearAirport(prisma, airport.code, "RESTAURANT", distance, minRating),
-    findPoisNearAirport(prisma, airport.code, "ATTRACTION", distance, minRating),
+    findPoisNearby(prisma, airport, "RESTAURANT", distance, minRating),
+    findPoisNearby(prisma, airport, "ATTRACTION", distance, minRating),
     prisma.airportAccessFact.findMany({
       where: { airportId: airport.id },
       orderBy: [{ confidence: "asc" }, { mode: "asc" }],
