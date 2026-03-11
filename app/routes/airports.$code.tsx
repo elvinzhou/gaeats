@@ -44,7 +44,7 @@ export function meta({ data }: Route.MetaArgs) {
 }
 
 export async function loader({ params, request }: Route.LoaderArgs) {
-  const { findPoisNearAirport } = await import("~/utils/geospatial.server");
+  const { findPoisNearby } = await import("~/utils/geospatial.server");
   const code = params.code?.trim();
 
   if (!code) {
