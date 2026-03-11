@@ -10,14 +10,15 @@ declare global {
    */
   interface Env {
     /**
-     * Prisma Accelerate connection string
-     * Format: prisma://accelerate.prisma-data.net/?api_key=YOUR_API_KEY
+     * Direct Postgres connection string
+     * Example: Supabase pooled or direct Postgres URL
      *
      * Set via:
      * - Production: `wrangler secret put DATABASE_URL`
      * - Local dev: .dev.vars file
      */
     DATABASE_URL: string;
+    GOOGLE_MAPS_SERVER_API_KEY?: string;
 
     /**
      * Application environment

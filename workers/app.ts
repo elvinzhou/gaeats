@@ -20,4 +20,19 @@ export default {
       cloudflare: { env, ctx },
     });
   },
+  async scheduled(_controller, env, ctx) {
+    const [{ refreshFaaAirportsIfStale }, { refreshGooglePoiSyncIfDue }] = await Promise.all([
+      import("~/utils/faa-sync.server"),
+      import("~/utils/google-poi-sync.server"),
+    ]);
+
+    ctx.waitUntil(
+      Promise.all([
+        refreshFaaAirportsIfStale({ env, ctx }),
+        refreshGooglePoiSyncIfDue({ env, ctx }),
+      ]).catch((error) => {
+        console.error("Scheduled sync failed:", error);
+      })
+    );
+  },
 } satisfies ExportedHandler<Env>;

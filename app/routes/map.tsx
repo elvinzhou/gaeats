@@ -18,7 +18,11 @@
 import type { Route } from "./+types/map";
 import { lazy, Suspense } from "react";
 import { prisma } from "~/utils/db.server";
-import { findRestaurantsNearby, findAirportsNearby } from "~/utils/geospatial.server";
+import {
+  findAirportsNearby,
+  findAttractionsNearby,
+  findRestaurantsNearby,
+} from "~/utils/geospatial.server";
 import type { POI } from "~/components/GoogleMapComponent";
 
 // Lazy load the Google Maps component (client-side only)
@@ -33,13 +37,13 @@ export function meta({}: Route.MetaArgs) {
     {
       name: "description",
       content:
-        "Interactive map showing fly-in dining locations. Find restaurants near airports with directions.",
+        "Interactive map showing general aviation airports and nearby points of interest with directions.",
     },
   ];
 }
 
 /**
- * Loader function - fetches nearby restaurants and airports
+ * Loader function - fetches nearby POIs and airports
  *
  * Query Parameters:
  * - lat (optional): Center latitude
@@ -53,18 +57,27 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const lat = parseFloat(url.searchParams.get("lat") || "39.8283");
   const lng = parseFloat(url.searchParams.get("lng") || "-98.5795");
   const radius = parseFloat(url.searchParams.get("radius") || "50");
+  const selectedPoiId = Number.parseInt(url.searchParams.get("poiId") || "", 10);
+  const selectedPoiType = url.searchParams.get("poiType");
 
   try {
     const db = prisma;
 
-    // Fetch restaurants and airports in parallel
-    const [restaurants, airports] = await Promise.all([
+    // Fetch nearby POIs and airports in parallel
+    const [restaurants, attractions, airports] = await Promise.all([
       findRestaurantsNearby(
         db,
         { latitude: lat, longitude: lng },
         radius,
         4.0, // Min rating
         50 // Limit
+      ),
+      findAttractionsNearby(
+        db,
+        { latitude: lat, longitude: lng },
+        radius,
+        4.0,
+        50
       ),
       findAirportsNearby(
         db,
@@ -80,11 +93,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       position: { lat: r.latitude, lng: r.longitude },
       title: r.name,
       type: "restaurant" as const,
-      data: {
-        ...r,
-        // Ensure the required property exists so RestaurantWithDistance is compatible with Restaurant
-        googlePlaceId: (r as any).googlePlaceId ?? (r as any).google_place_id ?? "",
-      },
+      data: r,
+    }));
+
+    const attractionPOIs: POI[] = attractions.map((poi) => ({
+      id: poi.id,
+      position: { lat: poi.latitude, lng: poi.longitude },
+      title: poi.name,
+      type: "attraction" as const,
+      data: poi,
     }));
 
     const airportPOIs: POI[] = airports.map((a) => ({
@@ -96,9 +113,22 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     }));
 
     return {
-      pois: [...restaurantPOIs, ...airportPOIs],
+      pois: [...restaurantPOIs, ...attractionPOIs, ...airportPOIs],
       center: { lat, lng },
+      initialSelectedPoi:
+        Number.isNaN(selectedPoiId) || !selectedPoiType
+          ? null
+          : {
+              id: selectedPoiId,
+              type:
+                selectedPoiType === "attraction"
+                  ? ("attraction" as const)
+                  : selectedPoiType === "airport"
+                    ? ("airport" as const)
+                    : ("restaurant" as const),
+            },
       restaurants: restaurants.length,
+      attractions: attractions.length,
       airports: airports.length,
     };
   } catch (error) {
@@ -108,7 +138,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     return {
       pois: [],
       center: { lat, lng },
+      initialSelectedPoi: null,
       restaurants: 0,
+      attractions: 0,
       airports: 0,
     };
   }
@@ -142,6 +174,7 @@ export default function MapRoute({ loaderData }: Route.ComponentProps) {
         center={loaderData.center}
         zoom={8}
         pois={loaderData.pois}
+        initialSelectedPoi={loaderData.initialSelectedPoi}
       />
     </Suspense>
   );

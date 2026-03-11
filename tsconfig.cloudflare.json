@@ -5,11 +5,9 @@
     "app/**/*",
     "app/**/.server/**/*",
     "app/**/.client/**/*",
+    "env.d.ts",
     "workers/**/*",
     "worker-configuration.d.ts"
-  ],
-  "exclude": [
-    "app/generated/prisma/**/*"
   ],
   "compilerOptions": {
     "composite": true,

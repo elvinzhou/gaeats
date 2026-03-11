@@ -1,5 +1,7 @@
 # Prisma Client Singleton Pattern
 
+> Note: this document predates the Supabase migration. The current runtime uses a singleton Prisma client with the Postgres adapter and a direct `DATABASE_URL`, not Prisma Accelerate.
+
 This document explains the singleton pattern implementation for Prisma Client in the GA Eats application.
 
 ## Overview

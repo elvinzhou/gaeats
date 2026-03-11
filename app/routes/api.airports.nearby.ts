@@ -98,7 +98,7 @@ export async function loader({ request, context }: LoaderArgs) {
   }
 
   try {
-    // Get singleton Prisma client with Accelerate extension
+    // Get singleton Prisma client
     const db = prisma;
 
     // Find airports using PostGIS geospatial queries

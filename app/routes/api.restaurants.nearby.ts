@@ -2,8 +2,7 @@
  * API Route: Find Restaurants Nearby
  * GET /api/restaurants/nearby
  *
- * Returns restaurants within a specified radius of a geographic point.
- * Results are sorted by distance and filtered by minimum rating.
+ * Compatibility endpoint for restaurant-only POI search.
  *
  * Query Parameters:
  * - lat (required): Latitude of search point
@@ -103,10 +102,10 @@ export async function loader({ request, context }: LoaderArgs) {
   }
 
   try {
-    // Get singleton Prisma client with Accelerate extension
+    // Get singleton Prisma client
     const db = prisma;
 
-    // Find restaurants using PostGIS geospatial queries
+    // Restaurant-specific alias for the canonical POI model
     const restaurants = await findRestaurantsNearby(
       db,
       { latitude: lat, longitude: lng },
