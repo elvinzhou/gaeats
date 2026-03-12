@@ -15,6 +15,8 @@ export async function listAirportsForPoiSync(prisma, airportCode) {
     `;
   }
 
+  // Prioritize NorCal (Bay Area) first, then West Coast states (CA, OR, WA)
+  // This helps with the initial launch strategy focused on the West Coast.
   return prisma.$queryRaw`
     SELECT
       id,
@@ -24,8 +26,14 @@ export async function listAirportsForPoiSync(prisma, airportCode) {
       "nextPoiSyncAt",
       "syncPriority",
       ST_Y(location::geometry) as latitude,
-      ST_X(location::geometry) as longitude
+      ST_X(location::geometry) as longitude,
+      CASE
+        WHEN state = 'CA' AND ST_Y(location::geometry) BETWEEN 36.5 AND 39.0 AND ST_X(location::geometry) BETWEEN -123.5 AND -121.0 THEN 1 -- NorCal/Bay Area
+        WHEN state IN ('CA', 'OR', 'WA') THEN 2 -- West Coast
+        ELSE 3
+      END as "regionPriority"
     FROM "airports"
+    ORDER BY "regionPriority" ASC, "syncPriority" ASC
   `;
 }
 

@@ -46,6 +46,12 @@ export function chooseNextPoiSyncAt(options = {}) {
 
 export function sortAirportsForSync(airports) {
   return [...airports].sort((left, right) => {
+    // 1. Regional priority (NorCal > West Coast > Other)
+    if (left.regionPriority !== right.regionPriority) {
+      return left.regionPriority - right.regionPriority;
+    }
+
+    // 2. Freshness (Oldest sync/never synced first)
     const leftDue = left.nextPoiSyncAt ? new Date(left.nextPoiSyncAt).getTime() : 0;
     const rightDue = right.nextPoiSyncAt ? new Date(right.nextPoiSyncAt).getTime() : 0;
 
@@ -53,6 +59,7 @@ export function sortAirportsForSync(airports) {
       return leftDue - rightDue;
     }
 
+    // 3. Explicit sync priority
     return (left.syncPriority ?? 100) - (right.syncPriority ?? 100);
   });
 }

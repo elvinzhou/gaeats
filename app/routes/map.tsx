@@ -96,7 +96,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       data: r,
     }));
 
-    const attractionPOIs: POI[] = attractions.map((poi) => ({
+    const attractionPOIs: POI[] = (attractions as any).map((poi: any) => ({
       id: poi.id,
       position: { lat: poi.latitude, lng: poi.longitude },
       title: poi.name,

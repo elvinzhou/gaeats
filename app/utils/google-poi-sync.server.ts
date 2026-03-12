@@ -27,10 +27,11 @@ type GooglePlace = {
   editorialSummary?: { text?: string };
 };
 
-const DEFAULT_CHECK_INTERVAL_MS = 5 * 60 * 1000;
-const DEFAULT_BATCH_LIMIT = 2;
+const DEFAULT_CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check once per hour
+const DEFAULT_BATCH_LIMIT = 1;                   // 1 airport per check
 const DEFAULT_RADIUS_METERS = 5000;
-const DEFAULT_POI_CYCLE_DAYS = 30;
+const DEFAULT_POI_CYCLE_DAYS = 90;               // Refresh once every 3 months
+const MAX_TRAVEL_TIME_POIS_PER_AIRPORT = 5;      // Only calculate real travel times for top 5 POIs
 
 const placeTypeMap = {
   RESTAURANT: ["restaurant", "cafe", "bakery", "bar"],
@@ -82,7 +83,7 @@ async function syncGooglePois(options: {
     return;
   }
 
-  for (const airport of dueAirports) {
+    for (const airport of dueAirports) {
     const places = await fetchNearbyPlaces(
       {
         latitude: Number(airport.latitude),
@@ -93,7 +94,29 @@ async function syncGooglePois(options: {
       options.apiKey
     );
 
-    for (const place of places) {
+    // ZERO-RESULT BACKOFF: If no POIs found, push sync out to 1 year and deprioritize
+    if (places.length === 0) {
+      await prisma.airport.update({
+        where: { id: airport.id },
+        data: {
+          lastPoiSyncAt: new Date(),
+          syncPriority: Math.min((airport.syncPriority ?? 100) + 50, 1000), // Deprioritize
+          nextPoiSyncAt: chooseNextPoiSyncAt({
+            airportCount: airports.length,
+            desiredCycleDays: 365, // Check again in a year
+          }),
+        },
+      });
+      continue;
+    }
+
+    // Limit POIs processed per sync to save budget
+    const prioritisedPlaces = places
+      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+      .slice(0, 10); // Sync basic info for top 10
+
+    for (let i = 0; i < prioritisedPlaces.length; i++) {
+      const place = prioritisedPlaces[i];
       const latitude = place.location?.latitude;
       const longitude = place.location?.longitude;
 
@@ -131,7 +154,7 @@ async function syncGooglePois(options: {
         continue;
       }
 
-      await prisma.airportPoi.upsert({
+      const airportPoi = await prisma.airportPoi.upsert({
         where: {
           airportId_poiId: {
             airportId: airport.id,
@@ -148,6 +171,17 @@ async function syncGooglePois(options: {
           straightLineDistanceMeters: distanceMeters,
         },
       });
+
+      // Fetch real travel times ONLY for the top 5 per sync to stay within free tier
+      if (i < MAX_TRAVEL_TIME_POIS_PER_AIRPORT) {
+        await updateAirportPoiMetrics({
+          prisma,
+          apiKey: options.apiKey,
+          airportPoiId: airportPoi.id,
+          origin: { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
+          destination: { latitude, longitude },
+        });
+      }
     }
 
     await prisma.airport.update({
@@ -161,6 +195,101 @@ async function syncGooglePois(options: {
       },
     });
   }
+}
+
+async function updateAirportPoiMetrics(options: {
+  prisma: typeof prisma;
+  apiKey: string;
+  airportPoiId: number;
+  origin: { latitude: number; longitude: number };
+  destination: { latitude: number; longitude: number };
+}) {
+  const modes = ["walking", "bicycling", "transit", "driving"] as const;
+  const metrics: Record<string, number | null> = {
+    walkingMinutes: null,
+    bikingMinutes: null,
+    transitMinutes: null,
+    drivingMinutes: null,
+  };
+
+  for (const mode of modes) {
+    const result = await fetchDistanceMatrix({
+      apiKey: options.apiKey,
+      origin: options.origin,
+      destination: options.destination,
+      mode,
+    });
+
+    if (result) {
+      const minutes = Math.ceil(result.durationValue / 60);
+      if (mode === "walking") metrics.walkingMinutes = minutes;
+      if (mode === "bicycling") metrics.bikingMinutes = minutes;
+      if (mode === "transit") metrics.transitMinutes = minutes;
+      if (mode === "driving") metrics.drivingMinutes = minutes;
+    }
+  }
+
+  // Basic reachability logic
+  let preferredMode: string | null = null;
+  let needsCrewCar = false;
+  let needsRideshare = false;
+
+  if (metrics.walkingMinutes && metrics.walkingMinutes <= 20) {
+    preferredMode = "WALKING";
+  } else if (metrics.bikingMinutes && metrics.bikingMinutes <= 15) {
+    preferredMode = "BIKING";
+  } else if (metrics.transitMinutes && metrics.transitMinutes <= 30) {
+    preferredMode = "TRANSIT";
+  } else if (metrics.drivingMinutes) {
+    preferredMode = "DRIVING";
+    needsRideshare = true; // Default assumption for airport-to-POI
+  }
+
+  await options.prisma.airportPoi.update({
+    where: { id: options.airportPoiId },
+    data: {
+      walkingMinutes: metrics.walkingMinutes,
+      bikingMinutes: metrics.bikingMinutes,
+      transitMinutes: metrics.transitMinutes,
+      drivingMinutes: metrics.drivingMinutes,
+      preferredMode: preferredMode as any,
+      needsRideshare,
+      needsCrewCar: false, // For now, crew car is a manual/verified fact
+      lastCalculatedAt: new Date(),
+    },
+  });
+}
+
+async function fetchDistanceMatrix(options: {
+  apiKey: string;
+  origin: { latitude: number; longitude: number };
+  destination: { latitude: number; longitude: number };
+  mode: "walking" | "bicycling" | "transit" | "driving";
+}) {
+  const url = new URL("https://maps.googleapis.com/maps/api/distancematrix/json");
+  url.searchParams.set("origins", `${options.origin.latitude},${options.origin.longitude}`);
+  url.searchParams.set("destinations", `${options.destination.latitude},${options.destination.longitude}`);
+  url.searchParams.set("mode", options.mode);
+  url.searchParams.set("key", options.apiKey);
+
+  try {
+    const response = await fetch(url.toString());
+    if (!response.ok) return null;
+
+    const data = (await response.json()) as any;
+    const element = data.rows?.[0]?.elements?.[0];
+
+    if (element?.status === "OK") {
+      return {
+        distanceValue: element.distance.value,
+        durationValue: element.duration.value,
+      };
+    }
+  } catch (error) {
+    console.error(`Distance Matrix failed for mode ${options.mode}:`, error);
+  }
+
+  return null;
 }
 
 async function fetchNearbyPlaces(
@@ -269,6 +398,12 @@ function chooseNextPoiSyncAt(options: {
 
 function sortAirportsForSync(airports: DueAirportRow[]) {
   return [...airports].sort((left, right) => {
+    // 1. Regional priority (NorCal > West Coast > Other)
+    if (left.regionPriority !== right.regionPriority) {
+      return left.regionPriority - right.regionPriority;
+    }
+
+    // 2. Freshness (Oldest sync/never synced first)
     const leftDue = left.nextPoiSyncAt ? new Date(left.nextPoiSyncAt).getTime() : 0;
     const rightDue = right.nextPoiSyncAt ? new Date(right.nextPoiSyncAt).getTime() : 0;
 
@@ -276,6 +411,7 @@ function sortAirportsForSync(airports: DueAirportRow[]) {
       return leftDue - rightDue;
     }
 
+    // 3. Explicit sync priority
     return (left.syncPriority ?? 100) - (right.syncPriority ?? 100);
   });
 }

@@ -478,23 +478,21 @@ Exit criteria:
 
 Do not try to launch nationally at full fidelity on day one.
 
-Recommended rollout:
+**Initial Population Strategy:**
+The MVP does not require a pre-seeded database of POIs. Instead, the production environment will use the daily staggered sync process to slowly populate the database.
 
-1. Launch with one tightly scoped geography or airport cohort.
-2. Ensure the import, ranking, and reachability model works end to end.
-3. Validate that pilots actually care about restaurants versus attractions split.
-4. Only then expand coverage and add business-facing features.
+**Launch Geography:**
+The initial launch will focus on the **West Coast**, with a specific one-time priority given to the **San Francisco Bay Area (NorCal)**. The first production sync cycles will target airports in this region to ensure a high-quality initial experience for West Coast pilots, before naturally expanding across the U.S.
 
 Good initial launch slices:
-
-- A region with dense GA activity
-- A curated set of high-traffic GA airports
-- A state or metro corridor with strong airport density
+- San Francisco Bay Area (Priority 1)
+- Pacific Northwest (Priority 2)
+- Southern California (Priority 3)
 
 ## Open Product Decisions
 
-- [ ] Choose primary source: Google Maps, Yelp, or hybrid
-- [ ] Choose launch geography
+- [x] Choose primary source: Google Maps
+- [x] Choose launch geography: West Coast (Bay Area start)
 - [ ] Define what counts as an attraction for MVP
 - [ ] Decide whether attractions ship in MVP or one release after restaurants
 - [ ] Decide whether claimed listings can edit only business metadata or also promos
@@ -504,8 +502,8 @@ Good initial launch slices:
 
 1. Fix product copy and route structure.
 2. Finalize schema for airports, POIs, and airport-to-POI metrics.
-3. Build the sync/import job.
-4. Compute and persist last-mile travel metrics.
+3. Build the sync/import job with regional prioritization (starting with NorCal).
+4. Compute and persist last-mile travel metrics using real routing data (Distance Matrix).
 5. Build airport-first browsing UX.
 6. Add pilot reviews.
 7. Add claimed listings and ads.

@@ -11,13 +11,21 @@ import {
   createPoiWithLocationQuery,
   findAirportsNearbyQuery,
   findPoisNearbyQuery,
+  findPoisNearAirportQuery,
+  getAirportDetailByCode,
   getAirportCoordinatesByCode,
   type AirportWithDistance,
   type GeoPoint,
   type PoiWithDistance,
+  type PoiWithTravelTimes,
 } from "~/utils/postgis.server";
 
-export type { AirportWithDistance, GeoPoint, PoiWithDistance } from "~/utils/postgis.server";
+export type {
+  AirportWithDistance,
+  GeoPoint,
+  PoiWithDistance,
+  PoiWithTravelTimes,
+} from "~/utils/postgis.server";
 
 export async function findRestaurantsNearby(
   prisma: AppPrismaClient,
@@ -88,14 +96,22 @@ export async function findPoisNearAirport(
   type: "RESTAURANT" | "ATTRACTION",
   radiusKm: number = 5.0,
   minRating: number = 4.0
-): Promise<PoiWithDistance[]> {
-  const airport = await getAirportCoordinatesByCode(prisma, airportCode);
+): Promise<PoiWithTravelTimes[]> {
+  const airport = await getAirportDetailByCode(prisma, airportCode);
 
   if (!airport) {
     throw new Error(`Airport not found: ${airportCode}`);
   }
 
-  return findPoisNearby(prisma, airport, type, radiusKm, minRating);
+  return findPoisNearAirportQuery(
+    prisma,
+    airport.id,
+    { latitude: airport.latitude, longitude: airport.longitude },
+    type,
+    radiusKm,
+    minRating,
+    20
+  );
 }
 
 export async function createPoiWithLocation(

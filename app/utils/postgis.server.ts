@@ -68,10 +68,20 @@ export interface DueAirportRow {
   state: string | null;
   nextPoiSyncAt: Date | string | null;
   syncPriority: number;
+  regionPriority: number;
   latitude: number;
   longitude: number;
 }
 
+export interface PoiWithTravelTimes extends PoiWithDistance {
+  walkingMinutes: number | null;
+  bikingMinutes: number | null;
+  transitMinutes: number | null;
+  drivingMinutes: number | null;
+  preferredMode: string | null;
+  needsRideshare: boolean | null;
+  needsCrewCar: boolean | null;
+}
 export async function findPoisNearbyQuery(
   prisma: AppPrismaClient,
   point: GeoPoint,
@@ -115,6 +125,70 @@ export async function findPoisNearbyQuery(
         ST_MakePoint(${point.longitude}, ${point.latitude})
       ) <= ${radiusMeters}
     ORDER BY distance ASC
+    LIMIT ${limit}
+  `;
+}
+
+export async function findPoisNearAirportQuery(
+  prisma: AppPrismaClient,
+  airportId: number,
+  airportLocation: GeoPoint,
+  type: "RESTAURANT" | "ATTRACTION",
+  radiusKm: number,
+  minRating: number,
+  limit: number
+) {
+  const radiusMeters = radiusKm * 1000;
+
+  return prisma.$queryRaw<PoiWithTravelTimes[]>`
+    SELECT
+      p.id,
+      p."externalSourceId",
+      p.type,
+      p.name,
+      p.category,
+      p.subcategory,
+      p.description,
+      p.cuisine,
+      p."externalRating",
+      p."pilotRating",
+      p.address,
+      p.city,
+      p.state,
+      p.country,
+      ST_Y(p.location::geometry) as latitude,
+      ST_X(p.location::geometry) as longitude,
+      ST_DistanceSphere(
+        p.location::geometry,
+        ST_MakePoint(${airportLocation.longitude}, ${airportLocation.latitude})
+      ) as distance,
+      ap."walkingMinutes",
+      ap."bikingMinutes",
+      ap."transitMinutes",
+      ap."drivingMinutes",
+      ap."preferredMode",
+      ap."needsRideshare",
+      ap."needsCrewCar",
+      p."createdAt",
+      p."updatedAt"
+    FROM "pois" p
+    LEFT JOIN "airport_pois" ap ON ap."poiId" = p.id AND ap."airportId" = ${airportId}
+    WHERE p.type = ${type}
+      AND p.active = true
+      AND COALESCE(p."externalRating", 0) >= ${minRating}
+      AND ST_DistanceSphere(
+        p.location::geometry,
+        ST_MakePoint(${airportLocation.longitude}, ${airportLocation.latitude})
+      ) <= ${radiusMeters}
+    ORDER BY
+      CASE
+        WHEN ap."preferredMode" = 'WALKING' THEN 1
+        WHEN ap."preferredMode" = 'BIKING' THEN 2
+        WHEN ap."preferredMode" = 'TRANSIT' THEN 3
+        WHEN ap."preferredMode" = 'DRIVING' THEN 4
+        ELSE 5
+      END ASC,
+      distance ASC
     LIMIT ${limit}
   `;
 }
@@ -342,6 +416,8 @@ export async function listAirportsForPoiSync(
     `;
   }
 
+  // Prioritize NorCal (Bay Area) first, then West Coast states (CA, OR, WA)
+  // This helps with the initial launch strategy focused on the West Coast.
   return prisma.$queryRaw<DueAirportRow[]>`
     SELECT
       id,
@@ -351,8 +427,14 @@ export async function listAirportsForPoiSync(
       "nextPoiSyncAt",
       "syncPriority",
       ST_Y(location::geometry) as latitude,
-      ST_X(location::geometry) as longitude
+      ST_X(location::geometry) as longitude,
+      CASE
+        WHEN state = 'CA' AND ST_Y(location::geometry) BETWEEN 36.5 AND 39.0 AND ST_X(location::geometry) BETWEEN -123.5 AND -121.0 THEN 1 -- NorCal/Bay Area
+        WHEN state IN ('CA', 'OR', 'WA') THEN 2 -- West Coast
+        ELSE 3
+      END as "regionPriority"
     FROM "airports"
+    ORDER BY "regionPriority" ASC, "syncPriority" ASC
   `;
 }
 

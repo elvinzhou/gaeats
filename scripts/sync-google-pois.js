@@ -53,6 +53,8 @@ const placeTypeMap = {
   ATTRACTION: ["tourist_attraction", "museum", "art_gallery", "park"],
 };
 
+const MAX_TRAVEL_TIME_POIS_PER_AIRPORT = 5;
+
 try {
   const airports = await listAirportsForPoiSync(prisma, airportFilter);
 
@@ -80,11 +82,36 @@ try {
       apiKey
     );
 
+    // ZERO-RESULT BACKOFF
+    if (places.length === 0) {
+      console.log(`${airport.code}: Zero results found. Backing off for 1 year.`);
+      if (!dryRun) {
+        await prisma.airport.update({
+          where: { id: airport.id },
+          data: {
+            lastPoiSyncAt: new Date(),
+            syncPriority: Math.min((airport.syncPriority ?? 100) + 50, 1000),
+            nextPoiSyncAt: chooseNextPoiSyncAt({
+              airportCount: airports.length,
+              desiredCycleDays: 365,
+            }),
+          },
+        });
+      }
+      continue;
+    }
+
+    // Prioritize and limit
+    const prioritisedPlaces = places
+      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+      .slice(0, 10);
+
     console.log(
-      `${airport.code}: fetched ${places.length} ${requestedType.toLowerCase()} candidates`
+      `${airport.code}: processing top ${prioritisedPlaces.length} ${requestedType.toLowerCase()} candidates`
     );
 
-    for (const place of places) {
+    for (let i = 0; i < prioritisedPlaces.length; i++) {
+      const place = prioritisedPlaces[i];
       const latitude = place.location?.latitude;
       const longitude = place.location?.longitude;
 
@@ -127,7 +154,7 @@ try {
         continue;
       }
 
-      await prisma.airportPoi.upsert({
+      const airportPoi = await prisma.airportPoi.upsert({
         where: {
           airportId_poiId: {
             airportId: airport.id,
@@ -144,6 +171,17 @@ try {
           straightLineDistanceMeters: distanceMeters,
         },
       });
+
+      // Only calculate real travel times for the top 5
+      if (i < MAX_TRAVEL_TIME_POIS_PER_AIRPORT) {
+        await updateAirportPoiMetrics({
+          prisma,
+          apiKey,
+          airportPoiId: airportPoi.id,
+          origin: { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
+          destination: { latitude, longitude },
+        });
+      }
     }
 
     if (!dryRun) {
@@ -153,7 +191,7 @@ try {
           lastPoiSyncAt: new Date(),
           nextPoiSyncAt: chooseNextPoiSyncAt({
             airportCount: airports.length,
-            desiredCycleDays: 30,
+            desiredCycleDays: 90, // 3 month cycle
           }),
         },
       });
@@ -161,6 +199,90 @@ try {
   }
 } finally {
   await prisma.$disconnect();
+}
+
+async function updateAirportPoiMetrics(options) {
+  const modes = ["walking", "bicycling", "transit", "driving"];
+  const metrics = {
+    walkingMinutes: null,
+    bikingMinutes: null,
+    transitMinutes: null,
+    drivingMinutes: null,
+  };
+
+  for (const mode of modes) {
+    const result = await fetchDistanceMatrix({
+      apiKey: options.apiKey,
+      origin: options.origin,
+      destination: options.destination,
+      mode,
+    });
+
+    if (result) {
+      const minutes = Math.ceil(result.durationValue / 60);
+      if (mode === "walking") metrics.walkingMinutes = minutes;
+      if (mode === "bicycling") metrics.bikingMinutes = minutes;
+      if (mode === "transit") metrics.transitMinutes = minutes;
+      if (mode === "driving") metrics.drivingMinutes = minutes;
+    }
+  }
+
+  // Basic reachability logic
+  let preferredMode = null;
+  let needsCrewCar = false;
+  let needsRideshare = false;
+
+  if (metrics.walkingMinutes && metrics.walkingMinutes <= 20) {
+    preferredMode = "WALKING";
+  } else if (metrics.bikingMinutes && metrics.bikingMinutes <= 15) {
+    preferredMode = "BIKING";
+  } else if (metrics.transitMinutes && metrics.transitMinutes <= 30) {
+    preferredMode = "TRANSIT";
+  } else if (metrics.drivingMinutes) {
+    preferredMode = "DRIVING";
+    needsRideshare = true; // Default assumption for airport-to-POI
+  }
+
+  await options.prisma.airportPoi.update({
+    where: { id: options.airportPoiId },
+    data: {
+      walkingMinutes: metrics.walkingMinutes,
+      bikingMinutes: metrics.bikingMinutes,
+      transitMinutes: metrics.transitMinutes,
+      drivingMinutes: metrics.drivingMinutes,
+      preferredMode,
+      needsRideshare,
+      needsCrewCar: false,
+      lastCalculatedAt: new Date(),
+    },
+  });
+}
+
+async function fetchDistanceMatrix(options) {
+  const url = new URL("https://maps.googleapis.com/maps/api/distancematrix/json");
+  url.searchParams.set("origins", `${options.origin.latitude},${options.origin.longitude}`);
+  url.searchParams.set("destinations", `${options.destination.latitude},${options.destination.longitude}`);
+  url.searchParams.set("mode", options.mode);
+  url.searchParams.set("key", options.apiKey);
+
+  try {
+    const response = await fetch(url.toString());
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const element = data.rows?.[0]?.elements?.[0];
+
+    if (element?.status === "OK") {
+      return {
+        distanceValue: element.distance.value,
+        durationValue: element.duration.value,
+      };
+    }
+  } catch (error) {
+    console.error(`Distance Matrix failed for mode ${options.mode}:`, error);
+  }
+
+  return null;
 }
 
 async function fetchNearbyPlaces(center, radius, type, apiKey) {

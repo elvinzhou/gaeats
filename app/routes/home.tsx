@@ -78,7 +78,7 @@ export async function loader({ request }: Route.LoaderArgs) {
  */
 export default function Home({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-100 to-white">
+    <div className="min-h-screen bg-linear-to-b from-sky-100 to-white">
       <div className="container mx-auto px-4 py-16">
         {/* Header */}
         <header className="text-center mb-16">
@@ -126,7 +126,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               </div>
 
               <div className="grid gap-3">
-                {loaderData.results.map((airport) => (
+                {loaderData.results.map((airport: AirportSearchResult) => (
                   <Link
                     key={airport.code}
                     to={`/airports/${airport.code}`}

@@ -14,6 +14,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router";
 import {
   APIProvider,
   Map,
@@ -33,8 +34,8 @@ export interface POI {
   id: number;
   position: { lat: number; lng: number };
   title: string;
-  type: "restaurant" | "airport";
-  data: Restaurant | Airport;
+  type: "restaurant" | "airport" | "attraction";
+  data: Poi | Airport;
 }
 
 /**
@@ -52,6 +53,8 @@ interface GoogleMapComponentProps {
   zoom?: number;
   /** Array of points of interest to display */
   pois: POI[];
+  /** Initial selected POI */
+  initialSelectedPoi?: { id: number; type: string } | null;
 }
 
 /**
@@ -67,6 +70,20 @@ export default function GoogleMapComponent({
   const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
   const [mapTypeId, setMapTypeId] = useState<MapTypeId>("roadmap");
   const [hoveredPOI, setHoveredPOI] = useState<POI | null>(null);
+  const [searchParams] = useSearchParams();
+
+  const getMarkerColors = (type: string) => {
+    switch (type) {
+      case "restaurant":
+        return { background: "#FF6B6B", border: "#D64545" };
+      case "airport":
+        return { background: "#4ECDC4", border: "#399E97" };
+      case "attraction":
+        return { background: "#FFD93D", border: "#C9A71A" };
+      default:
+        return { background: "#4D96FF", border: "#2E76E6" };
+    }
+  };
 
   // Get API key from environment variable
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -95,9 +112,9 @@ export default function GoogleMapComponent({
             className="h-full w-full"
           >
             {/* Render POI Markers */}
-            {visiblePois.map((poi) => (
+            {pois.map((poi) => (
               <AdvancedMarker
-                key={poi.id}
+                key={`${poi.type}-${poi.id}`}
                 position={poi.position}
                 onClick={() => setSelectedPOI(poi)}
                 onMouseEnter={() => setHoveredPOI(poi)}
@@ -123,7 +140,7 @@ export default function GoogleMapComponent({
                   <h3 className="font-semibold">{hoveredPOI.title}</h3>
                   {hoveredPOI.type !== "airport" && (
                     <p className="text-sm text-gray-600">
-                      ⭐ {(hoveredPOI.data as Restaurant).rating}/5.0
+                      ⭐ {(hoveredPOI.data as Poi).externalRating}/5.0
                     </p>
                   )}
                 </div>
