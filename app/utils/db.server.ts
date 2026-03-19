@@ -22,9 +22,13 @@ import { withAccelerate } from "@prisma/extension-accelerate";
  * Creates a new Prisma Client instance
  */
 function createPrismaClient(url?: string) {
+  if (!url) {
+    throw new Error(
+      "DATABASE_URL environment variable is required to create Prisma Client"
+    );
+  }
   // Prisma 7+ with accelerate
-  const finalUrl = url || "prisma+postgres://accelerate.prisma-data.net/?api_key=DUMMY";
-  const client = new PrismaClient({ datasourceUrl: finalUrl } as any);
+  const client = new PrismaClient({ datasourceUrl: url } as any);
   return client.$extends(withAccelerate());
 }
 
