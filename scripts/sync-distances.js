@@ -50,28 +50,30 @@ try {
     const modes = ["walking", "bicycling", "transit", "driving"];
     const results = { walking: null, bicycling: null, transit: null, driving: null };
 
-    for (const mode of modes) {
-      try {
-        const url = new URL("https://maps.googleapis.com/maps/api/distancematrix/json");
-        url.searchParams.set("origins", origin);
-        url.searchParams.set("destinations", destination);
-        url.searchParams.set("mode", mode);
-        url.searchParams.set("key", apiKey);
+    await Promise.all(
+      modes.map(async (mode) => {
+        try {
+          const url = new URL("https://maps.googleapis.com/maps/api/distancematrix/json");
+          url.searchParams.set("origins", origin);
+          url.searchParams.set("destinations", destination);
+          url.searchParams.set("mode", mode);
+          url.searchParams.set("key", apiKey);
 
-        const res = await fetch(url);
-        const data = await res.json();
+          const res = await fetch(url);
+          const data = await res.json();
 
-        if (data.status === "OK" && data.rows[0].elements[0].status === "OK") {
-          const durationSeconds = data.rows[0].elements[0].duration.value;
-          results[mode] = Math.ceil(durationSeconds / 60);
-        } else {
+          if (data.status === "OK" && data.rows[0].elements[0].status === "OK") {
+            const durationSeconds = data.rows[0].elements[0].duration.value;
+            results[mode] = Math.ceil(durationSeconds / 60);
+          } else {
+            results[mode] = null;
+          }
+        } catch (e) {
+          console.error(`Failed to fetch ${mode} for pair ${pair.airportPoiId}`, e);
           results[mode] = null;
         }
-      } catch (e) {
-        console.error(`Failed to fetch ${mode} for pair ${pair.airportPoiId}`, e);
-        results[mode] = null;
-      }
-    }
+      })
+    );
 
     let preferredMode = "DRIVING";
     if (results.walking !== null && results.walking <= 20) {
