@@ -4,6 +4,7 @@ import {
   listAirportsForPoiSync,
   upsertGooglePoiWithLocation,
 } from "~/utils/postgis.server";
+import { chooseNextPoiSyncAt } from "~/utils/sync-utils.server";
 
 type CloudflareContext = {
   env: Env;
@@ -373,27 +374,6 @@ function derivePoiCategory(place: GooglePlace) {
 
 function derivePoiSubcategory(place: GooglePlace) {
   return place.types?.[1] ?? null;
-}
-
-function chooseNextPoiSyncAt(options: {
-  now?: Date;
-  airportCount?: number;
-  desiredCycleDays?: number;
-  minDays?: number;
-}) {
-  const {
-    now = new Date(),
-    airportCount = 1,
-    desiredCycleDays = 30,
-    minDays = 1,
-  } = options;
-
-  const dailyBatchSize = Math.max(1, Math.ceil(airportCount / desiredCycleDays));
-  const spacingDays = Math.max(minDays, Math.floor(desiredCycleDays / dailyBatchSize));
-
-  const next = new Date(now);
-  next.setUTCDate(next.getUTCDate() + spacingDays);
-  return next;
 }
 
 function sortAirportsForSync(airports: DueAirportRow[]) {
