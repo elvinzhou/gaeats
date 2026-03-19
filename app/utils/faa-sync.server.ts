@@ -1,5 +1,6 @@
 import { prisma } from "~/utils/db.server";
 import { upsertFaaAirportWithLocation } from "~/utils/postgis.server";
+import { chooseNextPoiSyncAt } from "~/utils/sync-utils.server";
 
 type CloudflareContext = {
   env: Env;
@@ -108,27 +109,6 @@ async function getCurrentNasrEdition() {
     downloadUrl,
     dataset: `faa-nasr-${normalizeEditionDate(editionDate)}-apt`,
   };
-}
-
-function chooseNextPoiSyncAt(options: {
-  now?: Date;
-  airportCount?: number;
-  desiredCycleDays?: number;
-  minDays?: number;
-}) {
-  const {
-    now = new Date(),
-    airportCount = 1,
-    desiredCycleDays = 30,
-    minDays = 1,
-  } = options;
-
-  const dailyBatchSize = Math.max(1, Math.ceil(airportCount / desiredCycleDays));
-  const spacingDays = Math.max(minDays, Math.floor(desiredCycleDays / dailyBatchSize));
-
-  const next = new Date(now);
-  next.setUTCDate(next.getUTCDate() + spacingDays);
-  return next;
 }
 
 async function loadAptText(response: Response) {
