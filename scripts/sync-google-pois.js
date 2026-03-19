@@ -110,6 +110,8 @@ try {
       `${airport.code}: processing top ${prioritisedPlaces.length} ${requestedType.toLowerCase()} candidates`
     );
 
+    const metricUpdatePromises = [];
+
     for (let i = 0; i < prioritisedPlaces.length; i++) {
       const place = prioritisedPlaces[i];
       const latitude = place.location?.latitude;
@@ -174,15 +176,20 @@ try {
 
       // Only calculate real travel times for the top 5
       if (i < MAX_TRAVEL_TIME_POIS_PER_AIRPORT) {
-        await updateAirportPoiMetrics({
-          prisma,
-          apiKey,
-          airportPoiId: airportPoi.id,
-          origin: { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
-          destination: { latitude, longitude },
-        });
+        metricUpdatePromises.push(
+          updateAirportPoiMetrics({
+            prisma,
+            apiKey,
+            airportPoiId: airportPoi.id,
+            origin: { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
+            destination: { latitude, longitude },
+          })
+        );
       }
     }
+
+    // Process all travel time updates concurrently
+    await Promise.all(metricUpdatePromises);
 
     if (!dryRun) {
       await prisma.airport.update({
@@ -210,14 +217,19 @@ async function updateAirportPoiMetrics(options) {
     drivingMinutes: null,
   };
 
-  for (const mode of modes) {
-    const result = await fetchDistanceMatrix({
-      apiKey: options.apiKey,
-      origin: options.origin,
-      destination: options.destination,
-      mode,
-    });
+  const results = await Promise.all(
+    modes.map((mode) =>
+      fetchDistanceMatrix({
+        apiKey: options.apiKey,
+        origin: options.origin,
+        destination: options.destination,
+        mode,
+      })
+    )
+  );
 
+  results.forEach((result, index) => {
+    const mode = modes[index];
     if (result) {
       const minutes = Math.ceil(result.durationValue / 60);
       if (mode === "walking") metrics.walkingMinutes = minutes;
@@ -225,7 +237,7 @@ async function updateAirportPoiMetrics(options) {
       if (mode === "transit") metrics.transitMinutes = minutes;
       if (mode === "driving") metrics.drivingMinutes = minutes;
     }
-  }
+  });
 
   // Basic reachability logic
   let preferredMode = null;

@@ -116,6 +116,8 @@ async function syncGooglePois(options: {
       .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
       .slice(0, 10); // Sync basic info for top 10
 
+    const metricUpdatePromises: Promise<void>[] = [];
+
     for (let i = 0; i < prioritisedPlaces.length; i++) {
       const place = prioritisedPlaces[i];
       const latitude = place.location?.latitude;
@@ -175,15 +177,20 @@ async function syncGooglePois(options: {
 
       // Fetch real travel times ONLY for the top 5 per sync to stay within free tier
       if (i < MAX_TRAVEL_TIME_POIS_PER_AIRPORT) {
-        await updateAirportPoiMetrics({
-          prisma,
-          apiKey: options.apiKey,
-          airportPoiId: airportPoi.id,
-          origin: { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
-          destination: { latitude, longitude },
-        });
+        metricUpdatePromises.push(
+          updateAirportPoiMetrics({
+            prisma,
+            apiKey: options.apiKey,
+            airportPoiId: airportPoi.id,
+            origin: { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
+            destination: { latitude, longitude },
+          })
+        );
       }
     }
+
+    // Process all travel time updates concurrently
+    await Promise.all(metricUpdatePromises);
 
     await prisma.airport.update({
       where: { id: airport.id },
@@ -198,7 +205,7 @@ async function syncGooglePois(options: {
   }
 }
 
-async function updateAirportPoiMetrics(options: {
+export async function updateAirportPoiMetrics(options: {
   prisma: typeof prisma;
   apiKey: string;
   airportPoiId: number;
@@ -213,14 +220,19 @@ async function updateAirportPoiMetrics(options: {
     drivingMinutes: null,
   };
 
-  for (const mode of modes) {
-    const result = await fetchDistanceMatrix({
-      apiKey: options.apiKey,
-      origin: options.origin,
-      destination: options.destination,
-      mode,
-    });
+  const results = await Promise.all(
+    modes.map((mode) =>
+      fetchDistanceMatrix({
+        apiKey: options.apiKey,
+        origin: options.origin,
+        destination: options.destination,
+        mode,
+      })
+    )
+  );
 
+  results.forEach((result, index) => {
+    const mode = modes[index];
     if (result) {
       const minutes = Math.ceil(result.durationValue / 60);
       if (mode === "walking") metrics.walkingMinutes = minutes;
@@ -228,7 +240,7 @@ async function updateAirportPoiMetrics(options: {
       if (mode === "transit") metrics.transitMinutes = minutes;
       if (mode === "driving") metrics.drivingMinutes = minutes;
     }
-  }
+  });
 
   // Basic reachability logic
   let preferredMode: string | null = null;
