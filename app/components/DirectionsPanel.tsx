@@ -218,7 +218,7 @@ export function DirectionsPanel({
                           <div className="flex-1">
                             <div
                               dangerouslySetInnerHTML={{
-                                __html: step.instructions,
+                                __html: sanitizeInstructions(step.instructions),
                               }}
                               className="mb-1 text-sm text-gray-900"
                             />
@@ -247,6 +247,17 @@ export function DirectionsPanel({
       </div>
     </div>
   );
+}
+
+/**
+ * Sanitize Google Maps step instructions to prevent XSS.
+ * Only allows the subset of HTML tags Google Maps actually uses (<b>, <wbr>, <div>).
+ * All event handlers and other tags are stripped.
+ */
+function sanitizeInstructions(html: string): string {
+  return html
+    .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, "") // strip event handlers
+    .replace(/<(?!\/?(?:b|wbr|div)(?:\s|\/?>))[^>]*>/gi, "");     // strip disallowed tags
 }
 
 /**

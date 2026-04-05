@@ -36,6 +36,7 @@
 
 import { prisma } from "~/utils/db.server";
 import { findAirportsNearby } from "~/utils/geospatial.server";
+import { logger } from "~/utils/logger.server";
 
 interface LoaderArgs {
   request: Request;
@@ -122,7 +123,7 @@ export async function loader({ request, context }: LoaderArgs) {
     });
   } catch (error) {
     // Log error and return 500 response
-    console.error("Error fetching airports:", error);
+    logger.error("Error fetching airports", { lat, lng, distance, error: String(error) });
 
     return Response.json(
       {

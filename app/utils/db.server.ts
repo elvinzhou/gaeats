@@ -23,11 +23,8 @@ import { withAccelerate } from "@prisma/extension-accelerate";
  */
 function createPrismaClient(url?: string) {
   if (!url) {
-    throw new Error(
-      "DATABASE_URL environment variable is required to create Prisma Client"
-    );
+    throw new Error("DATABASE_URL environment variable is required but not set.");
   }
-  // Prisma 7+ with accelerate
   const client = new PrismaClient({ datasourceUrl: url } as any);
   return client.$extends(withAccelerate());
 }

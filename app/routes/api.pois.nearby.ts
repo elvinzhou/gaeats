@@ -8,6 +8,7 @@
 
 import { prisma } from "~/utils/db.server";
 import { findPoisNearby } from "~/utils/geospatial.server";
+import { logger } from "~/utils/logger.server";
 
 interface LoaderArgs {
   request: Request;
@@ -89,7 +90,7 @@ export async function loader({ request }: LoaderArgs) {
       count: pois.length,
     });
   } catch (error) {
-    console.error("Error fetching POIs:", error);
+    logger.error("Error fetching POIs", { lat, lng, distance, type: requestedType, error: String(error) });
 
     return Response.json(
       {

@@ -36,6 +36,7 @@
 import { prisma } from "~/utils/db.server";
 import { findPoisNearAirport } from "~/utils/geospatial.server";
 import { getAirportSummaryByCode } from "~/utils/postgis.server";
+import { logger } from "~/utils/logger.server";
 
 interface LoaderArgs {
   params: { code: string };
@@ -50,12 +51,13 @@ interface LoaderArgs {
 export async function loader({ params, request, context }: LoaderArgs) {
   const { code } = params;
 
-  // Validate airport code parameter
-  if (!code || code.trim().length === 0) {
+  // Validate airport code parameter: 3-letter IATA or 4-char ICAO (letters/digits only)
+  const cleanCode = code.trim().toUpperCase();
+  if (!cleanCode || !/^[A-Z0-9]{3,4}$/.test(cleanCode)) {
     return Response.json(
       {
         error: "Invalid airport code",
-        message: "Airport code is required",
+        message: "Airport code must be a 3-letter IATA or 4-character ICAO code (e.g., SFO or KSFO)",
         example: "/api/airports/KSFO",
       },
       { status: 400 }
@@ -94,14 +96,14 @@ export async function loader({ params, request, context }: LoaderArgs) {
     const db = prisma;
 
     // First, get the airport details
-    const airport = await getAirportSummaryByCode(db, code);
+    const airport = await getAirportSummaryByCode(db, cleanCode);
 
     // Check if airport exists
     if (!airport) {
       return Response.json(
         {
           error: "Airport not found",
-          message: `No airport found with code: ${code}`,
+          message: `No airport found with code: ${cleanCode}`,
           suggestion: "Check the airport code and try again. Use IATA or ICAO codes (e.g., KSFO, SFO).",
         },
         { status: 404 }
@@ -111,7 +113,7 @@ export async function loader({ params, request, context }: LoaderArgs) {
     // Find POIs near this airport
     const pois = await findPoisNearAirport(
       db,
-      code,
+      cleanCode,
       requestedType as "RESTAURANT" | "ATTRACTION",
       distance,
       minRating
@@ -137,7 +139,7 @@ export async function loader({ params, request, context }: LoaderArgs) {
       count: pois.length,
     });
   } catch (error) {
-    console.error(`Error fetching airport ${code}:`, error);
+    logger.error("Error fetching airport", { code: cleanCode, error: String(error) });
 
     return Response.json(
       {

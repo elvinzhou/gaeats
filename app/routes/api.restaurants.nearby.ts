@@ -39,6 +39,7 @@
 
 import { prisma } from "~/utils/db.server";
 import { findRestaurantsNearby } from "~/utils/geospatial.server";
+import { logger } from "~/utils/logger.server";
 
 interface LoaderArgs {
   request: Request;
@@ -128,7 +129,7 @@ export async function loader({ request, context }: LoaderArgs) {
     });
   } catch (error) {
     // Log error and return 500 response
-    console.error("Error fetching restaurants:", error);
+    logger.error("Error fetching restaurants", { lat, lng, distance, error: String(error) });
 
     return Response.json(
       {
