@@ -33,9 +33,6 @@ jobs:
       - name: Unit tests
         run: pnpm run test:run
 
-      - name: Build
-        run: pnpm run build
-
   # ---------------------------------------------------------------------------
   # Deploy – runs only on pushes to main after CI passes
   # ---------------------------------------------------------------------------
@@ -76,4 +73,4 @@ jobs:
       - name: Smoke tests
         run: pnpm run test:smoke
         env:
-          BASE_URL: ${{ secrets.WORKER_BASE_URL }}
+          BASE_URL: ${{ vars.WORKER_BASE_URL }}

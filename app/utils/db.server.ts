@@ -21,11 +21,11 @@ import { withAccelerate } from "@prisma/extension-accelerate";
 /**
  * Creates a new Prisma Client instance
  */
-function createPrismaClient(url?: string) {
-  if (!url) {
+function createPrismaClient() {
+  if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL environment variable is required but not set.");
   }
-  const client = new PrismaClient({ datasourceUrl: url } as any);
+  const client = new PrismaClient();
   return client.$extends(withAccelerate());
 }
 
@@ -35,4 +35,4 @@ export type AppPrismaClient = any;
  * Singleton Prisma Client instance
  * Created on first use and reused for all subsequent requests.
  */
-export const prisma: AppPrismaClient = (globalThis as any).__prisma || ((globalThis as any).__prisma = createPrismaClient(process.env.DATABASE_URL));
+export const prisma: AppPrismaClient = (globalThis as any).__prisma || ((globalThis as any).__prisma = createPrismaClient());
