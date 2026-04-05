@@ -2,21 +2,22 @@
   "name": "gaeats",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "react-router build",
     "cf-typegen": "wrangler types",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "pnpm run build && wrangler deploy",
     "dev": "react-router dev",
     "import:faa-airports": "node --experimental-transform-types scripts/import-faa-airports.js",
-    "postinstall": "npm run cf-typegen",
-    "preview": "npm run build && vite preview",
+    "postinstall": "pnpm run cf-typegen",
+    "preview": "pnpm run build && vite preview",
     "sync:google-pois": "node --experimental-transform-types scripts/sync-google-pois.js",
     "sync:mvp": "node --experimental-transform-types scripts/sync-mvp.js",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:smoke": "node --experimental-transform-types scripts/smoke-test.ts",
-    "typecheck": "npm run cf-typegen && react-router typegen && tsc -b"
+    "typecheck": "pnpm run cf-typegen && react-router typegen && tsc -b"
   },
   "dependencies": {
     "@prisma/client": "^7.6.0",
