@@ -16,7 +16,7 @@
  */
 
 import { PrismaClient } from "~/generated/prisma/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 /**
  * Creates a new Prisma Client instance
@@ -25,11 +25,11 @@ function createPrismaClient() {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL environment variable is required but not set.");
   }
-  const client = new PrismaClient();
-  return client.$extends(withAccelerate());
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  return new PrismaClient({ adapter });
 }
 
-export type AppPrismaClient = any;
+export type AppPrismaClient = PrismaClient;
 
 /**
  * Singleton Prisma Client instance
