@@ -7,6 +7,21 @@
   "triggers": {
     "crons": ["0 3 * * *"]
   }
+  "observability": {
+    "enabled": false,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": false,
+      "persist": true,
+      "head_sampling_rate": 1
+    }
+  }
   // Secrets Configuration (set via CLI):
   // Run: wrangler secret put DATABASE_URL
   // Then paste your Supabase Postgres connection string.
