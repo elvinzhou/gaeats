@@ -1,12 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "gaeats-app",
+  "name": "gaeats",
   "compatibility_date": "2025-04-04",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./workers/app.ts",
-  "vars": {
-    "ENVIRONMENT": "development"
-  },
   "triggers": {
     "crons": ["0 3 * * *"]
   }
