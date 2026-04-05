@@ -245,7 +245,7 @@ export type PilotAccessReportGroupByOutputType = {
   _max: PilotAccessReportMaxAggregateOutputType | null
 }
 
-type GetPilotAccessReportGroupByPayload<T extends PilotAccessReportGroupByArgs> = Prisma.PrismaPromise<
+export type GetPilotAccessReportGroupByPayload<T extends PilotAccessReportGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PilotAccessReportGroupByOutputType, T['by']> &
       {

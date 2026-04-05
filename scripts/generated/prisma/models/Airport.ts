@@ -334,7 +334,7 @@ export type AirportGroupByOutputType = {
   _max: AirportMaxAggregateOutputType | null
 }
 
-type GetAirportGroupByPayload<T extends AirportGroupByArgs> = Prisma.PrismaPromise<
+export type GetAirportGroupByPayload<T extends AirportGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<AirportGroupByOutputType, T['by']> &
       {

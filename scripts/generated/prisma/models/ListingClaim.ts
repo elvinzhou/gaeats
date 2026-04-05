@@ -238,7 +238,7 @@ export type ListingClaimGroupByOutputType = {
   _max: ListingClaimMaxAggregateOutputType | null
 }
 
-type GetListingClaimGroupByPayload<T extends ListingClaimGroupByArgs> = Prisma.PrismaPromise<
+export type GetListingClaimGroupByPayload<T extends ListingClaimGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ListingClaimGroupByOutputType, T['by']> &
       {

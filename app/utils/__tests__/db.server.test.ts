@@ -7,7 +7,7 @@ vi.mock("@prisma/extension-accelerate", () => ({
 
 // We need to mock the generated prisma client because it might not be available or have issues in the test environment
 vi.mock("~/generated/prisma/client", () => {
-  const MockPrismaClient = vi.fn().mockImplementation(function(config) {
+  const MockPrismaClient = vi.fn().mockImplementation(function(this: any, config: any) {
     this.config = config;
     this.$extends = vi.fn().mockReturnValue(this);
     return this;
@@ -34,7 +34,7 @@ describe("db.server.ts", () => {
     delete process.env.DATABASE_URL;
     try {
       await expect(import("../db.server")).rejects.toThrow(
-        "DATABASE_URL environment variable is required to create Prisma Client"
+        "DATABASE_URL environment variable is required but not set."
       );
     } finally {
       process.env.DATABASE_URL = originalUrl;

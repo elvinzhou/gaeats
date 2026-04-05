@@ -252,7 +252,7 @@ export type PoiAccessFactGroupByOutputType = {
   _max: PoiAccessFactMaxAggregateOutputType | null
 }
 
-type GetPoiAccessFactGroupByPayload<T extends PoiAccessFactGroupByArgs> = Prisma.PrismaPromise<
+export type GetPoiAccessFactGroupByPayload<T extends PoiAccessFactGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PoiAccessFactGroupByOutputType, T['by']> &
       {

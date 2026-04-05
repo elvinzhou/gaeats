@@ -242,7 +242,7 @@ export type PilotReviewGroupByOutputType = {
   _max: PilotReviewMaxAggregateOutputType | null
 }
 
-type GetPilotReviewGroupByPayload<T extends PilotReviewGroupByArgs> = Prisma.PrismaPromise<
+export type GetPilotReviewGroupByPayload<T extends PilotReviewGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PilotReviewGroupByOutputType, T['by']> &
       {

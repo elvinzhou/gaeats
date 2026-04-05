@@ -350,7 +350,7 @@ export type PoiGroupByOutputType = {
   _max: PoiMaxAggregateOutputType | null
 }
 
-type GetPoiGroupByPayload<T extends PoiGroupByArgs> = Prisma.PrismaPromise<
+export type GetPoiGroupByPayload<T extends PoiGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PoiGroupByOutputType, T['by']> &
       {

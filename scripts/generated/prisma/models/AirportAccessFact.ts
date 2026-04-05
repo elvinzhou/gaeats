@@ -252,7 +252,7 @@ export type AirportAccessFactGroupByOutputType = {
   _max: AirportAccessFactMaxAggregateOutputType | null
 }
 
-type GetAirportAccessFactGroupByPayload<T extends AirportAccessFactGroupByArgs> = Prisma.PrismaPromise<
+export type GetAirportAccessFactGroupByPayload<T extends AirportAccessFactGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<AirportAccessFactGroupByOutputType, T['by']> &
       {
