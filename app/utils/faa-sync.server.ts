@@ -1,6 +1,5 @@
 import { createPrisma } from "~/utils/db.server";
 import { upsertFaaAirportWithLocation } from "~/utils/postgis.server";
-import { chooseNextPoiSyncAt } from "~/utils/sync-utils.server";
 
 type CloudflareContext = {
   env: Env;
@@ -39,6 +38,22 @@ export async function refreshFaaAirportsIfStale(cloudflare: CloudflareContext) {
   await refreshFaaAirportsIfNeeded(createPrisma(cloudflare.env.DATABASE_URL));
 }
 
+/**
+ * Assigns a sync priority to an airport based on its name.
+ * Lower number = synced sooner. West Coast region priority is handled
+ * separately in listAirportsForPoiSync; this covers per-airport importance.
+ *
+ * Budget: 100 airports/day × 2 requests (RESTAURANT + ATTRACTION) = 200/day
+ * At $0.032/request that's ~$6.40/day, well within the $200/month free credit.
+ */
+function computeSyncPriority(airport: FaaAirportRecord): number {
+  const name = airport.name.toUpperCase();
+  if (name.includes("INTERNATIONAL")) return 10;
+  if (name.includes("REGIONAL") || name.includes("EXECUTIVE") || name.includes("MUNICIPAL")) return 20;
+  if (name.includes("FIELD") || name.includes("AIRPORT") || name.includes("AIRPARK")) return 50;
+  return 100; // heliports, seaplane bases, small strips
+}
+
 async function refreshFaaAirportsIfNeeded(prisma: ReturnType<typeof createPrisma>) {
   const [{ lastRefreshedAt }] = await prisma.$queryRaw<Array<{ lastRefreshedAt: Date | null }>>`
     SELECT MAX("sourceRefreshedAt") AS "lastRefreshedAt"
@@ -72,13 +87,8 @@ async function refreshFaaAirportsIfNeeded(prisma: ReturnType<typeof createPrisma
     throw new Error("No valid FAA APT airport rows were parsed.");
   }
 
-  const nextPoiSyncAt = chooseNextPoiSyncAt({
-    airportCount: records.length,
-    desiredCycleDays: 30,
-  });
-
   for (const airport of records) {
-    await upsertFaaAirportWithLocation(prisma, airport, nextPoiSyncAt);
+    await upsertFaaAirportWithLocation(prisma, airport, computeSyncPriority(airport));
   }
 }
 

@@ -7,5 +7,6 @@ export default [
   route("api/pois/nearby", "routes/api.pois.nearby.ts"),
   route("api/restaurants/nearby", "routes/api.restaurants.nearby.ts"),
   route("api/airports/nearby", "routes/api.airports.nearby.ts"),
+  route("api/airports/search", "routes/api.airports.search.ts"),
   route("api/airports/:code", "routes/api.airports.$code.ts"),
 ] satisfies RouteConfig;

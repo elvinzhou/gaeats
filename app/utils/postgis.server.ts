@@ -556,7 +556,7 @@ export async function upsertFaaAirportWithLocation(
     latitude: number;
     longitude: number;
   },
-  nextPoiSyncAt: Date
+  syncPriority: number
 ) {
   const point = `POINT(${airport.longitude} ${airport.latitude})`;
 
@@ -574,6 +574,7 @@ export async function upsertFaaAirportWithLocation(
       state,
       country,
       "nextPoiSyncAt",
+      "syncPriority",
       location,
       "createdAt",
       "updatedAt"
@@ -590,7 +591,8 @@ export async function upsertFaaAirportWithLocation(
       ${airport.city},
       ${airport.state},
       ${airport.country},
-      ${nextPoiSyncAt},
+      CURRENT_TIMESTAMP,
+      ${syncPriority},
       ST_GeomFromText(${point}, 4326),
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP
@@ -607,6 +609,7 @@ export async function upsertFaaAirportWithLocation(
       state = EXCLUDED.state,
       country = EXCLUDED.country,
       "nextPoiSyncAt" = COALESCE("airports"."nextPoiSyncAt", EXCLUDED."nextPoiSyncAt"),
+      "syncPriority" = COALESCE("airports"."syncPriority", EXCLUDED."syncPriority"),
       location = EXCLUDED.location,
       "updatedAt" = CURRENT_TIMESTAMP
   `;

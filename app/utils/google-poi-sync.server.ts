@@ -28,10 +28,9 @@ type GooglePlace = {
   editorialSummary?: { text?: string };
 };
 
-const DEFAULT_CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check once per hour
-const DEFAULT_BATCH_LIMIT = 1;                   // 1 airport per check
+const DEFAULT_BATCH_LIMIT = 100;                 // 100 airports/day × 2 requests = 200/day, ~6000/month (within $200 free tier)
 const DEFAULT_RADIUS_METERS = 5000;
-const DEFAULT_POI_CYCLE_DAYS = 90;               // Refresh once every 3 months
+const DEFAULT_POI_CYCLE_DAYS = 365;              // Re-sync each airport once per year (~52/day steady state)
 const MAX_TRAVEL_TIME_POIS_PER_AIRPORT = 5;      // Only calculate real travel times for top 5 POIs
 
 const placeTypeMap = {
@@ -39,20 +38,12 @@ const placeTypeMap = {
   ATTRACTION: ["tourist_attraction", "museum", "art_gallery", "park"],
 } as const;
 
-let lastCheckedAt = 0;
 let nextType: keyof typeof placeTypeMap = "RESTAURANT";
 
 export async function refreshGooglePoiSyncIfDue(cloudflare: CloudflareContext) {
   if (!cloudflare.env.GOOGLE_MAPS_SERVER_API_KEY) {
     return;
   }
-
-  const now = Date.now();
-  if (now - lastCheckedAt < DEFAULT_CHECK_INTERVAL_MS) {
-    return;
-  }
-
-  lastCheckedAt = now;
 
   const scheduledType = nextType;
   nextType = nextType === "RESTAURANT" ? "ATTRACTION" : "RESTAURANT";
@@ -393,20 +384,19 @@ function derivePoiSubcategory(place: GooglePlace) {
 
 function sortAirportsForSync(airports: DueAirportRow[]) {
   return [...airports].sort((left, right) => {
-    // 1. Regional priority (NorCal > West Coast > Other)
-    if (left.regionPriority !== right.regionPriority) {
-      return left.regionPriority - right.regionPriority;
-    }
-
-    // 2. Freshness (Oldest sync/never synced first)
+    // 1. Freshness (oldest/never synced first) — in steady state this is sufficient
+    //    because priority ordering during initial seeding is baked into nextPoiSyncAt.
     const leftDue = left.nextPoiSyncAt ? new Date(left.nextPoiSyncAt).getTime() : 0;
     const rightDue = right.nextPoiSyncAt ? new Date(right.nextPoiSyncAt).getTime() : 0;
-
     if (leftDue !== rightDue) {
       return leftDue - rightDue;
     }
 
-    // 3. Explicit sync priority
+    // 2. Tiebreaker (only applies during initial seeding when all airports share
+    //    the same nextPoiSyncAt): region first, then airport type within region.
+    if (left.regionPriority !== right.regionPriority) {
+      return left.regionPriority - right.regionPriority;
+    }
     return (left.syncPriority ?? 100) - (right.syncPriority ?? 100);
   });
 }
