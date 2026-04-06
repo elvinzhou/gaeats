@@ -82,8 +82,15 @@ export default {
       }
     }
 
-    const response = await requestHandler(request, { cloudflare: { env, ctx } });
-    return addSecurityHeaders(response);
+    try {
+      const response = await requestHandler(request, { cloudflare: { env, ctx } });
+      return addSecurityHeaders(response);
+    } catch (error) {
+      console.error(JSON.stringify({ level: "error", message: "Unhandled request error", error: String(error), url: request.url, timestamp: new Date().toISOString() }));
+      return addSecurityHeaders(
+        Response.json({ error: "Internal Server Error" }, { status: 500 })
+      );
+    }
   },
 
   async scheduled(_controller, env, ctx) {
