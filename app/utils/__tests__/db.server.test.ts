@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "~/generated/prisma/client";
 
-// Mock the dependencies BEFORE importing the module
-vi.mock("@prisma/extension-accelerate", () => ({
-  withAccelerate: vi.fn(() => (client: any) => client),
+vi.mock("@prisma/adapter-pg", () => ({
+  PrismaPg: vi.fn().mockImplementation(function(this: any, opts: any) {
+    this.connectionString = opts.connectionString;
+  }),
 }));
 
-// We need to mock the generated prisma client because it might not be available or have issues in the test environment
 vi.mock("~/generated/prisma/client", () => {
-  const MockPrismaClient = vi.fn().mockImplementation(function(this: any, config: any) {
-    this.config = config;
-    this.$extends = vi.fn().mockReturnValue(this);
+  const MockPrismaClient = vi.fn().mockImplementation(function(this: any) {
     return this;
   });
   return { PrismaClient: MockPrismaClient };
@@ -23,10 +23,11 @@ describe("db.server.ts", () => {
   });
 
   it("should use DATABASE_URL if provided", async () => {
-    process.env.DATABASE_URL = "prisma+postgres://real-url@accelerate.prisma-data.net";
-    const { prisma } = await import("../db.server");
+    process.env.DATABASE_URL = "postgresql://user:pass@db.supabase.co:5432/postgres";
+    await import("../db.server");
 
-    expect(prisma.config.datasourceUrl).toBe(process.env.DATABASE_URL);
+    expect(vi.mocked(PrismaPg)).toHaveBeenCalledWith({ connectionString: process.env.DATABASE_URL });
+    expect(vi.mocked(PrismaClient)).toHaveBeenCalledWith({ adapter: expect.anything() });
   });
 
   it("should throw an error if DATABASE_URL is missing", async () => {
