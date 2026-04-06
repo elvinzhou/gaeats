@@ -1,9 +1,10 @@
 import { PrismaClient } from "~/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { withAccelerate } from "@prisma/extension-accelerate";
 
-export type AppPrismaClient = PrismaClient;
+export type AppPrismaClient = ReturnType<typeof createPrisma>;
 
-export function createPrisma(connectionString: string): AppPrismaClient {
-  const adapter = new PrismaPg({ connectionString });
-  return new PrismaClient({ adapter });
+export function createPrisma(connectionString: string) {
+  return new PrismaClient({ accelerateUrl: connectionString }).$extends(
+    withAccelerate()
+  );
 }

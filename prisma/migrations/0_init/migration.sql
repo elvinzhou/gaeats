@@ -1,3 +1,6 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateExtension
 CREATE EXTENSION IF NOT EXISTS "postgis";
 
@@ -309,3 +312,4 @@ ALTER TABLE "pilot_access_reports" ADD CONSTRAINT "pilot_access_reports_poiId_fk
 
 -- AddForeignKey
 ALTER TABLE "listing_claims" ADD CONSTRAINT "listing_claims_poiId_fkey" FOREIGN KEY ("poiId") REFERENCES "pois"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

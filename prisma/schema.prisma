@@ -34,7 +34,7 @@ generator scriptClient {
  */
 datasource db {
   provider   = "postgresql"
-  extensions = [postgis(version: "3.4")]
+  extensions = [postgis]
 }
 
 enum PoiType {
@@ -332,6 +332,18 @@ model PilotAccessReport {
   @@index([airportId, mode, moderationStatus])
   @@index([poiId, mode, moderationStatus])
   @@map("pilot_access_reports")
+}
+
+model AirportFuelCache {
+  id        Int      @id @default(autoincrement())
+  icao      String   @unique @db.VarChar(10)
+  hasFuel   Boolean
+  fbos      Json
+  fetchedAt DateTime @db.Timestamptz
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@map("airport_fuel_cache")
 }
 
 model ListingClaim {
