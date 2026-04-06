@@ -16,10 +16,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ["@prisma/adapter-pg", "pg", "events", "util", "net", "path", "fs", "tls", "dns", "crypto", "stream", "string_decoder"],
+      external: ["events", "util", "net", "path", "fs", "tls", "dns", "crypto", "stream", "string_decoder"],
     }
-  },
-  optimizeDeps: {
-    exclude: ["@prisma/adapter-pg", "pg"]
   }
 });

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "~/generated/prisma/client";
 
@@ -16,29 +16,23 @@ vi.mock("~/generated/prisma/client", () => {
 });
 
 describe("db.server.ts", () => {
-  beforeEach(() => {
-    vi.resetModules();
-    vi.clearAllMocks();
-    delete (globalThis as any).__prisma;
-  });
+  it("should create a client with the given connection string", async () => {
+    const { createPrisma } = await import("../db.server");
+    const url = "postgresql://user:pass@db.supabase.co:5432/postgres";
 
-  it("should use DATABASE_URL if provided", async () => {
-    process.env.DATABASE_URL = "postgresql://user:pass@db.supabase.co:5432/postgres";
-    await import("../db.server");
+    createPrisma(url);
 
-    expect(vi.mocked(PrismaPg)).toHaveBeenCalledWith({ connectionString: process.env.DATABASE_URL });
+    expect(vi.mocked(PrismaPg)).toHaveBeenCalledWith({ connectionString: url });
     expect(vi.mocked(PrismaClient)).toHaveBeenCalledWith({ adapter: expect.anything() });
   });
 
-  it("should throw an error if DATABASE_URL is missing", async () => {
-    const originalUrl = process.env.DATABASE_URL;
-    delete process.env.DATABASE_URL;
-    try {
-      await expect(import("../db.server")).rejects.toThrow(
-        "DATABASE_URL environment variable is required but not set."
-      );
-    } finally {
-      process.env.DATABASE_URL = originalUrl;
-    }
+  it("should create a new instance on each call", async () => {
+    const { createPrisma } = await import("../db.server");
+    const url = "postgresql://user:pass@db.supabase.co:5432/postgres";
+
+    const a = createPrisma(url);
+    const b = createPrisma(url);
+
+    expect(a).not.toBe(b);
   });
 });

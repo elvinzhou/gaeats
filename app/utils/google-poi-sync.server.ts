@@ -1,4 +1,4 @@
-import { prisma } from "~/utils/db.server";
+import { createPrisma, type AppPrismaClient } from "~/utils/db.server";
 import {
   type DueAirportRow,
   listAirportsForPoiSync,
@@ -58,6 +58,7 @@ export async function refreshGooglePoiSyncIfDue(cloudflare: CloudflareContext) {
   nextType = nextType === "RESTAURANT" ? "ATTRACTION" : "RESTAURANT";
 
   await syncGooglePois({
+    prisma: createPrisma(cloudflare.env.DATABASE_URL),
     apiKey: cloudflare.env.GOOGLE_MAPS_SERVER_API_KEY,
     requestedType: scheduledType,
     limit: DEFAULT_BATCH_LIMIT,
@@ -66,11 +67,13 @@ export async function refreshGooglePoiSyncIfDue(cloudflare: CloudflareContext) {
 }
 
 async function syncGooglePois(options: {
+  prisma: AppPrismaClient;
   apiKey: string;
   requestedType: keyof typeof placeTypeMap;
   limit: number;
   radiusMeters: number;
 }) {
+  const { prisma } = options;
   const airports = await listAirportsForPoiSync(prisma);
 
   const dueAirports = sortAirportsForSync(airports)
@@ -206,7 +209,7 @@ async function syncGooglePois(options: {
 }
 
 export async function updateAirportPoiMetrics(options: {
-  prisma: typeof prisma;
+  prisma: AppPrismaClient;
   apiKey: string;
   airportPoiId: number;
   origin: { latitude: number; longitude: number };

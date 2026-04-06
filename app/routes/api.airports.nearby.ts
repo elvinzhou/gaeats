@@ -34,7 +34,7 @@
  * }
  */
 
-import { prisma } from "~/utils/db.server";
+import { createPrisma } from "~/utils/db.server";
 import { findAirportsNearby } from "~/utils/geospatial.server";
 import { logger } from "~/utils/logger.server";
 
@@ -99,8 +99,7 @@ export async function loader({ request, context }: LoaderArgs) {
   }
 
   try {
-    // Get singleton Prisma client
-    const db = prisma;
+    const db = createPrisma(context.cloudflare.env.DATABASE_URL);
 
     // Find airports using PostGIS geospatial queries
     const airports = await findAirportsNearby(

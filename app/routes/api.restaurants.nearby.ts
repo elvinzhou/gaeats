@@ -37,7 +37,7 @@
  * }
  */
 
-import { prisma } from "~/utils/db.server";
+import { createPrisma } from "~/utils/db.server";
 import { findRestaurantsNearby } from "~/utils/geospatial.server";
 import { logger } from "~/utils/logger.server";
 
@@ -103,8 +103,7 @@ export async function loader({ request, context }: LoaderArgs) {
   }
 
   try {
-    // Get singleton Prisma client
-    const db = prisma;
+    const db = createPrisma(context.cloudflare.env.DATABASE_URL);
 
     // Restaurant-specific alias for the canonical POI model
     const restaurants = await findRestaurantsNearby(

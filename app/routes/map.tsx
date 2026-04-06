@@ -17,7 +17,7 @@
 
 import type { Route } from "./+types/map";
 import { lazy, Suspense } from "react";
-import { prisma } from "~/utils/db.server";
+import { createPrisma } from "~/utils/db.server";
 import {
   findAirportsNearby,
   findAttractionsNearby,
@@ -61,7 +61,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const selectedPoiType = url.searchParams.get("poiType");
 
   try {
-    const db = prisma;
+    const db = createPrisma(context.cloudflare.env.DATABASE_URL);
 
     // Fetch nearby POIs and airports in parallel
     const [restaurants, attractions, airports] = await Promise.all([

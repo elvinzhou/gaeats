@@ -33,7 +33,7 @@
  * }
  */
 
-import { prisma } from "~/utils/db.server";
+import { createPrisma } from "~/utils/db.server";
 import { findPoisNearAirport } from "~/utils/geospatial.server";
 import { getAirportSummaryByCode } from "~/utils/postgis.server";
 import { logger } from "~/utils/logger.server";
@@ -92,8 +92,7 @@ export async function loader({ params, request, context }: LoaderArgs) {
   }
 
   try {
-    // Get singleton Prisma client
-    const db = prisma;
+    const db = createPrisma(context.cloudflare.env.DATABASE_URL);
 
     // First, get the airport details
     const airport = await getAirportSummaryByCode(db, cleanCode);

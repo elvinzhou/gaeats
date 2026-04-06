@@ -1,14 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { updateAirportPoiMetrics } from '../google-poi-sync.server';
-import { prisma } from '~/utils/db.server';
-
 vi.mock('~/utils/db.server', () => ({
-  prisma: {
+  createPrisma: vi.fn(() => ({
     airportPoi: {
       update: vi.fn().mockResolvedValue({}),
     },
-  },
+  })),
 }));
+
+const mockPrisma = {
+  airportPoi: {
+    update: vi.fn().mockResolvedValue({}),
+  },
+};
 
 describe('updateAirportPoiMetrics performance', () => {
   beforeEach(() => {
@@ -35,7 +39,7 @@ describe('updateAirportPoiMetrics performance', () => {
   it('measures the time taken for updateAirportPoiMetrics', async () => {
     const start = Date.now();
     await updateAirportPoiMetrics({
-      prisma,
+      prisma: mockPrisma as any,
       apiKey: 'test-key',
       airportPoiId: 1,
       origin: { latitude: 0, longitude: 0 },

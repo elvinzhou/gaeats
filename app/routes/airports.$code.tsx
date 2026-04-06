@@ -1,21 +1,22 @@
-import { prisma } from "~/utils/db.server";
+import { createPrisma } from "~/utils/db.server";
 import { findPoisNearAirport } from "~/utils/geospatial.server";
 import { getAirportDetailByCode } from "~/utils/postgis.server";
 import { Link, useLoaderData } from "react-router";
 import type { Route } from "./+types/airports.$code";
 
-export async function loader({ params, request }: Route.LoaderArgs) {
+export async function loader({ params, request, context }: Route.LoaderArgs) {
   const { code } = params;
   const url = new URL(request.url);
   const distance = parseFloat(url.searchParams.get("distance") || "5.0");
   const type = (url.searchParams.get("type") || "RESTAURANT") as "RESTAURANT" | "ATTRACTION";
 
-  const airport = await getAirportDetailByCode(prisma, code);
+  const db = createPrisma(context.cloudflare.env.DATABASE_URL);
+  const airport = await getAirportDetailByCode(db, code);
   if (!airport) {
     throw new Response("Airport Not Found", { status: 404 });
   }
 
-  const pois = await findPoisNearAirport(prisma, code, type, distance);
+  const pois = await findPoisNearAirport(db, code, type, distance);
 
   return { airport, pois, distance, type };
 }

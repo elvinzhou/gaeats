@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock the db module to prevent importing Prisma client before loader is imported
 vi.mock("~/utils/db.server", () => ({
-  prisma: {},
+  createPrisma: vi.fn(() => ({})),
 }));
 
 // Mock the geospatial module before loader is imported
@@ -27,7 +27,7 @@ describe("API Route: /api/airports/nearby", () => {
 
     // Create a mock request
     const request = new Request("http://localhost:3000/api/airports/nearby?lat=37.7749&lng=-122.4194&distance=50");
-    const context = { cloudflare: { env: {} as any } };
+    const context = { cloudflare: { env: { DATABASE_URL: "postgresql://test" } as any } };
 
     // Call the loader
     const response = await loader({ request, context } as any);

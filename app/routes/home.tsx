@@ -35,8 +35,9 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const { prisma } = await import("~/utils/db.server");
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const { createPrisma } = await import("~/utils/db.server");
+  const prisma = createPrisma(context.cloudflare.env.DATABASE_URL);
   const url = new URL(request.url);
   const query = url.searchParams.get("q")?.trim() ?? "";
 

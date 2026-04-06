@@ -1,4 +1,4 @@
-import { prisma } from "~/utils/db.server";
+import { createPrisma } from "~/utils/db.server";
 import { upsertFaaAirportWithLocation } from "~/utils/postgis.server";
 import { chooseNextPoiSyncAt } from "~/utils/sync-utils.server";
 
@@ -35,11 +35,11 @@ type NasrEditionResponse = {
 // https://github.com/kdknigga/aeroinfo/blob/master/aeroinfo/parsers/apt.py
 const FAA_NASR_DISCOVERY_URL = "https://external-api.faa.gov/apra/nfdc/nasr/chart";
 const DEFAULT_REFRESH_INTERVAL_DAYS = 28;
-export async function refreshFaaAirportsIfStale(_cloudflare?: CloudflareContext) {
-  await refreshFaaAirportsIfNeeded();
+export async function refreshFaaAirportsIfStale(cloudflare: CloudflareContext) {
+  await refreshFaaAirportsIfNeeded(createPrisma(cloudflare.env.DATABASE_URL));
 }
 
-async function refreshFaaAirportsIfNeeded() {
+async function refreshFaaAirportsIfNeeded(prisma: ReturnType<typeof createPrisma>) {
   const [{ lastRefreshedAt }] = await prisma.$queryRaw<Array<{ lastRefreshedAt: Date | null }>>`
     SELECT MAX("sourceRefreshedAt") AS "lastRefreshedAt"
     FROM "airports"

@@ -6,7 +6,7 @@
  * Results are sorted by distance and filtered by minimum external rating.
  */
 
-import { prisma } from "~/utils/db.server";
+import { createPrisma } from "~/utils/db.server";
 import { findPoisNearby } from "~/utils/geospatial.server";
 import { logger } from "~/utils/logger.server";
 
@@ -15,7 +15,7 @@ interface LoaderArgs {
   context: { cloudflare: { env: Env } };
 }
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request, context }: LoaderArgs) {
   const url = new URL(request.url);
   const lat = parseFloat(url.searchParams.get("lat") || "");
   const lng = parseFloat(url.searchParams.get("lng") || "");
@@ -69,7 +69,7 @@ export async function loader({ request }: LoaderArgs) {
 
   try {
     const pois = await findPoisNearby(
-      prisma,
+      createPrisma(context.cloudflare.env.DATABASE_URL),
       { latitude: lat, longitude: lng },
       requestedType,
       distance,
