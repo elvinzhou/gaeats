@@ -16,7 +16,20 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ["events", "util", "net", "path", "fs", "tls", "dns", "crypto", "stream", "string_decoder"],
+      external: [
+        "events", "node:events",
+        "util", "node:util",
+        "net", "node:net",
+        "path", "node:path",
+        "fs", "node:fs",
+        "tls", "node:tls",
+        "dns", "node:dns",
+        "crypto", "node:crypto",
+        "stream", "node:stream",
+        "string_decoder", "node:string_decoder",
+        "os", "node:os",
+        "assert", "node:assert",
+      ],
     }
   }
 });
