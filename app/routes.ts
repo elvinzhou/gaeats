@@ -9,4 +9,5 @@ export default [
   route("api/airports/nearby", "routes/api.airports.nearby.ts"),
   route("api/airports/search", "routes/api.airports.search.ts"),
   route("api/airports/:code", "routes/api.airports.$code.ts"),
+  route("api/admin/sync", "routes/api.admin.sync.ts"),
 ] satisfies RouteConfig;

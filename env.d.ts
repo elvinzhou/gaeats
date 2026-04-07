@@ -21,6 +21,13 @@ declare global {
     GOOGLE_MAPS_SERVER_API_KEY?: string;
 
     /**
+     * Secret token required to manually trigger sync via POST /api/admin/sync.
+     * Set via `wrangler secret put SYNC_SECRET`.
+     * If unset, the endpoint returns 503.
+     */
+    SYNC_SECRET?: string;
+
+    /**
      * Application environment
      * Defined in wrangler.jsonc vars
      */
