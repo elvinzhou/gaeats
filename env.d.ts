@@ -28,6 +28,13 @@ declare global {
     SYNC_SECRET?: string;
 
     /**
+     * Queue binding for dispatching sync jobs.
+     * Declared in wrangler.jsonc queues.producers.
+     * Create with: wrangler queues create gaeats-sync
+     */
+    SYNC_QUEUE: Queue<SyncMessage>;
+
+    /**
      * Application environment
      * Defined in wrangler.jsonc vars
      */
@@ -35,4 +42,8 @@ declare global {
   }
 }
 
-export {};
+/** Message shape for the gaeats-sync queue. */
+export interface SyncMessage {
+  job: "faa" | "poi" | "all";
+  force: boolean;
+}

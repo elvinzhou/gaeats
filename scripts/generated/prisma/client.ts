@@ -97,6 +97,11 @@ export type PilotReview = Prisma.PilotReviewModel
  */
 export type PilotAccessReport = Prisma.PilotAccessReportModel
 /**
+ * Model AirportFuelCache
+ * 
+ */
+export type AirportFuelCache = Prisma.AirportFuelCacheModel
+/**
  * Model ListingClaim
  * 
  */

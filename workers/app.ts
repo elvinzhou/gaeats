@@ -1,4 +1,5 @@
 import { createRequestHandler } from "react-router";
+import type { SyncMessage } from "../env";
 
 declare module "react-router" {
   export interface AppLoadContext {
@@ -93,19 +94,38 @@ export default {
     }
   },
 
-  async scheduled(_controller, env, ctx) {
+  async scheduled(_controller, env, _ctx) {
+    // Enqueue rather than run directly — the queue consumer has a 5-minute
+    // CPU budget vs. the 30s limit on cron/fetch events.
+    await env.SYNC_QUEUE.send({ job: "all", force: false });
+  },
+
+  async queue(batch: MessageBatch<SyncMessage>, env: Env, ctx: ExecutionContext) {
     const [{ refreshFaaAirportsIfStale }, { refreshGooglePoiSyncIfDue }] = await Promise.all([
       import("~/utils/faa-sync.server"),
       import("~/utils/google-poi-sync.server"),
     ]);
 
-    ctx.waitUntil(
-      Promise.all([
-        refreshFaaAirportsIfStale({ env, ctx }),
-        refreshGooglePoiSyncIfDue({ env, ctx }),
-      ]).catch((error) => {
-        console.error(JSON.stringify({ level: "error", message: "Scheduled sync failed", error: String(error), timestamp: new Date().toISOString() }));
-      })
-    );
+    for (const message of batch.messages) {
+      const { job, force } = message.body;
+      try {
+        if (job === "faa" || job === "all") {
+          await refreshFaaAirportsIfStale({ env, ctx }, force);
+        }
+        if (job === "poi" || job === "all") {
+          await refreshGooglePoiSyncIfDue({ env, ctx });
+        }
+        message.ack();
+      } catch (error) {
+        console.error(JSON.stringify({
+          level: "error",
+          message: "Sync queue job failed",
+          job,
+          error: String(error),
+          timestamp: new Date().toISOString(),
+        }));
+        message.retry();
+      }
+    }
   },
 } satisfies ExportedHandler<Env>;

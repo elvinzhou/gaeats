@@ -391,6 +391,7 @@ export const ModelName = {
   PoiAccessFact: 'PoiAccessFact',
   PilotReview: 'PilotReview',
   PilotAccessReport: 'PilotAccessReport',
+  AirportFuelCache: 'AirportFuelCache',
   ListingClaim: 'ListingClaim'
 } as const
 
@@ -407,7 +408,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "airport" | "poi" | "airportPoi" | "airportAccessFact" | "poiAccessFact" | "pilotReview" | "pilotAccessReport" | "listingClaim"
+    modelProps: "airport" | "poi" | "airportPoi" | "airportAccessFact" | "poiAccessFact" | "pilotReview" | "pilotAccessReport" | "airportFuelCache" | "listingClaim"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -897,6 +898,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AirportFuelCache: {
+      payload: Prisma.$AirportFuelCachePayload<ExtArgs>
+      fields: Prisma.AirportFuelCacheFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AirportFuelCacheFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AirportFuelCachePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AirportFuelCacheFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AirportFuelCachePayload>
+        }
+        findFirst: {
+          args: Prisma.AirportFuelCacheFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AirportFuelCachePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AirportFuelCacheFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AirportFuelCachePayload>
+        }
+        findMany: {
+          args: Prisma.AirportFuelCacheFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AirportFuelCachePayload>[]
+        }
+        create: {
+          args: Prisma.AirportFuelCacheCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AirportFuelCachePayload>
+        }
+        createMany: {
+          args: Prisma.AirportFuelCacheCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AirportFuelCacheCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AirportFuelCachePayload>[]
+        }
+        delete: {
+          args: Prisma.AirportFuelCacheDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AirportFuelCachePayload>
+        }
+        update: {
+          args: Prisma.AirportFuelCacheUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AirportFuelCachePayload>
+        }
+        deleteMany: {
+          args: Prisma.AirportFuelCacheDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AirportFuelCacheUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AirportFuelCacheUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AirportFuelCachePayload>[]
+        }
+        upsert: {
+          args: Prisma.AirportFuelCacheUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AirportFuelCachePayload>
+        }
+        aggregate: {
+          args: Prisma.AirportFuelCacheAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAirportFuelCache>
+        }
+        groupBy: {
+          args: Prisma.AirportFuelCacheGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AirportFuelCacheGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AirportFuelCacheCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AirportFuelCacheCountAggregateOutputType> | number
+        }
+      }
+    }
     ListingClaim: {
       payload: Prisma.$ListingClaimPayload<ExtArgs>
       fields: Prisma.ListingClaimFieldRefs
@@ -1165,6 +1240,19 @@ export const PilotAccessReportScalarFieldEnum = {
 export type PilotAccessReportScalarFieldEnum = (typeof PilotAccessReportScalarFieldEnum)[keyof typeof PilotAccessReportScalarFieldEnum]
 
 
+export const AirportFuelCacheScalarFieldEnum = {
+  id: 'id',
+  icao: 'icao',
+  hasFuel: 'hasFuel',
+  fbos: 'fbos',
+  fetchedAt: 'fetchedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AirportFuelCacheScalarFieldEnum = (typeof AirportFuelCacheScalarFieldEnum)[keyof typeof AirportFuelCacheScalarFieldEnum]
+
+
 export const ListingClaimScalarFieldEnum = {
   id: 'id',
   poiId: 'poiId',
@@ -1196,6 +1284,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1547,6 +1642,7 @@ export type GlobalOmitConfig = {
   poiAccessFact?: Prisma.PoiAccessFactOmit
   pilotReview?: Prisma.PilotReviewOmit
   pilotAccessReport?: Prisma.PilotAccessReportOmit
+  airportFuelCache?: Prisma.AirportFuelCacheOmit
   listingClaim?: Prisma.ListingClaimOmit
 }
 

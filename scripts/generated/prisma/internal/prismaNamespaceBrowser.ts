@@ -58,6 +58,7 @@ export const ModelName = {
   PoiAccessFact: 'PoiAccessFact',
   PilotReview: 'PilotReview',
   PilotAccessReport: 'PilotAccessReport',
+  AirportFuelCache: 'AirportFuelCache',
   ListingClaim: 'ListingClaim'
 } as const
 
@@ -232,6 +233,19 @@ export const PilotAccessReportScalarFieldEnum = {
 export type PilotAccessReportScalarFieldEnum = (typeof PilotAccessReportScalarFieldEnum)[keyof typeof PilotAccessReportScalarFieldEnum]
 
 
+export const AirportFuelCacheScalarFieldEnum = {
+  id: 'id',
+  icao: 'icao',
+  hasFuel: 'hasFuel',
+  fbos: 'fbos',
+  fetchedAt: 'fetchedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AirportFuelCacheScalarFieldEnum = (typeof AirportFuelCacheScalarFieldEnum)[keyof typeof AirportFuelCacheScalarFieldEnum]
+
+
 export const ListingClaimScalarFieldEnum = {
   id: 'id',
   poiId: 'poiId',
@@ -263,6 +277,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
