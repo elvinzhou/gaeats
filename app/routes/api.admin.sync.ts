@@ -34,9 +34,10 @@ export async function action({ request, context }: ActionArgs) {
 
   const url = new URL(request.url);
   const job = url.searchParams.get("job"); // "faa" | "poi" | null (= both)
+  const force = url.searchParams.get("force") === "true";
 
   const jobs: Array<() => Promise<void>> = [];
-  if (!job || job === "faa") jobs.push(() => refreshFaaAirportsIfStale({ env, ctx }));
+  if (!job || job === "faa") jobs.push(() => refreshFaaAirportsIfStale({ env, ctx }, force));
   if (!job || job === "poi") jobs.push(() => refreshGooglePoiSyncIfDue({ env, ctx }));
 
   if (jobs.length === 0) {

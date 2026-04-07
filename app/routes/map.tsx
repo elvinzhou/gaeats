@@ -25,6 +25,7 @@ import {
   findAttractionsNearby,
   findRestaurantsNearby,
 } from "~/utils/geospatial.server";
+import { listAllAirports } from "~/utils/postgis.server";
 import type { POI } from "~/components/GoogleMapComponent";
 
 // Lazy load the Google Maps component (client-side only)
@@ -64,41 +65,50 @@ export function meta({}: Route.MetaArgs) {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const url = new URL(request.url);
 
-  // Get coordinates from query params or use default (center of USA)
-  const lat = parseFloat(url.searchParams.get("lat") || "39.8283");
-  const lng = parseFloat(url.searchParams.get("lng") || "-98.5795");
+  const rawLat = url.searchParams.get("lat");
+  const rawLng = url.searchParams.get("lng");
+  const hasLocation = rawLat !== null && rawLng !== null;
+
+  const lat = parseFloat(rawLat ?? "39.8283");
+  const lng = parseFloat(rawLng ?? "-98.5795");
   const radius = parseFloat(url.searchParams.get("radius") || "50");
   const selectedPoiId = Number.parseInt(url.searchParams.get("poiId") || "", 10);
   const selectedPoiType = url.searchParams.get("poiType");
 
+  const db = createPrisma(context.cloudflare.env.DATABASE_URL);
+
   try {
-    const db = createPrisma(context.cloudflare.env.DATABASE_URL);
+    // Default view: show all airports we have in the DB on a US-wide map.
+    // Location view: show nearby airports and POIs around the selected point.
+    if (!hasLocation) {
+      const airports = await listAllAirports(db);
+
+      const airportPOIs: POI[] = airports.map((a) => ({
+        id: a.id,
+        position: { lat: a.latitude, lng: a.longitude },
+        title: `${a.code} - ${a.name}`,
+        type: "airport" as const,
+        data: a as any,
+      }));
+
+      return {
+        pois: airportPOIs,
+        center: { lat: 39.8283, lng: -98.5795 },
+        zoom: 4,
+        initialSelectedPoi: null,
+        restaurants: 0,
+        attractions: 0,
+        airports: airports.length,
+      };
+    }
 
     // Fetch nearby POIs and airports in parallel
     const [restaurants, attractions, airports] = await Promise.all([
-      findRestaurantsNearby(
-        db,
-        { latitude: lat, longitude: lng },
-        radius,
-        4.0, // Min rating
-        50 // Limit
-      ),
-      findAttractionsNearby(
-        db,
-        { latitude: lat, longitude: lng },
-        radius,
-        4.0,
-        50
-      ),
-      findAirportsNearby(
-        db,
-        { latitude: lat, longitude: lng },
-        radius * 2, // Wider radius for airports
-        20 // Limit
-      ),
+      findRestaurantsNearby(db, { latitude: lat, longitude: lng }, radius, 4.0, 50),
+      findAttractionsNearby(db, { latitude: lat, longitude: lng }, radius, 4.0, 50),
+      findAirportsNearby(db, { latitude: lat, longitude: lng }, radius * 2, 20),
     ]);
 
-    // Transform to POI format
     const restaurantPOIs: POI[] = restaurants.map((r) => ({
       id: r.id,
       position: { lat: r.latitude, lng: r.longitude },
@@ -126,6 +136,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     return {
       pois: [...restaurantPOIs, ...attractionPOIs, ...airportPOIs],
       center: { lat, lng },
+      zoom: 10,
       initialSelectedPoi:
         Number.isNaN(selectedPoiId) || !selectedPoiType
           ? null
@@ -145,10 +156,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   } catch (error) {
     console.error("Error loading map data:", error);
 
-    // Return empty data on error
     return {
       pois: [],
       center: { lat, lng },
+      zoom: hasLocation ? 10 : 4,
       initialSelectedPoi: null,
       restaurants: 0,
       attractions: 0,
@@ -276,7 +287,7 @@ export default function MapRoute({ loaderData }: Route.ComponentProps) {
       <Suspense fallback={<MapFallback />}>
         <GoogleMapComponent
           center={loaderData.center}
-          zoom={8}
+          zoom={loaderData.zoom}
           pois={loaderData.pois}
           initialSelectedPoi={loaderData.initialSelectedPoi}
         />

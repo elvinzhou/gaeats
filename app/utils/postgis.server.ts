@@ -227,6 +227,36 @@ export async function findAirportsNearbyQuery(
   `;
 }
 
+export interface AirportMapRow {
+  id: number;
+  code: string;
+  name: string;
+  city: string;
+  state: string | null;
+  latitude: number;
+  longitude: number;
+}
+
+/**
+ * Returns all airports in the database ordered by importance (syncPriority).
+ * Used to populate the default map view.
+ */
+export async function listAllAirports(prisma: AppPrismaClient, limit = 2000) {
+  return prisma.$queryRaw<AirportMapRow[]>`
+    SELECT
+      id,
+      code,
+      name,
+      city,
+      state,
+      ST_Y(location::geometry) AS latitude,
+      ST_X(location::geometry) AS longitude
+    FROM "airports"
+    ORDER BY "syncPriority" ASC, id ASC
+    LIMIT ${limit}
+  `;
+}
+
 export async function getAirportCoordinatesByCode(
   prisma: AppPrismaClient,
   airportCode: string

@@ -34,8 +34,8 @@ type NasrEditionResponse = {
 // https://github.com/kdknigga/aeroinfo/blob/master/aeroinfo/parsers/apt.py
 const FAA_NASR_DISCOVERY_URL = "https://external-api.faa.gov/apra/nfdc/nasr/chart";
 const DEFAULT_REFRESH_INTERVAL_DAYS = 28;
-export async function refreshFaaAirportsIfStale(cloudflare: CloudflareContext) {
-  await refreshFaaAirportsIfNeeded(createPrisma(cloudflare.env.DATABASE_URL));
+export async function refreshFaaAirportsIfStale(cloudflare: CloudflareContext, force = false) {
+  await refreshFaaAirportsIfNeeded(createPrisma(cloudflare.env.DATABASE_URL), force);
 }
 
 /**
@@ -54,18 +54,25 @@ function computeSyncPriority(airport: FaaAirportRecord): number {
   return 100; // heliports, seaplane bases, small strips
 }
 
-async function refreshFaaAirportsIfNeeded(prisma: ReturnType<typeof createPrisma>) {
+async function refreshFaaAirportsIfNeeded(prisma: ReturnType<typeof createPrisma>, force = false) {
   const [{ lastRefreshedAt }] = await prisma.$queryRaw<Array<{ lastRefreshedAt: Date | null }>>`
     SELECT MAX("sourceRefreshedAt") AS "lastRefreshedAt"
     FROM "airports"
     WHERE source = 'FAA'::"AirportSource"
   `;
 
-  if (lastRefreshedAt) {
+  if (!force && lastRefreshedAt) {
     const staleAfter = new Date(lastRefreshedAt);
     staleAfter.setUTCDate(staleAfter.getUTCDate() + DEFAULT_REFRESH_INTERVAL_DAYS);
 
     if (staleAfter.getTime() > Date.now()) {
+      console.log(JSON.stringify({
+        level: "info",
+        message: "FAA airport sync skipped — data is fresh",
+        lastRefreshedAt,
+        nextRefreshAt: staleAfter,
+        timestamp: new Date().toISOString(),
+      }));
       return;
     }
   }
