@@ -100,14 +100,14 @@ export default {
     await env.SYNC_QUEUE.send({ job: "all", force: false });
   },
 
-  async queue(batch: MessageBatch<SyncMessage>, env: Env, ctx: ExecutionContext) {
+  async queue(batch: MessageBatch<unknown>, env: Env, ctx: ExecutionContext) {
     const [{ refreshFaaAirportsIfStale }, { refreshGooglePoiSyncIfDue }] = await Promise.all([
       import("~/utils/faa-sync.server"),
       import("~/utils/google-poi-sync.server"),
     ]);
 
     for (const message of batch.messages) {
-      const { job, force } = message.body;
+      const { job, force } = message.body as SyncMessage;
       try {
         if (job === "faa" || job === "all") {
           await refreshFaaAirportsIfStale({ env, ctx }, force);
