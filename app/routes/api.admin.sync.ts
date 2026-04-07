@@ -12,10 +12,8 @@ interface ActionArgs {
  * Requires `Authorization: Bearer <SYNC_SECRET>` header.
  *
  * Query params:
- *   - job=poi      enqueue poi-dispatch (fans out per-airport queue messages)
- *   - job=faa      start FaaSyncWorkflow (durable, checkpointed, paid plan only)
- *   - (omit)       both
- *   - force=true   bypass FAA staleness check
+ *   - job=poi   enqueue poi-dispatch (fans out per-airport queue messages)
+ *   - (omit)    same as job=poi
  */
 export async function action({ request, context }: ActionArgs) {
   const { env } = context.cloudflare;
@@ -31,24 +29,14 @@ export async function action({ request, context }: ActionArgs) {
 
   const url = new URL(request.url);
   const jobParam = url.searchParams.get("job");
-  const force = url.searchParams.get("force") === "true";
 
-  if (jobParam && jobParam !== "faa" && jobParam !== "poi") {
-    return Response.json({ error: `Unknown job "${jobParam}". Use "faa" or "poi".` }, { status: 400 });
+  if (jobParam && jobParam !== "poi") {
+    return Response.json({ error: `Unknown job "${jobParam}". Use "poi".` }, { status: 400 });
   }
 
   const queued = new Date().toISOString();
-  const result: Record<string, unknown> = { queued };
 
-  if (!jobParam || jobParam === "poi") {
-    await env.SYNC_QUEUE.send({ job: "poi-dispatch" } satisfies SyncMessage);
-    result.poi = "dispatched";
-  }
+  await env.SYNC_QUEUE.send({ job: "poi-dispatch" } satisfies SyncMessage);
 
-  if (!jobParam || jobParam === "faa") {
-    const instance = await env.FAA_SYNC_WORKFLOW.create({ params: { force } });
-    result.faa = { workflowInstanceId: instance.id };
-  }
-
-  return Response.json({ status: "accepted", ...result }, { status: 202 });
+  return Response.json({ status: "accepted", queued, poi: "dispatched" }, { status: 202 });
 }

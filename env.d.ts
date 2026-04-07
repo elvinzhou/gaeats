@@ -35,12 +35,6 @@ declare global {
     SYNC_QUEUE: Queue<SyncMessage>;
 
     /**
-     * Workflow binding for the durable FAA airport import.
-     * Create with: wrangler workflows create gaeats-faa-sync FaaSyncWorkflow
-     */
-    FAA_SYNC_WORKFLOW: Workflow;
-
-    /**
      * Application environment
      * Defined in wrangler.jsonc vars
      */
@@ -59,7 +53,6 @@ declare global {
  *               Designed to fit within the free-plan 10ms CPU budget since
  *               the work is almost entirely I/O (network + DB).
  *
- * FAA sync is handled by FaaSyncWorkflow (not the queue) — see env.FAA_SYNC_WORKFLOW.
  */
 export type SyncMessage =
   | { job: "poi-dispatch" }

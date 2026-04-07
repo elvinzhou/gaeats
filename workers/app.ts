@@ -1,8 +1,6 @@
 import { createRequestHandler } from "react-router";
 import type { SyncMessage } from "../env";
 
-export { FaaSyncWorkflow } from "./faa-sync-workflow";
-
 declare module "react-router" {
   export interface AppLoadContext {
     cloudflare: {
@@ -97,13 +95,8 @@ export default {
   },
 
   async scheduled(_controller, env, _ctx) {
-    await Promise.all([
-      // POI sync: fan out one queue message per due airport (near-zero CPU each).
-      env.SYNC_QUEUE.send({ job: "poi-dispatch" }),
-      // FAA sync: durable workflow that checkpoints each step. The import step
-      // needs limits.cpu_ms: 300000 (paid plan). Exits early if data is fresh.
-      env.FAA_SYNC_WORKFLOW.create({ params: { force: false } }),
-    ]);
+    // POI sync: fan out one queue message per due airport (near-zero CPU each).
+    await env.SYNC_QUEUE.send({ job: "poi-dispatch" });
   },
 
   async queue(batch: MessageBatch<unknown>, env: Env, ctx: ExecutionContext) {

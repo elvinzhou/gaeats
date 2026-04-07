@@ -1,0 +1,45 @@
+name: FAA Database Import
+
+on:
+  schedule:
+    # 1st of every month at 02:00 UTC
+    - cron: "0 2 1 * *"
+  workflow_dispatch:
+    inputs:
+      edition:
+        description: "FAA NASR edition to import (current or next)"
+        required: false
+        default: current
+      dry_run:
+        description: "Dry run (log airports without writing to DB)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  faa-import:
+    name: Import FAA Airports
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Import FAA airports
+        run: |
+          ARGS="--edition=${{ github.event.inputs.edition || 'current' }}"
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          node scripts/import-faa-airports.js $ARGS
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
