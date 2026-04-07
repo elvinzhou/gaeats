@@ -39,6 +39,72 @@ export async function refreshFaaAirportsIfStale(cloudflare: CloudflareContext, f
 }
 
 /**
+ * Checks whether a fresh FAA import is needed.
+ * Returns the edition to download, or null if data is still fresh.
+ * Used as the first step in FaaSyncWorkflow.
+ */
+export async function checkFaaAirportStaleness(
+  prisma: ReturnType<typeof createPrisma>,
+  force: boolean
+): Promise<{ downloadUrl: string; dataset: string } | null> {
+  const [{ lastRefreshedAt }] = await prisma.$queryRaw<Array<{ lastRefreshedAt: Date | null }>>`
+    SELECT MAX("sourceRefreshedAt") AS "lastRefreshedAt"
+    FROM "airports"
+    WHERE source = 'FAA'::"AirportSource"
+  `;
+
+  if (!force && lastRefreshedAt) {
+    const staleAfter = new Date(lastRefreshedAt);
+    staleAfter.setUTCDate(staleAfter.getUTCDate() + DEFAULT_REFRESH_INTERVAL_DAYS);
+    if (staleAfter.getTime() > Date.now()) {
+      console.log(JSON.stringify({
+        level: "info",
+        message: "FAA airport sync skipped — data is fresh",
+        lastRefreshedAt,
+        nextRefreshAt: staleAfter,
+        timestamp: new Date().toISOString(),
+      }));
+      return null;
+    }
+  }
+
+  return getCurrentNasrEdition();
+}
+
+/**
+ * Downloads and imports all airports from the given NASR edition.
+ * CPU-intensive — designed to run inside a Workflow step with limits.cpu_ms: 300000.
+ * Returns the number of airports upserted.
+ */
+export async function importFaaAirports(
+  downloadUrl: string,
+  dataset: string,
+  prisma: ReturnType<typeof createPrisma>
+): Promise<{ count: number }> {
+  const response = await fetch(downloadUrl);
+  if (!response.ok) {
+    throw new Error(`FAA airport import failed: ${response.status} ${response.statusText}`);
+  }
+
+  let count = 0;
+  for await (const airport of streamAptRecords(response, dataset)) {
+    await upsertFaaAirportWithLocation(prisma, airport, computeSyncPriority(airport));
+    count++;
+  }
+
+  if (count === 0) throw new Error("No valid FAA APT airport rows were parsed.");
+
+  console.log(JSON.stringify({
+    level: "info",
+    message: "FAA airport import complete",
+    count,
+    timestamp: new Date().toISOString(),
+  }));
+
+  return { count };
+}
+
+/**
  * Assigns a sync priority to an airport based on its name.
  * Lower number = synced sooner. West Coast region priority is handled
  * separately in listAirportsForPoiSync; this covers per-airport importance.
@@ -55,44 +121,9 @@ function computeSyncPriority(airport: FaaAirportRecord): number {
 }
 
 async function refreshFaaAirportsIfNeeded(prisma: ReturnType<typeof createPrisma>, force = false) {
-  const [{ lastRefreshedAt }] = await prisma.$queryRaw<Array<{ lastRefreshedAt: Date | null }>>`
-    SELECT MAX("sourceRefreshedAt") AS "lastRefreshedAt"
-    FROM "airports"
-    WHERE source = 'FAA'::"AirportSource"
-  `;
-
-  if (!force && lastRefreshedAt) {
-    const staleAfter = new Date(lastRefreshedAt);
-    staleAfter.setUTCDate(staleAfter.getUTCDate() + DEFAULT_REFRESH_INTERVAL_DAYS);
-
-    if (staleAfter.getTime() > Date.now()) {
-      console.log(JSON.stringify({
-        level: "info",
-        message: "FAA airport sync skipped — data is fresh",
-        lastRefreshedAt,
-        nextRefreshAt: staleAfter,
-        timestamp: new Date().toISOString(),
-      }));
-      return;
-    }
-  }
-
-  const { dataset, downloadUrl } = await getCurrentNasrEdition();
-  const response = await fetch(downloadUrl);
-
-  if (!response.ok) {
-    throw new Error(`FAA airport import failed: ${response.status} ${response.statusText}`);
-  }
-
-  let count = 0;
-  for await (const airport of streamAptRecords(response, dataset)) {
-    await upsertFaaAirportWithLocation(prisma, airport, computeSyncPriority(airport));
-    count++;
-  }
-
-  if (count === 0) {
-    throw new Error("No valid FAA APT airport rows were parsed.");
-  }
+  const edition = await checkFaaAirportStaleness(prisma, force);
+  if (!edition) return;
+  await importFaaAirports(edition.downloadUrl, edition.dataset, prisma);
 }
 
 async function getCurrentNasrEdition() {

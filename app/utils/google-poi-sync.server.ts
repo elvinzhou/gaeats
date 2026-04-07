@@ -1,6 +1,7 @@
 import { createPrisma, type AppPrismaClient } from "~/utils/db.server";
 import {
   type DueAirportRow,
+  getAirportForPoiSync,
   listAirportsForPoiSync,
   upsertGooglePoiWithLocation,
 } from "~/utils/postgis.server";
@@ -28,175 +29,165 @@ type GooglePlace = {
   editorialSummary?: { text?: string };
 };
 
-const DEFAULT_BATCH_LIMIT = 100;                 // 100 airports/day × 2 requests = 200/day, ~6000/month (within $200 free tier)
+const DEFAULT_BATCH_LIMIT = 100;
 const DEFAULT_RADIUS_METERS = 5000;
-const DEFAULT_POI_CYCLE_DAYS = 365;              // Re-sync each airport once per year (~52/day steady state)
-const MAX_TRAVEL_TIME_POIS_PER_AIRPORT = 5;      // Only calculate real travel times for top 5 POIs
+const DEFAULT_POI_CYCLE_DAYS = 365;
+const MAX_TRAVEL_TIME_POIS_PER_AIRPORT = 5;
 
 const placeTypeMap = {
   RESTAURANT: ["restaurant", "cafe", "bakery", "bar"],
   ATTRACTION: ["tourist_attraction", "museum", "art_gallery", "park"],
 } as const;
 
-let nextType: keyof typeof placeTypeMap = "RESTAURANT";
+/**
+ * Enqueues one `poi` message per due airport.
+ * Near-zero CPU — just a DB read + queue sends — safe on the free plan.
+ */
+export async function dispatchPoiSync(cloudflare: CloudflareContext) {
+  if (!cloudflare.env.GOOGLE_MAPS_SERVER_API_KEY) return;
 
-export async function refreshGooglePoiSyncIfDue(cloudflare: CloudflareContext) {
-  if (!cloudflare.env.GOOGLE_MAPS_SERVER_API_KEY) {
-    return;
-  }
-
-  const scheduledType = nextType;
-  nextType = nextType === "RESTAURANT" ? "ATTRACTION" : "RESTAURANT";
-
-  await syncGooglePois({
-    prisma: createPrisma(cloudflare.env.DATABASE_URL),
-    apiKey: cloudflare.env.GOOGLE_MAPS_SERVER_API_KEY,
-    requestedType: scheduledType,
-    limit: DEFAULT_BATCH_LIMIT,
-    radiusMeters: DEFAULT_RADIUS_METERS,
-  });
-}
-
-async function syncGooglePois(options: {
-  prisma: AppPrismaClient;
-  apiKey: string;
-  requestedType: keyof typeof placeTypeMap;
-  limit: number;
-  radiusMeters: number;
-}) {
-  const { prisma } = options;
+  const prisma = createPrisma(cloudflare.env.DATABASE_URL);
   const airports = await listAirportsForPoiSync(prisma);
 
-  const dueAirports = sortAirportsForSync(airports)
-    .filter((airport) => {
-      if (!airport.nextPoiSyncAt) return true;
-      return new Date(airport.nextPoiSyncAt).getTime() <= Date.now();
-    })
-    .slice(0, Math.max(1, options.limit));
+  const due = sortAirportsForSync(airports)
+    .filter((a) => !a.nextPoiSyncAt || new Date(a.nextPoiSyncAt).getTime() <= Date.now())
+    .slice(0, DEFAULT_BATCH_LIMIT);
 
-  if (dueAirports.length === 0) {
-    return;
+  if (due.length === 0) return;
+
+  await Promise.all(
+    due.map((a) => cloudflare.env.SYNC_QUEUE.send({ job: "poi", airportId: a.id }))
+  );
+
+  console.log(JSON.stringify({
+    level: "info",
+    message: "POI sync dispatched",
+    count: due.length,
+    timestamp: new Date().toISOString(),
+  }));
+}
+
+/**
+ * Processes a single airport: fetches RESTAURANT + ATTRACTION places from
+ * Google and upserts the results. Designed to run within the free-plan 10ms
+ * CPU budget — the work is almost entirely network + DB I/O.
+ */
+export async function syncAirportPois(airportId: number, cloudflare: CloudflareContext) {
+  if (!cloudflare.env.GOOGLE_MAPS_SERVER_API_KEY) return;
+
+  const prisma = createPrisma(cloudflare.env.DATABASE_URL);
+  const apiKey = cloudflare.env.GOOGLE_MAPS_SERVER_API_KEY;
+
+  const [airport, allAirports] = await Promise.all([
+    getAirportForPoiSync(prisma, airportId),
+    listAirportsForPoiSync(prisma),
+  ]);
+  if (!airport) return;
+
+  for (const type of Object.keys(placeTypeMap) as Array<keyof typeof placeTypeMap>) {
+    await syncAirportForType({ prisma, apiKey, airport, requestedType: type, allAirports });
   }
+}
 
-    for (const airport of dueAirports) {
-    const places = await fetchNearbyPlaces(
-      {
-        latitude: Number(airport.latitude),
-        longitude: Number(airport.longitude),
-      },
-      options.radiusMeters,
-      options.requestedType,
-      options.apiKey
-    );
+async function syncAirportForType(options: {
+  prisma: AppPrismaClient;
+  apiKey: string;
+  airport: DueAirportRow;
+  requestedType: keyof typeof placeTypeMap;
+  allAirports: DueAirportRow[];
+}) {
+  const { prisma, airport, requestedType, allAirports } = options;
 
-    // ZERO-RESULT BACKOFF: If no POIs found, push sync out to 1 year and deprioritize
-    if (places.length === 0) {
-      await prisma.airport.update({
-        where: { id: airport.id },
-        data: {
-          lastPoiSyncAt: new Date(),
-          syncPriority: Math.min((airport.syncPriority ?? 100) + 50, 1000), // Deprioritize
-          nextPoiSyncAt: chooseNextPoiSyncAt({
-            airportCount: airports.length,
-            desiredCycleDays: 365, // Check again in a year
-          }),
-        },
-      });
-      continue;
-    }
+  const places = await fetchNearbyPlaces(
+    { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
+    DEFAULT_RADIUS_METERS,
+    requestedType,
+    options.apiKey
+  );
 
-    // Limit POIs processed per sync to save budget
-    const prioritisedPlaces = places
-      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-      .slice(0, 10); // Sync basic info for top 10
-
-    const metricUpdatePromises: Promise<void>[] = [];
-
-    for (let i = 0; i < prioritisedPlaces.length; i++) {
-      const place = prioritisedPlaces[i];
-      const latitude = place.location?.latitude;
-      const longitude = place.location?.longitude;
-
-      if (typeof latitude !== "number" || typeof longitude !== "number" || !place.id) {
-        continue;
-      }
-
-      const distanceMeters = calculateDistanceMeters(
-        { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
-        { latitude, longitude }
-      );
-
-      const poiId = await upsertGooglePoiWithLocation(prisma, {
-        externalSourceId: place.id,
-        requestedType: options.requestedType,
-        name: place.displayName?.text ?? "Unnamed place",
-        category: derivePoiCategory(place),
-        subcategory: derivePoiSubcategory(place),
-        cuisine: options.requestedType === "RESTAURANT" ? derivePoiCategory(place) : null,
-        description: place.editorialSummary?.text ?? null,
-        address: place.formattedAddress ?? "Unknown address",
-        city: airport.city ?? "",
-        state: airport.state ?? null,
-        priceLevel: normalizePriceLevel(place.priceLevel),
-        externalRating: place.rating ?? null,
-        externalReviewCount: place.userRatingCount ?? null,
-        url: place.websiteUri ?? place.googleMapsUri ?? null,
-        phone: place.nationalPhoneNumber ?? null,
-        hoursJson: JSON.stringify(place.regularOpeningHours ?? null),
-        latitude,
-        longitude,
-      });
-
-      if (!poiId) {
-        continue;
-      }
-
-      const airportPoi = await prisma.airportPoi.upsert({
-        where: {
-          airportId_poiId: {
-            airportId: airport.id,
-            poiId,
-          },
-        },
-        update: {
-          straightLineDistanceMeters: distanceMeters,
-          updatedAt: new Date(),
-        },
-        create: {
-          airportId: airport.id,
-          poiId,
-          straightLineDistanceMeters: distanceMeters,
-        },
-      });
-
-      // Fetch real travel times ONLY for the top 5 per sync to stay within free tier
-      if (i < MAX_TRAVEL_TIME_POIS_PER_AIRPORT) {
-        metricUpdatePromises.push(
-          updateAirportPoiMetrics({
-            prisma,
-            apiKey: options.apiKey,
-            airportPoiId: airportPoi.id,
-            origin: { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
-            destination: { latitude, longitude },
-          })
-        );
-      }
-    }
-
-    // Process all travel time updates concurrently
-    await Promise.all(metricUpdatePromises);
-
+  if (places.length === 0) {
     await prisma.airport.update({
       where: { id: airport.id },
       data: {
         lastPoiSyncAt: new Date(),
-        nextPoiSyncAt: chooseNextPoiSyncAt({
-          airportCount: airports.length,
-          desiredCycleDays: DEFAULT_POI_CYCLE_DAYS,
-        }),
+        syncPriority: Math.min((airport.syncPriority ?? 100) + 50, 1000),
+        nextPoiSyncAt: chooseNextPoiSyncAt({ airportCount: allAirports.length, desiredCycleDays: 365 }),
       },
     });
+    return;
   }
+
+  const prioritisedPlaces = places
+    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    .slice(0, 10);
+
+  const metricUpdatePromises: Promise<void>[] = [];
+
+  for (let i = 0; i < prioritisedPlaces.length; i++) {
+    const place = prioritisedPlaces[i];
+    const latitude = place.location?.latitude;
+    const longitude = place.location?.longitude;
+    if (typeof latitude !== "number" || typeof longitude !== "number" || !place.id) continue;
+
+    const distanceMeters = calculateDistanceMeters(
+      { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
+      { latitude, longitude }
+    );
+
+    const poiId = await upsertGooglePoiWithLocation(prisma, {
+      externalSourceId: place.id,
+      requestedType,
+      name: place.displayName?.text ?? "Unnamed place",
+      category: derivePoiCategory(place),
+      subcategory: derivePoiSubcategory(place),
+      cuisine: requestedType === "RESTAURANT" ? derivePoiCategory(place) : null,
+      description: place.editorialSummary?.text ?? null,
+      address: place.formattedAddress ?? "Unknown address",
+      city: airport.city ?? "",
+      state: airport.state ?? null,
+      priceLevel: normalizePriceLevel(place.priceLevel),
+      externalRating: place.rating ?? null,
+      externalReviewCount: place.userRatingCount ?? null,
+      url: place.websiteUri ?? place.googleMapsUri ?? null,
+      phone: place.nationalPhoneNumber ?? null,
+      hoursJson: JSON.stringify(place.regularOpeningHours ?? null),
+      latitude,
+      longitude,
+    });
+
+    if (!poiId) continue;
+
+    const airportPoi = await prisma.airportPoi.upsert({
+      where: { airportId_poiId: { airportId: airport.id, poiId } },
+      update: { straightLineDistanceMeters: distanceMeters, updatedAt: new Date() },
+      create: { airportId: airport.id, poiId, straightLineDistanceMeters: distanceMeters },
+    });
+
+    if (i < MAX_TRAVEL_TIME_POIS_PER_AIRPORT) {
+      metricUpdatePromises.push(
+        updateAirportPoiMetrics({
+          prisma,
+          apiKey: options.apiKey,
+          airportPoiId: airportPoi.id,
+          origin: { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
+          destination: { latitude, longitude },
+        })
+      );
+    }
+  }
+
+  await Promise.all(metricUpdatePromises);
+
+  await prisma.airport.update({
+    where: { id: airport.id },
+    data: {
+      lastPoiSyncAt: new Date(),
+      nextPoiSyncAt: chooseNextPoiSyncAt({
+        airportCount: allAirports.length,
+        desiredCycleDays: DEFAULT_POI_CYCLE_DAYS,
+      }),
+    },
+  });
 }
 
 export async function updateAirportPoiMetrics(options: {

@@ -1,6 +1,8 @@
 import { createRequestHandler } from "react-router";
 import type { SyncMessage } from "../env";
 
+export { FaaSyncWorkflow } from "./faa-sync-workflow";
+
 declare module "react-router" {
   export interface AppLoadContext {
     cloudflare: {
@@ -95,32 +97,32 @@ export default {
   },
 
   async scheduled(_controller, env, _ctx) {
-    // Enqueue rather than run directly — the queue consumer has a 5-minute
-    // CPU budget vs. the 30s limit on cron/fetch events.
-    await env.SYNC_QUEUE.send({ job: "all", force: false });
+    await Promise.all([
+      // POI sync: fan out one queue message per due airport (near-zero CPU each).
+      env.SYNC_QUEUE.send({ job: "poi-dispatch" }),
+      // FAA sync: durable workflow that checkpoints each step. The import step
+      // needs limits.cpu_ms: 300000 (paid plan). Exits early if data is fresh.
+      env.FAA_SYNC_WORKFLOW.create({ params: { force: false } }),
+    ]);
   },
 
   async queue(batch: MessageBatch<unknown>, env: Env, ctx: ExecutionContext) {
-    const [{ refreshFaaAirportsIfStale }, { refreshGooglePoiSyncIfDue }] = await Promise.all([
-      import("~/utils/faa-sync.server"),
-      import("~/utils/google-poi-sync.server"),
-    ]);
+    const { dispatchPoiSync, syncAirportPois } = await import("~/utils/google-poi-sync.server");
 
     for (const message of batch.messages) {
-      const { job, force } = message.body as SyncMessage;
+      const msg = message.body as SyncMessage;
       try {
-        if (job === "faa" || job === "all") {
-          await refreshFaaAirportsIfStale({ env, ctx }, force);
-        }
-        if (job === "poi" || job === "all") {
-          await refreshGooglePoiSyncIfDue({ env, ctx });
+        if (msg.job === "poi-dispatch") {
+          await dispatchPoiSync({ env, ctx });
+        } else if (msg.job === "poi") {
+          await syncAirportPois(msg.airportId, { env, ctx });
         }
         message.ack();
       } catch (error) {
         console.error(JSON.stringify({
           level: "error",
           message: "Sync queue job failed",
-          job,
+          job: msg.job,
           error: String(error),
           timestamp: new Date().toISOString(),
         }));

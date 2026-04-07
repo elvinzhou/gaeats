@@ -426,6 +426,25 @@ export async function createAirportWithLocationQuery(
   `;
 }
 
+export async function getAirportForPoiSync(prisma: AppPrismaClient, airportId: number) {
+  const rows = await prisma.$queryRaw<DueAirportRow[]>`
+    SELECT
+      id,
+      code,
+      city,
+      state,
+      "nextPoiSyncAt",
+      "syncPriority",
+      ST_Y(location::geometry) AS latitude,
+      ST_X(location::geometry) AS longitude,
+      0 AS "regionPriority"
+    FROM "airports"
+    WHERE id = ${airportId}
+    LIMIT 1
+  `;
+  return rows[0] ?? null;
+}
+
 export async function listAirportsForPoiSync(
   prisma: AppPrismaClient,
   airportCode?: string

@@ -8,17 +8,14 @@ interface ActionArgs {
 /**
  * POST /api/admin/sync
  *
- * Enqueues a sync job and returns 202 immediately.
- * The queue consumer runs with a 5-minute CPU budget (vs. 30s for fetch).
- * Check Worker logs for completion / errors.
- *
+ * Manually triggers sync jobs. Returns 202 immediately.
  * Requires `Authorization: Bearer <SYNC_SECRET>` header.
  *
- * Optional query params:
- *   - job=faa        run only the FAA airport sync
- *   - job=poi        run only the Google POI sync
- *   - (omit)         run both
- *   - force=true     bypass the FAA staleness check
+ * Query params:
+ *   - job=poi      enqueue poi-dispatch (fans out per-airport queue messages)
+ *   - job=faa      start FaaSyncWorkflow (durable, checkpointed, paid plan only)
+ *   - (omit)       both
+ *   - force=true   bypass FAA staleness check
  */
 export async function action({ request, context }: ActionArgs) {
   const { env } = context.cloudflare;
@@ -40,11 +37,18 @@ export async function action({ request, context }: ActionArgs) {
     return Response.json({ error: `Unknown job "${jobParam}". Use "faa" or "poi".` }, { status: 400 });
   }
 
-  const job: SyncMessage["job"] = (jobParam as SyncMessage["job"]) ?? "all";
-  await env.SYNC_QUEUE.send({ job, force });
+  const queued = new Date().toISOString();
+  const result: Record<string, unknown> = { queued };
 
-  return Response.json(
-    { status: "accepted", job, force, queued: new Date().toISOString() },
-    { status: 202 }
-  );
+  if (!jobParam || jobParam === "poi") {
+    await env.SYNC_QUEUE.send({ job: "poi-dispatch" } satisfies SyncMessage);
+    result.poi = "dispatched";
+  }
+
+  if (!jobParam || jobParam === "faa") {
+    const instance = await env.FAA_SYNC_WORKFLOW.create({ params: { force } });
+    result.faa = { workflowInstanceId: instance.id };
+  }
+
+  return Response.json({ status: "accepted", ...result }, { status: 202 });
 }

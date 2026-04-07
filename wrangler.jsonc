@@ -13,6 +13,13 @@
   "limits": {
     "cpu_ms": 300000
   },
+  "workflows": [
+    {
+      "name": "gaeats-faa-sync",
+      "binding": "FAA_SYNC_WORKFLOW",
+      "class_name": "FaaSyncWorkflow"
+    }
+  ],
   "queues": {
     "producers": [
       { "queue": "gaeats-sync", "binding": "SYNC_QUEUE" }
