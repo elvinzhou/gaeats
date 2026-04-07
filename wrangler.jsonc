@@ -7,12 +7,6 @@
   "triggers": {
     "crons": ["0 3 * * *"]
   },
-  // Raise CPU budget to 5 minutes for queue consumer invocations.
-  // The FAA sync streams and upserts ~20k airport records which exceeds
-  // the default 30s limit.
-  "limits": {
-    "cpu_ms": 300000
-  },
   "workflows": [
     {
       "name": "gaeats-faa-sync",
