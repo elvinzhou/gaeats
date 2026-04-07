@@ -10,6 +10,9 @@ interface ActionArgs {
  * POST /api/admin/sync
  *
  * Manually triggers the same sync jobs that run on the nightly cron.
+ * Returns 202 immediately — the sync runs in the background via ctx.waitUntil().
+ * Check Worker logs to confirm completion or see errors.
+ *
  * Requires `Authorization: Bearer <SYNC_SECRET>` header.
  *
  * Optional query params:
@@ -29,10 +32,6 @@ export async function action({ request, context }: ActionArgs) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  if (request.method !== "POST") {
-    return Response.json({ error: "Method not allowed." }, { status: 405 });
-  }
-
   const url = new URL(request.url);
   const job = url.searchParams.get("job"); // "faa" | "poi" | null (= both)
 
@@ -45,19 +44,27 @@ export async function action({ request, context }: ActionArgs) {
   }
 
   const started = new Date().toISOString();
-  const errors: string[] = [];
 
-  for (const run of jobs) {
-    try {
-      await run();
-    } catch (err) {
-      errors.push(String(err));
-    }
-  }
+  // Run in background — same pattern as the cron handler.
+  // The FAA sync downloads and parses a large dataset that exceeds the CPU
+  // budget of a synchronous fetch response. Check logs for completion/errors.
+  ctx.waitUntil(
+    (async () => {
+      for (const run of jobs) {
+        try {
+          await run();
+        } catch (err) {
+          console.error(JSON.stringify({
+            level: "error",
+            message: "Manual sync failed",
+            job,
+            error: String(err),
+            timestamp: new Date().toISOString(),
+          }));
+        }
+      }
+    })()
+  );
 
-  if (errors.length > 0) {
-    return Response.json({ started, status: "error", errors }, { status: 500 });
-  }
-
-  return Response.json({ started, status: "ok", job: job ?? "all" });
+  return Response.json({ started, status: "accepted", job: job ?? "all" }, { status: 202 });
 }
