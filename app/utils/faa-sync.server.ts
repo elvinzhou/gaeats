@@ -118,70 +118,169 @@ async function getCurrentNasrEdition() {
 }
 
 async function* streamAptRecords(response: Response, sourceDataset: string | null): AsyncGenerator<FaaAirportRecord> {
+  if (!response.body) throw new Error("FAA response has no body.");
+
   const contentType = response.headers.get("content-type") ?? "";
   const isZip = contentType.includes("zip") || response.url.toLowerCase().endsWith(".zip");
 
   if (!isZip) {
-    if (!response.body) throw new Error("FAA response has no body.");
     yield* streamLinesAsRecords(response.body, sourceDataset);
     return;
   }
 
-  // Load the ZIP index into memory to locate apt.txt, then stream-decompress only that entry.
-  const archiveBuffer = await response.arrayBuffer();
-  const archive = new Uint8Array(archiveBuffer);
-  let offset = 0;
+  yield* streamZipEntryLines(response.body, "apt.txt", sourceDataset);
+}
 
-  while (offset + 30 <= archive.length) {
-    const signature = readUint32(archive, offset);
-    if (signature === 0x02014b50 || signature === 0x06054b50) break;
+/**
+ * Fully-streaming ZIP reader: parses local file headers on the fly without
+ * ever buffering the whole archive. Finds targetName and yields its lines.
+ *
+ * ZIP local-file-header layout (all little-endian):
+ *   0  4  signature 0x04034b50
+ *   4  2  version needed
+ *   6  2  general purpose flags
+ *   8  2  compression method
+ *  10  2  last mod time
+ *  12  2  last mod date
+ *  14  4  crc-32
+ *  18  4  compressed size
+ *  22  4  uncompressed size
+ *  26  2  file name length (n)
+ *  28  2  extra field length (m)
+ *  30  n  file name
+ * 30+n m  extra field
+ * 30+n+m  file data (compressedSize bytes)
+ */
+async function* streamZipEntryLines(
+  body: ReadableStream<Uint8Array>,
+  targetName: string,
+  sourceDataset: string | null
+): AsyncGenerator<FaaAirportRecord> {
+  const sr = new StreamReader(body);
 
-    if (signature !== 0x04034b50) {
+  while (true) {
+    const sigBytes = await sr.peek(4);
+    if (sigBytes.length < 4) break;
+
+    const sig = readUint32(sigBytes, 0);
+    if (sig === 0x02014b50 || sig === 0x06054b50) break; // central directory reached
+
+    if (sig !== 0x04034b50) {
       throw new Error("FAA archive contains an unsupported ZIP structure.");
     }
 
-    const flags = readUint16(archive, offset + 6);
-    const compressionMethod = readUint16(archive, offset + 8);
-    const compressedSize = readUint32(archive, offset + 18);
-    const fileNameLength = readUint16(archive, offset + 26);
-    const extraFieldLength = readUint16(archive, offset + 28);
-    const fileNameStart = offset + 30;
-    const fileNameEnd = fileNameStart + fileNameLength;
-    const fileName = decodeText(archive.subarray(fileNameStart, fileNameEnd));
-    const dataStart = fileNameEnd + extraFieldLength;
-    const dataEnd = dataStart + compressedSize;
+    const header = await sr.readExact(30);
+    const flags            = readUint16(header, 6);
+    const compressionMethod = readUint16(header, 8);
+    const compressedSize   = readUint32(header, 18);
+    const fileNameLength   = readUint16(header, 26);
+    const extraFieldLength = readUint16(header, 28);
 
     if ((flags & 0x0008) !== 0) {
       throw new Error("FAA archive uses ZIP data descriptors, which are not supported.");
     }
 
-    if (fileName.toLowerCase().endsWith("apt.txt")) {
-      // Slice just this entry's bytes and stream-decompress to avoid holding
-      // zip + decompressed + text string all in memory at once.
-      const entryBytes = archive.slice(dataStart, dataEnd);
-      let stream: ReadableStream<Uint8Array>;
+    const fileNameBytes = await sr.readExact(fileNameLength);
+    const fileName = new TextDecoder().decode(fileNameBytes);
+    await sr.skip(extraFieldLength);
+
+    if (fileName.toLowerCase().endsWith(targetName)) {
+      let dataStream: ReadableStream<Uint8Array>;
 
       if (compressionMethod === 0) {
-        stream = new ReadableStream({
-          start(controller) {
-            controller.enqueue(entryBytes);
-            controller.close();
-          },
-        });
+        dataStream = sr.takeBytesAsStream(compressedSize);
       } else if (compressionMethod === 8) {
-        stream = new Response(entryBytes).body!.pipeThrough(new DecompressionStream("deflate-raw"));
+        dataStream = sr.takeBytesAsStream(compressedSize)
+          .pipeThrough(new DecompressionStream("deflate-raw") as unknown as TransformStream<Uint8Array, Uint8Array>);
       } else {
         throw new Error(`Unsupported FAA ZIP compression method: ${compressionMethod}`);
       }
 
-      yield* streamLinesAsRecords(stream, sourceDataset);
+      yield* streamLinesAsRecords(dataStream, sourceDataset);
       return;
     }
 
-    offset = dataEnd;
+    await sr.skip(compressedSize);
   }
 
-  throw new Error("No apt.txt file was found in the FAA archive.");
+  throw new Error(`No ${targetName} file was found in the FAA archive.`);
+}
+
+/** Reads a ReadableStream<Uint8Array> chunk-by-chunk and yields parsed FAA records line by line. */
+class StreamReader {
+  private reader: ReadableStreamDefaultReader<Uint8Array>;
+  private buf: Uint8Array = new Uint8Array(0);
+  private eof = false;
+
+  constructor(stream: ReadableStream<Uint8Array>) {
+    this.reader = stream.getReader();
+  }
+
+  private async refill(minBytes: number): Promise<void> {
+    while (this.buf.length < minBytes && !this.eof) {
+      const { value, done } = await this.reader.read();
+      if (done) {
+        this.eof = true;
+      } else if (value?.length) {
+        const merged = new Uint8Array(this.buf.length + value.length);
+        merged.set(this.buf);
+        merged.set(value, this.buf.length);
+        this.buf = merged;
+      }
+    }
+  }
+
+  async peek(n: number): Promise<Uint8Array> {
+    await this.refill(n);
+    return this.buf.slice(0, Math.min(n, this.buf.length));
+  }
+
+  async readExact(n: number): Promise<Uint8Array> {
+    await this.refill(n);
+    if (this.buf.length < n) throw new Error(`Unexpected EOF: wanted ${n} bytes, got ${this.buf.length}`);
+    const result = this.buf.slice(0, n);
+    this.buf = this.buf.slice(n);
+    return result;
+  }
+
+  async skip(n: number): Promise<void> {
+    let remaining = n;
+    if (this.buf.length > 0) {
+      const take = Math.min(remaining, this.buf.length);
+      this.buf = this.buf.slice(take);
+      remaining -= take;
+    }
+    while (remaining > 0 && !this.eof) {
+      const { value, done } = await this.reader.read();
+      if (done) { this.eof = true; break; }
+      if (value) {
+        if (value.length <= remaining) {
+          remaining -= value.length;
+        } else {
+          this.buf = value.slice(remaining);
+          remaining = 0;
+        }
+      }
+    }
+  }
+
+  /** Returns a ReadableStream that yields exactly byteCount bytes from this reader. */
+  takeBytesAsStream(byteCount: number): ReadableStream<Uint8Array> {
+    let remaining = byteCount;
+    const self = this;
+    return new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        if (remaining === 0) { controller.close(); return; }
+        await self.refill(1);
+        if (self.buf.length === 0) { controller.close(); return; }
+        const take = Math.min(remaining, self.buf.length);
+        controller.enqueue(self.buf.slice(0, take));
+        self.buf = self.buf.slice(take);
+        remaining -= take;
+        if (remaining === 0) controller.close();
+      },
+    });
+  }
 }
 
 async function* streamLinesAsRecords(
@@ -225,10 +324,6 @@ function readUint32(bytes: Uint8Array, offset: number) {
     (bytes[offset + 2] << 16) |
     (bytes[offset + 3] << 24)
   ) >>> 0;
-}
-
-function decodeText(bytes: Uint8Array) {
-  return new TextDecoder("utf-8").decode(bytes);
 }
 
 function mapNasrAptRecord(line: string, sourceDataset: string | null) {
