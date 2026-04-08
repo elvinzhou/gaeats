@@ -77,11 +77,48 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const db = createPrisma(context.cloudflare.env.DATABASE_URL);
 
+  // Cloudflare provides IP-based geolocation via request.cf
+  const cf = (request as unknown as { cf?: { latitude?: string; longitude?: string } }).cf;
+  const cfLat = cf?.latitude ? parseFloat(cf.latitude) : NaN;
+  const cfLng = cf?.longitude ? parseFloat(cf.longitude) : NaN;
+  const hasIpLocation = !isNaN(cfLat) && !isNaN(cfLng);
+
   try {
-    // Default view: show all airports we have in the DB on a US-wide map.
+    // Default view: use IP geolocation to show the user's region, or fall back
+    // to a US-wide overview with a limited set of airports.
     // Location view: show nearby airports and POIs around the selected point.
     if (!hasLocation) {
-      const airports = await listAllAirports(db);
+      if (hasIpLocation) {
+        // Load airports within ~500 km of the user's IP location so the initial
+        // view is focused on their region rather than loading every airport.
+        const airports = await findAirportsNearby(
+          db,
+          { latitude: cfLat, longitude: cfLng },
+          500,
+          150
+        );
+
+        const airportPOIs: POI[] = airports.map((a) => ({
+          id: a.id,
+          position: { lat: a.latitude, lng: a.longitude },
+          title: `${a.code} - ${a.name}`,
+          type: "airport" as const,
+          data: a,
+        }));
+
+        return {
+          pois: airportPOIs,
+          center: { lat: cfLat, lng: cfLng },
+          zoom: 7,
+          initialSelectedPoi: null,
+          restaurants: 0,
+          attractions: 0,
+          airports: airportPOIs.length,
+        };
+      }
+
+      // No IP location — load the highest-priority airports for a US overview.
+      const airports = await listAllAirports(db, 300);
 
       const airportPOIs: POI[] = airports.map((a) => ({
         id: a.id,
