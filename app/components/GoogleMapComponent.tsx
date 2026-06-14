@@ -217,7 +217,12 @@ export default function GoogleMapComponent({
             gestureHandling="greedy"
             disableDefaultUI={false}
             mapTypeId={mapTypeId}
-            className="h-full w-full"
+            // `google-maps-container` scopes a CSS reset (in app.css) that
+            // undoes Tailwind's global Preflight rules inside the map. Without
+            // it, Tailwind's `img { max-width: 100% }` and `box-sizing:
+            // border-box` distort the map tiles and mis-project the markers
+            // (wrong location, clustered, not tracking the map while panning).
+            className="h-full w-full google-maps-container"
           >
             {/* Re-centres map on navigation & fetches airports on viewport change */}
             <MapController

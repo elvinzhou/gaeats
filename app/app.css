@@ -13,3 +13,27 @@ body {
     color-scheme: dark;
   }
 }
+
+/*
+ * Google Maps renders its own DOM (map tiles, markers/pins, zoom controls, and
+ * info windows) inside the map container. Tailwind's Preflight reset applies
+ * `img { max-width: 100% }` and `box-sizing: border-box` to every element
+ * globally — a box model Google Maps does not expect. The result is distorted
+ * tiles and markers that are mis-projected: they render in the wrong location,
+ * visually cluster together, and fail to stay anchored to the map while panning.
+ *
+ * Restoring the defaults Google Maps expects, scoped to our own map-container
+ * class (rather than Google's internal `.gm-style`, per Google's guidance),
+ * fixes tile and marker rendering.
+ * https://developers.google.com/maps/documentation/javascript/best-practices
+ */
+.google-maps-container img {
+  max-width: none;
+}
+
+.google-maps-container,
+.google-maps-container *,
+.google-maps-container *::before,
+.google-maps-container *::after {
+  box-sizing: content-box;
+}

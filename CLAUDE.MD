@@ -23,4 +23,10 @@ Update CLAUDE.MD as needed.
 - Supports satellite view, hybrid view, and street view
 - Multi-modal directions: walking, biking, transit, driving
 - Turn-by-turn navigation with step-by-step instructions
-- API Key configured via VITE_GOOGLE_MAPS_API_KEY environment variable 
+- API Key configured via VITE_GOOGLE_MAPS_API_KEY environment variable
+- CSS conflict note: Tailwind's Preflight reset (`img { max-width: 100% }` and
+  global `box-sizing: border-box`) distorts map tiles and mis-projects markers
+  (wrong location, clustered, not panning with the map). The `<Map>` element
+  carries a `google-maps-container` class whose scoped reset in `app/app.css`
+  restores the box model Google Maps expects. Do not remove either half; the
+  contract is guarded by `app/components/__tests__/GoogleMapComponent.test.ts`. 
