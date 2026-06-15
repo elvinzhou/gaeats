@@ -196,6 +196,15 @@ export default function GoogleMapComponent({
   // Get API key from environment variable
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
+  // Advanced Markers require a *valid* cloud-based Map ID. Google generates Map
+  // IDs (they are not arbitrary strings you can invent), and an invalid value
+  // makes the map silently fall back to a non-vector renderer where the Advanced
+  // Marker overlay mis-projects — pins render at the wrong scale/location and
+  // appear to sit at a different zoom level than the base map. Default to
+  // Google's built-in `DEMO_MAP_ID` (which supports Advanced Markers) so the map
+  // works out of the box, and allow a real Map ID to be supplied for production.
+  const mapId = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID";
+
   // Warn if API key is missing
   useEffect(() => {
     if (!apiKey || apiKey === "YOUR_GOOGLE_MAPS_API_KEY_HERE") {
@@ -213,7 +222,7 @@ export default function GoogleMapComponent({
           <Map
             defaultCenter={center}
             defaultZoom={zoom}
-            mapId="ga-eats-map" // Required for AdvancedMarker
+            mapId={mapId} // Required for AdvancedMarker; must be a valid Map ID
             gestureHandling="greedy"
             disableDefaultUI={false}
             mapTypeId={mapTypeId}
