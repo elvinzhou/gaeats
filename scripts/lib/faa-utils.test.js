@@ -35,9 +35,21 @@ describe("faa-utils", () => {
     });
   });
 
-  it("parses FAA NASR DMS coordinates", () => {
+  it("parses FAA NASR DMS coordinates (packed form)", () => {
     expect(parseNasrCoordinate("374122.20N")).toBeCloseTo(37.6895, 4);
     expect(parseNasrCoordinate("1222257.40W")).toBeCloseTo(-122.3826, 4);
+  });
+
+  it("parses FAA NASR DMS coordinates (dash-separated form)", () => {
+    // The real NASR APT.TXT "formatted" coordinates are dash-separated. These
+    // must split on "-"; mis-parsing them as packed digits silently corrupted
+    // every imported airport's location.
+    expect(parseNasrCoordinate("37-41-22.20N")).toBeCloseTo(37.6895, 4);
+    expect(parseNasrCoordinate("122-22-57.40W")).toBeCloseTo(-122.3826, 4);
+    // Regression: Oakland Intl (KOAK) is 37-43-17N / 122-13-15W. The old parser
+    // produced ~36.93 / ~-121.98 (clustered + shifted) for this exact input.
+    expect(parseNasrCoordinate("37-43-17.0000N")).toBeCloseTo(37.7214, 3);
+    expect(parseNasrCoordinate("122-13-15.0000W")).toBeCloseTo(-122.2208, 3);
   });
 
   it("parses FAA date formats used by APT records", () => {
@@ -54,13 +66,14 @@ describe("faa-utils", () => {
       [49, 2, "CA"],
       [94, 40, "Palo Alto"],
       [134, 50, "Palo Alto Airport"],
-      [524, 15, "374628.00N"],
-      [551, 15, "1220654.00W"],
+      [524, 15, "37-46-28.0000N"],
+      [551, 15, "122-06-54.0000W"],
       [885, 8, "03182026"],
       [1211, 7, "KPAO"],
     ]);
 
-    expect(mapNasrAptRecord(line, "faa-nasr-2026-03-19-apt")).toMatchObject({
+    const record = mapNasrAptRecord(line, "faa-nasr-2026-03-19-apt");
+    expect(record).toMatchObject({
       code: "KPAO",
       faaCode: "PAO",
       icaoCode: "KPAO",
@@ -69,6 +82,9 @@ describe("faa-utils", () => {
       source: "FAA",
       sourceDataset: "faa-nasr-2026-03-19-apt",
     });
+    // Coordinates must be parsed from the dash-separated DMS fields.
+    expect(record.latitude).toBeCloseTo(37.7744, 3);
+    expect(record.longitude).toBeCloseTo(-122.115, 3);
   });
 });
 

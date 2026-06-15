@@ -56,15 +56,36 @@ try {
     desiredCycleDays: 30,
   });
 
+  let imported = 0;
+  let failed = 0;
+
   for (const airport of records) {
     if (dryRun) {
       console.log(`[dry-run] would import FAA airport ${airport.code}`);
       continue;
     }
 
-    await upsertFaaAirportWithLocation(prisma, airport, initialNextSyncAt);
+    // Import resiliently: a single problematic record must not abort the run
+    // (the whole point of re-importing is to refresh every airport's data).
+    try {
+      await upsertFaaAirportWithLocation(prisma, airport, initialNextSyncAt);
+      imported += 1;
+    } catch (error) {
+      failed += 1;
+      console.error(
+        `failed to import FAA airport ${airport.code}: ${error?.message ?? error}`
+      );
+    }
+  }
 
-    console.log(`imported FAA airport ${airport.code}`);
+  if (!dryRun) {
+    console.log(
+      `FAA import complete: ${imported} imported, ${failed} failed of ${records.length} records.`
+    );
+    // Surface partial failures to CI without losing the airports that did import.
+    if (failed > 0) {
+      process.exitCode = 1;
+    }
   }
 } finally {
   await prisma.$disconnect();

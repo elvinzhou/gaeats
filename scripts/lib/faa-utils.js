@@ -128,16 +128,37 @@ export function parseNasrCoordinate(value) {
   }
 
   const direction = compact.slice(-1).toUpperCase();
-  const numeric = compact.slice(0, -1);
-  const degreeDigits = direction === "N" || direction === "S" ? 2 : 3;
-
-  if (!/^[NSEW]$/.test(direction) || numeric.length < degreeDigits + 4) {
+  if (!/^[NSEW]$/.test(direction)) {
     return null;
   }
 
-  const degrees = Number.parseFloat(numeric.slice(0, degreeDigits));
-  const minutes = Number.parseFloat(numeric.slice(degreeDigits, degreeDigits + 2));
-  const seconds = Number.parseFloat(numeric.slice(degreeDigits + 2));
+  const body = compact.slice(0, -1);
+  const degreeDigits = direction === "N" || direction === "S" ? 2 : 3;
+
+  let degrees;
+  let minutes;
+  let seconds;
+
+  if (body.includes("-")) {
+    // FAA NASR "formatted" DMS uses dash separators, e.g. "37-46-28.0000N"
+    // or "122-06-54.0000W". Splitting on "-" is required — treating it as a
+    // packed DDMMSS string mis-reads the dashes as part of the numbers and
+    // corrupts every coordinate (minutes/seconds collapse toward zero, which
+    // clusters airports near whole-degree lines and shifts them off-location).
+    const parts = body.split("-");
+    if (parts.length !== 3) {
+      return null;
+    }
+    [degrees, minutes, seconds] = parts.map((part) => Number.parseFloat(part));
+  } else {
+    // Packed form without separators, e.g. "374628.00N" / "1220654.00W".
+    if (body.length < degreeDigits + 4) {
+      return null;
+    }
+    degrees = Number.parseFloat(body.slice(0, degreeDigits));
+    minutes = Number.parseFloat(body.slice(degreeDigits, degreeDigits + 2));
+    seconds = Number.parseFloat(body.slice(degreeDigits + 2));
+  }
 
   if ([degrees, minutes, seconds].some((part) => Number.isNaN(part))) {
     return null;
