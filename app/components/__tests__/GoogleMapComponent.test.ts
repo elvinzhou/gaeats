@@ -55,3 +55,28 @@ describe("Google Maps Tailwind CSS conflict fix", () => {
     );
   });
 });
+
+/**
+ * Regression guard for the Advanced Marker Map ID fix.
+ *
+ * Advanced Markers require a *valid* cloud-based Map ID. The map previously
+ * hardcoded `mapId="ga-eats-map"`, which is not a real Google-issued Map ID, so
+ * Google fell back to a renderer where the marker overlay mis-projected: pins
+ * rendered at the wrong location and at a different effective zoom than the base
+ * map. The Map ID must come from configuration with a valid default.
+ */
+describe("Google Maps Advanced Marker Map ID", () => {
+  it("does not hardcode the invalid placeholder Map ID", () => {
+    expect(componentSrc).not.toMatch(/mapId\s*=\s*("|'|`)ga-eats-map/);
+  });
+
+  it("sources the Map ID from configuration", () => {
+    expect(componentSrc).toMatch(/VITE_GOOGLE_MAPS_MAP_ID/);
+  });
+
+  it("falls back to Google's DEMO_MAP_ID so Advanced Markers still work", () => {
+    // DEMO_MAP_ID is Google's built-in Map ID that supports Advanced Markers,
+    // keeping pins correctly positioned even when no custom Map ID is set.
+    expect(componentSrc).toMatch(/DEMO_MAP_ID/);
+  });
+});

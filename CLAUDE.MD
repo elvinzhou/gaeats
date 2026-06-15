@@ -24,6 +24,10 @@ Update CLAUDE.MD as needed.
 - Multi-modal directions: walking, biking, transit, driving
 - Turn-by-turn navigation with step-by-step instructions
 - API Key configured via VITE_GOOGLE_MAPS_API_KEY environment variable
+- Map ID note: Advanced Markers (the pins) require a *valid* cloud Map ID,
+  configured via VITE_GOOGLE_MAPS_MAP_ID. An invalid/placeholder ID makes pins
+  mis-project (wrong location, wrong effective zoom). Falls back to Google's
+  `DEMO_MAP_ID` when unset. Guarded by the GoogleMapComponent test.
 - CSS conflict note: Tailwind's Preflight reset (`img { max-width: 100% }` and
   global `box-sizing: border-box`) distorts map tiles and mis-projects markers
   (wrong location, clustered, not panning with the map). The `<Map>` element
