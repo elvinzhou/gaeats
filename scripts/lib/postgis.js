@@ -121,6 +121,46 @@ export async function upsertGooglePoiWithLocation(prisma, data) {
 export async function upsertFaaAirportWithLocation(prisma, airport, nextPoiSyncAt) {
   const point = `POINT(${airport.longitude} ${airport.latitude})`;
 
+  // The airports table has unique constraints on code, faaCode, icaoCode and
+  // iataCode. `code` is derived (icaoCode || faaCode) and can change between FAA
+  // editions, so a plain `ON CONFLICT (code)` upsert breaks on re-import: when an
+  // existing row matches on faaCode/icaoCode under a *different* code, the INSERT
+  // isn't deflected and violates airports_faaCode_key, aborting the whole run.
+  //
+  // Resolve the existing row by any of its stable identifiers, then UPDATE it in
+  // place (preserving the id and its POI/foreign-key relations); only INSERT when
+  // the airport is genuinely new. `col = NULL` is never true in SQL, so null
+  // faaCode/icaoCode values simply match nothing.
+  const existing = await prisma.$queryRaw`
+    SELECT id FROM "airports"
+    WHERE code = ${airport.code}
+       OR "faaCode" = ${airport.faaCode}
+       OR "icaoCode" = ${airport.icaoCode}
+    LIMIT 1
+  `;
+
+  if (existing.length > 0) {
+    await prisma.$executeRaw`
+      UPDATE "airports" SET
+        code = ${airport.code},
+        "faaCode" = ${airport.faaCode},
+        "icaoCode" = ${airport.icaoCode},
+        source = 'FAA'::"AirportSource",
+        "sourceDataset" = ${airport.sourceDataset},
+        "sourceRecordUpdatedAt" = ${airport.sourceRecordUpdatedAt},
+        "sourceRefreshedAt" = CURRENT_TIMESTAMP,
+        name = ${airport.name},
+        city = ${airport.city},
+        state = ${airport.state},
+        country = ${airport.country},
+        "nextPoiSyncAt" = COALESCE("nextPoiSyncAt", ${nextPoiSyncAt}),
+        location = ST_GeomFromText(${point}, 4326),
+        "updatedAt" = CURRENT_TIMESTAMP
+      WHERE id = ${existing[0].id}
+    `;
+    return;
+  }
+
   await prisma.$executeRaw`
     INSERT INTO "airports" (
       code,
@@ -156,19 +196,5 @@ export async function upsertFaaAirportWithLocation(prisma, airport, nextPoiSyncA
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP
     )
-    ON CONFLICT (code) DO UPDATE SET
-      "faaCode" = EXCLUDED."faaCode",
-      "icaoCode" = EXCLUDED."icaoCode",
-      source = EXCLUDED.source,
-      "sourceDataset" = EXCLUDED."sourceDataset",
-      "sourceRecordUpdatedAt" = EXCLUDED."sourceRecordUpdatedAt",
-      "sourceRefreshedAt" = CURRENT_TIMESTAMP,
-      name = EXCLUDED.name,
-      city = EXCLUDED.city,
-      state = EXCLUDED.state,
-      country = EXCLUDED.country,
-      "nextPoiSyncAt" = COALESCE("airports"."nextPoiSyncAt", EXCLUDED."nextPoiSyncAt"),
-      location = EXCLUDED.location,
-      "updatedAt" = CURRENT_TIMESTAMP
   `;
 }
