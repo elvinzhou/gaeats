@@ -28,6 +28,7 @@ export interface Poi {
 export interface Airport {
   id: number;
   code: string;
+  facilityType: string | null; // e.g. "AIRPORT", "HELIPORT", "SEAPLANE BASE"
   name: string;
   city: string;
   state: string | null;

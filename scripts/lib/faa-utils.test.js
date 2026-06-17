@@ -61,6 +61,7 @@ describe("faa-utils", () => {
   it("maps APT.TXT fixed-width airport rows into canonical airport payloads", () => {
     const line = buildAptLine([
       [1, 3, "APT"],
+      [14, 13, "AIRPORT"],
       [28, 4, "PAO"],
       [32, 10, "03/19/2026"],
       [49, 2, "CA"],
@@ -77,6 +78,7 @@ describe("faa-utils", () => {
       code: "KPAO",
       faaCode: "PAO",
       icaoCode: "KPAO",
+      facilityType: "AIRPORT",
       city: "Palo Alto",
       state: "CA",
       source: "FAA",

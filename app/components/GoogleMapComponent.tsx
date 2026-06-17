@@ -43,10 +43,16 @@ function getMarkerColors(type: string) {
 }
 
 function isHeliport(poi: POI): boolean {
+  const airport = poi.data as Airport;
+  // Prefer the structured facilityType from the FAA data when available;
+  // fall back to name-matching for airports imported before the migration.
+  if (airport.facilityType) return airport.facilityType.toUpperCase() === "HELIPORT";
   return /heliport|helipad/i.test(poi.title);
 }
 
 function isPrivateAirport(poi: POI): boolean {
+  // FAA NASR does not expose a public/private use flag in the fields we currently
+  // import, so we rely on name patterns as a best-effort filter.
   return /\bprivate\b|\bpriv\b|\bpvt\b/i.test(poi.title);
 }
 

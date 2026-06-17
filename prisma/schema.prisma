@@ -136,6 +136,7 @@ model Airport {
   sourceDataset  String?                               @db.VarChar(255)
   sourceRecordUpdatedAt DateTime?                      @db.Timestamptz
   sourceRefreshedAt DateTime?                          @db.Timestamptz
+  facilityType   String?                               @db.VarChar(20) // e.g. AIRPORT, HELIPORT, SEAPLANE BASE
   name           String                                @db.VarChar(255)
   city           String                                @db.VarChar(100)
   state          String?                               @db.VarChar(10)

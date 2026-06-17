@@ -30,6 +30,7 @@ export interface PoiWithDistance {
 export interface AirportWithDistance {
   id: number;
   code: string;
+  facilityType: string | null;
   name: string;
   city: string;
   state: string | null;
@@ -49,6 +50,7 @@ export interface AirportCoordinates {
 export interface AirportDetailRow {
   id: number;
   code: string;
+  facilityType: string | null;
   name: string;
   city: string;
   state: string | null;
@@ -205,6 +207,7 @@ export async function findAirportsNearbyQuery(
     SELECT
       id,
       code,
+      "facilityType",
       name,
       city,
       state,
@@ -230,6 +233,7 @@ export async function findAirportsNearbyQuery(
 export interface AirportMapRow {
   id: number;
   code: string;
+  facilityType: string | null;
   name: string;
   city: string;
   state: string | null;
@@ -246,6 +250,7 @@ export async function listAllAirports(prisma: AppPrismaClient, limit = 2000) {
     SELECT
       id,
       code,
+      "facilityType",
       name,
       city,
       state,
@@ -281,6 +286,7 @@ export async function getAirportDetailByCode(
     SELECT
       id,
       code,
+      "facilityType",
       name,
       city,
       state,
@@ -307,6 +313,7 @@ export async function getAirportSummaryByCode(
     SELECT
       id,
       code,
+      "facilityType",
       name,
       city,
       state,
@@ -596,6 +603,7 @@ export async function upsertFaaAirportWithLocation(
     code: string;
     faaCode: string | null;
     icaoCode: string | null;
+    facilityType: string | null;
     name: string;
     city: string;
     state: string | null;
@@ -614,6 +622,7 @@ export async function upsertFaaAirportWithLocation(
       code,
       "faaCode",
       "icaoCode",
+      "facilityType",
       source,
       "sourceDataset",
       "sourceRecordUpdatedAt",
@@ -632,6 +641,7 @@ export async function upsertFaaAirportWithLocation(
       ${airport.code},
       ${airport.faaCode},
       ${airport.icaoCode},
+      ${airport.facilityType},
       'FAA'::"AirportSource",
       ${airport.sourceDataset},
       ${airport.sourceRecordUpdatedAt},
@@ -649,6 +659,7 @@ export async function upsertFaaAirportWithLocation(
     ON CONFLICT (code) DO UPDATE SET
       "faaCode" = EXCLUDED."faaCode",
       "icaoCode" = EXCLUDED."icaoCode",
+      "facilityType" = EXCLUDED."facilityType",
       source = EXCLUDED.source,
       "sourceDataset" = EXCLUDED."sourceDataset",
       "sourceRecordUpdatedAt" = EXCLUDED."sourceRecordUpdatedAt",

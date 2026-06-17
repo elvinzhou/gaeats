@@ -90,6 +90,8 @@ export function mapNasrAptRecord(line, sourceDataset = null) {
   const faaCode = normalizeCode(extractField(line, 28, 4));
   const icaoCode = normalizeCode(extractField(line, 1211, 7));
   const code = icaoCode || faaCode;
+  // FAA NASR APT.txt col 14-26: facility type (AIRPORT, HELIPORT, SEAPLANE BASE, etc.)
+  const facilityType = extractField(line, 14, 13) || null;
   const name = extractField(line, 134, 50);
   const city = extractField(line, 94, 40);
   const state = extractField(line, 49, 2) || null;
@@ -109,6 +111,7 @@ export function mapNasrAptRecord(line, sourceDataset = null) {
     code,
     faaCode,
     icaoCode,
+    facilityType,
     name,
     city,
     state,
