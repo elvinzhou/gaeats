@@ -35,7 +35,7 @@
 
 import { createPrisma } from "~/utils/db.server";
 import { findPoisNearAirport } from "~/utils/geospatial.server";
-import { getAirportSummaryByCode } from "~/utils/postgis.server";
+import { getAirportDetailByCode } from "~/utils/postgis.server";
 import { logger } from "~/utils/logger.server";
 
 interface LoaderArgs {
@@ -53,11 +53,11 @@ export async function loader({ params, request, context }: LoaderArgs) {
 
   // Validate airport code parameter: 3-letter IATA or 4-char ICAO (letters/digits only)
   const cleanCode = code.trim().toUpperCase();
-  if (!cleanCode || !/^[A-Z0-9]{3,4}$/.test(cleanCode)) {
+  if (!cleanCode || !/^[A-Z0-9]{2,7}$/.test(cleanCode)) {
     return Response.json(
       {
         error: "Invalid airport code",
-        message: "Airport code must be a 3-letter IATA or 4-character ICAO code (e.g., SFO or KSFO)",
+        message: "Airport code must be 2–7 alphanumeric characters (e.g., SFO or KSFO)",
         example: "/api/airports/KSFO",
       },
       { status: 400 }
@@ -66,8 +66,8 @@ export async function loader({ params, request, context }: LoaderArgs) {
 
   // Parse query parameters
   const url = new URL(request.url);
-  const distance = parseFloat(url.searchParams.get("distance") || "5.0");
-  const minRating = parseFloat(url.searchParams.get("minRating") || "4.0");
+  const distance = parseFloat(url.searchParams.get("distance") || "15.0");
+  const minRating = parseFloat(url.searchParams.get("minRating") || "0");
   const requestedType = url.searchParams.get("type") || "RESTAURANT";
 
   // Validate parameters
@@ -94,8 +94,8 @@ export async function loader({ params, request, context }: LoaderArgs) {
   try {
     const db = createPrisma(context.cloudflare.env.DATABASE_URL);
 
-    // First, get the airport details
-    const airport = await getAirportSummaryByCode(db, cleanCode);
+    // First, get the airport details (includes FBO info)
+    const airport = await getAirportDetailByCode(db, cleanCode);
 
     // Check if airport exists
     if (!airport) {
@@ -128,6 +128,10 @@ export async function loader({ params, request, context }: LoaderArgs) {
         country: airport.country,
         latitude: airport.latitude,
         longitude: airport.longitude,
+        fboName: airport.fboName,
+        fboPhone: airport.fboPhone,
+        fboWebsite: airport.fboWebsite,
+        notes: airport.notes,
       },
       pois,
       search: {
