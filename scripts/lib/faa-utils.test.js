@@ -64,15 +64,31 @@ describe("faa-utils", () => {
       [14, 13, "AIRPORT"],
       [28, 4, "PAO"],
       [32, 10, "03/19/2026"],
+      [42, 3, "AWP"],         // faaRegionCode
       [49, 2, "CA"],
+      [51, 20, "CALIFORNIA"], // stateName
+      [71, 21, "SANTA CLARA"], // countyName
       [94, 40, "Palo Alto"],
       [134, 50, "Palo Alto Airport"],
       [184, 2, "PU"],   // ownershipType: publicly owned
       [186, 2, "PU"],   // airportUse: public use
+      [188, 35, "CITY OF PALO ALTO"], // ownerName
       [524, 15, "37-46-28.0000N"],
       [551, 15, "122-06-54.0000W"],
-      [579, 7, "7"],    // elevation: 7 feet MSL (Palo Alto is near sea level)
+      [579, 7, "7.0"],  // elevation: 7.0 feet MSL (float)
+      [587, 3, "14E"],  // magVariation
+      [598, 30, "SAN FRANCISCO"], // sectionalChart
+      [638, 4, "ZOA"],  // artccBoundaryId
+      [675, 4, "ZOA"],  // artccResponsibleId
+      [841, 2, "O"],    // airportStatus: operational
       [885, 8, "03182026"],
+      [901, 40, "100LL A"], // fuelTypes
+      [981, 1, "N"],    // controlTower: no
+      [982, 7, "122.70"], // unicomFrequency
+      [989, 7, "122.70"], // ctafFrequency
+      [1003, 1, "N"],   // landingFee: no
+      [1005, 3, "45"],  // singleEngineCount
+      [1208, 3, "Y-L"], // windIndicator
       [1211, 7, "KPAO"],
     ]);
 
@@ -84,7 +100,23 @@ describe("faa-utils", () => {
       facilityType: "AIRPORT",
       ownershipType: "PU",
       airportUse: "PU",
-      elevation: 7,
+      elevation: 7.0,
+      faaRegionCode: "AWP",
+      stateName: "CALIFORNIA",
+      countyName: "SANTA CLARA",
+      ownerName: "CITY OF PALO ALTO",
+      magVariation: "14E",
+      sectionalChart: "SAN FRANCISCO",
+      artccBoundaryId: "ZOA",
+      artccResponsibleId: "ZOA",
+      airportStatus: "O",
+      fuelTypes: "100LL A",
+      controlTower: "N",
+      unicomFrequency: "122.70",
+      ctafFrequency: "122.70",
+      landingFee: "N",
+      singleEngineCount: 45,
+      windIndicator: "Y-L",
       city: "Palo Alto",
       state: "CA",
       source: "FAA",
@@ -119,7 +151,7 @@ describe("faa-utils", () => {
 });
 
 function buildAptLine(fields) {
-  const chars = Array.from({ length: 1217 }, () => " ");
+  const chars = Array.from({ length: 1531 }, () => " ");
 
   for (const [start, length, value] of fields) {
     const padded = value.padEnd(length, " ");

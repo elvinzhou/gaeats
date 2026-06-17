@@ -57,6 +57,67 @@ export interface AirportDetailRow {
   ownershipType: string | null;
   airportUse: string | null;
   elevation: number | null;
+  siteNumber: string | null;
+  faaRegionCode: string | null;
+  stateName: string | null;
+  countyName: string | null;
+  countyState: string | null;
+  ownerName: string | null;
+  ownerPhone: string | null;
+  managerName: string | null;
+  managerPhone: string | null;
+  magVariation: string | null;
+  magVariationYear: string | null;
+  trafficPatternAltitude: number | null;
+  sectionalChart: string | null;
+  distanceFromCity: number | null;
+  directionFromCity: string | null;
+  acreage: number | null;
+  artccBoundaryId: string | null;
+  artccResponsibleId: string | null;
+  notamFacility: string | null;
+  notamDService: string | null;
+  activationDate: string | null;
+  airportStatus: string | null;
+  arffCertification: string | null;
+  npiasAgreements: string | null;
+  airspaceAnalysis: string | null;
+  customsEntry: string | null;
+  customsLanding: string | null;
+  jointUse: string | null;
+  militaryRights: string | null;
+  fuelTypes: string | null;
+  airframeRepair: string | null;
+  engineRepair: string | null;
+  bottledOxygen: string | null;
+  bulkOxygen: string | null;
+  lightingSchedule: string | null;
+  beaconSchedule: string | null;
+  controlTower: string | null;
+  unicomFrequency: string | null;
+  ctafFrequency: string | null;
+  segmentedCircle: string | null;
+  beaconColor: string | null;
+  landingFee: string | null;
+  singleEngineCount: number | null;
+  multiEngineCount: number | null;
+  jetEngineCount: number | null;
+  helicopterCount: number | null;
+  gliderCount: number | null;
+  militaryCount: number | null;
+  ultralightCount: number | null;
+  annualCommercialOps: number | null;
+  annualCommuterOps: number | null;
+  annualAirTaxiOps: number | null;
+  annualGaLocalOps: number | null;
+  annualGaItinerantOps: number | null;
+  annualMilitaryOps: number | null;
+  annualOpsDate: string | null;
+  contractFuel: string | null;
+  storageFacilities: string | null;
+  otherServices: string | null;
+  windIndicator: string | null;
+  minOperationalNetwork: string | null;
   name: string;
   city: string;
   state: string | null;
@@ -305,6 +366,67 @@ export async function getAirportDetailByCode(
       "ownershipType",
       "airportUse",
       "elevation",
+      "siteNumber",
+      "faaRegionCode",
+      "stateName",
+      "countyName",
+      "countyState",
+      "ownerName",
+      "ownerPhone",
+      "managerName",
+      "managerPhone",
+      "magVariation",
+      "magVariationYear",
+      "trafficPatternAltitude",
+      "sectionalChart",
+      "distanceFromCity",
+      "directionFromCity",
+      "acreage",
+      "artccBoundaryId",
+      "artccResponsibleId",
+      "notamFacility",
+      "notamDService",
+      "activationDate",
+      "airportStatus",
+      "arffCertification",
+      "npiasAgreements",
+      "airspaceAnalysis",
+      "customsEntry",
+      "customsLanding",
+      "jointUse",
+      "militaryRights",
+      "fuelTypes",
+      "airframeRepair",
+      "engineRepair",
+      "bottledOxygen",
+      "bulkOxygen",
+      "lightingSchedule",
+      "beaconSchedule",
+      "controlTower",
+      "unicomFrequency",
+      "ctafFrequency",
+      "segmentedCircle",
+      "beaconColor",
+      "landingFee",
+      "singleEngineCount",
+      "multiEngineCount",
+      "jetEngineCount",
+      "helicopterCount",
+      "gliderCount",
+      "militaryCount",
+      "ultralightCount",
+      "annualCommercialOps",
+      "annualCommuterOps",
+      "annualAirTaxiOps",
+      "annualGaLocalOps",
+      "annualGaItinerantOps",
+      "annualMilitaryOps",
+      "annualOpsDate",
+      "contractFuel",
+      "storageFacilities",
+      "otherServices",
+      "windIndicator",
+      "minOperationalNetwork",
       name,
       city,
       state,
@@ -628,6 +750,67 @@ export async function upsertFaaAirportWithLocation(
     ownershipType: string | null;
     airportUse: string | null;
     elevation: number | null;
+    siteNumber: string | null;
+    faaRegionCode: string | null;
+    stateName: string | null;
+    countyName: string | null;
+    countyState: string | null;
+    ownerName: string | null;
+    ownerPhone: string | null;
+    managerName: string | null;
+    managerPhone: string | null;
+    magVariation: string | null;
+    magVariationYear: string | null;
+    trafficPatternAltitude: number | null;
+    sectionalChart: string | null;
+    distanceFromCity: number | null;
+    directionFromCity: string | null;
+    acreage: number | null;
+    artccBoundaryId: string | null;
+    artccResponsibleId: string | null;
+    notamFacility: string | null;
+    notamDService: string | null;
+    activationDate: string | null;
+    airportStatus: string | null;
+    arffCertification: string | null;
+    npiasAgreements: string | null;
+    airspaceAnalysis: string | null;
+    customsEntry: string | null;
+    customsLanding: string | null;
+    jointUse: string | null;
+    militaryRights: string | null;
+    fuelTypes: string | null;
+    airframeRepair: string | null;
+    engineRepair: string | null;
+    bottledOxygen: string | null;
+    bulkOxygen: string | null;
+    lightingSchedule: string | null;
+    beaconSchedule: string | null;
+    controlTower: string | null;
+    unicomFrequency: string | null;
+    ctafFrequency: string | null;
+    segmentedCircle: string | null;
+    beaconColor: string | null;
+    landingFee: string | null;
+    singleEngineCount: number | null;
+    multiEngineCount: number | null;
+    jetEngineCount: number | null;
+    helicopterCount: number | null;
+    gliderCount: number | null;
+    militaryCount: number | null;
+    ultralightCount: number | null;
+    annualCommercialOps: number | null;
+    annualCommuterOps: number | null;
+    annualAirTaxiOps: number | null;
+    annualGaLocalOps: number | null;
+    annualGaItinerantOps: number | null;
+    annualMilitaryOps: number | null;
+    annualOpsDate: string | null;
+    contractFuel: string | null;
+    storageFacilities: string | null;
+    otherServices: string | null;
+    windIndicator: string | null;
+    minOperationalNetwork: string | null;
     name: string;
     city: string;
     state: string | null;
@@ -650,6 +833,67 @@ export async function upsertFaaAirportWithLocation(
       "ownershipType",
       "airportUse",
       "elevation",
+      "siteNumber",
+      "faaRegionCode",
+      "stateName",
+      "countyName",
+      "countyState",
+      "ownerName",
+      "ownerPhone",
+      "managerName",
+      "managerPhone",
+      "magVariation",
+      "magVariationYear",
+      "trafficPatternAltitude",
+      "sectionalChart",
+      "distanceFromCity",
+      "directionFromCity",
+      "acreage",
+      "artccBoundaryId",
+      "artccResponsibleId",
+      "notamFacility",
+      "notamDService",
+      "activationDate",
+      "airportStatus",
+      "arffCertification",
+      "npiasAgreements",
+      "airspaceAnalysis",
+      "customsEntry",
+      "customsLanding",
+      "jointUse",
+      "militaryRights",
+      "fuelTypes",
+      "airframeRepair",
+      "engineRepair",
+      "bottledOxygen",
+      "bulkOxygen",
+      "lightingSchedule",
+      "beaconSchedule",
+      "controlTower",
+      "unicomFrequency",
+      "ctafFrequency",
+      "segmentedCircle",
+      "beaconColor",
+      "landingFee",
+      "singleEngineCount",
+      "multiEngineCount",
+      "jetEngineCount",
+      "helicopterCount",
+      "gliderCount",
+      "militaryCount",
+      "ultralightCount",
+      "annualCommercialOps",
+      "annualCommuterOps",
+      "annualAirTaxiOps",
+      "annualGaLocalOps",
+      "annualGaItinerantOps",
+      "annualMilitaryOps",
+      "annualOpsDate",
+      "contractFuel",
+      "storageFacilities",
+      "otherServices",
+      "windIndicator",
+      "minOperationalNetwork",
       source,
       "sourceDataset",
       "sourceRecordUpdatedAt",
@@ -672,6 +916,67 @@ export async function upsertFaaAirportWithLocation(
       ${airport.ownershipType},
       ${airport.airportUse},
       ${airport.elevation},
+      ${airport.siteNumber},
+      ${airport.faaRegionCode},
+      ${airport.stateName},
+      ${airport.countyName},
+      ${airport.countyState},
+      ${airport.ownerName},
+      ${airport.ownerPhone},
+      ${airport.managerName},
+      ${airport.managerPhone},
+      ${airport.magVariation},
+      ${airport.magVariationYear},
+      ${airport.trafficPatternAltitude},
+      ${airport.sectionalChart},
+      ${airport.distanceFromCity},
+      ${airport.directionFromCity},
+      ${airport.acreage},
+      ${airport.artccBoundaryId},
+      ${airport.artccResponsibleId},
+      ${airport.notamFacility},
+      ${airport.notamDService},
+      ${airport.activationDate},
+      ${airport.airportStatus},
+      ${airport.arffCertification},
+      ${airport.npiasAgreements},
+      ${airport.airspaceAnalysis},
+      ${airport.customsEntry},
+      ${airport.customsLanding},
+      ${airport.jointUse},
+      ${airport.militaryRights},
+      ${airport.fuelTypes},
+      ${airport.airframeRepair},
+      ${airport.engineRepair},
+      ${airport.bottledOxygen},
+      ${airport.bulkOxygen},
+      ${airport.lightingSchedule},
+      ${airport.beaconSchedule},
+      ${airport.controlTower},
+      ${airport.unicomFrequency},
+      ${airport.ctafFrequency},
+      ${airport.segmentedCircle},
+      ${airport.beaconColor},
+      ${airport.landingFee},
+      ${airport.singleEngineCount},
+      ${airport.multiEngineCount},
+      ${airport.jetEngineCount},
+      ${airport.helicopterCount},
+      ${airport.gliderCount},
+      ${airport.militaryCount},
+      ${airport.ultralightCount},
+      ${airport.annualCommercialOps},
+      ${airport.annualCommuterOps},
+      ${airport.annualAirTaxiOps},
+      ${airport.annualGaLocalOps},
+      ${airport.annualGaItinerantOps},
+      ${airport.annualMilitaryOps},
+      ${airport.annualOpsDate},
+      ${airport.contractFuel},
+      ${airport.storageFacilities},
+      ${airport.otherServices},
+      ${airport.windIndicator},
+      ${airport.minOperationalNetwork},
       'FAA'::"AirportSource",
       ${airport.sourceDataset},
       ${airport.sourceRecordUpdatedAt},
@@ -693,6 +998,67 @@ export async function upsertFaaAirportWithLocation(
       "ownershipType" = EXCLUDED."ownershipType",
       "airportUse" = EXCLUDED."airportUse",
       "elevation" = EXCLUDED."elevation",
+      "siteNumber" = EXCLUDED."siteNumber",
+      "faaRegionCode" = EXCLUDED."faaRegionCode",
+      "stateName" = EXCLUDED."stateName",
+      "countyName" = EXCLUDED."countyName",
+      "countyState" = EXCLUDED."countyState",
+      "ownerName" = EXCLUDED."ownerName",
+      "ownerPhone" = EXCLUDED."ownerPhone",
+      "managerName" = EXCLUDED."managerName",
+      "managerPhone" = EXCLUDED."managerPhone",
+      "magVariation" = EXCLUDED."magVariation",
+      "magVariationYear" = EXCLUDED."magVariationYear",
+      "trafficPatternAltitude" = EXCLUDED."trafficPatternAltitude",
+      "sectionalChart" = EXCLUDED."sectionalChart",
+      "distanceFromCity" = EXCLUDED."distanceFromCity",
+      "directionFromCity" = EXCLUDED."directionFromCity",
+      "acreage" = EXCLUDED."acreage",
+      "artccBoundaryId" = EXCLUDED."artccBoundaryId",
+      "artccResponsibleId" = EXCLUDED."artccResponsibleId",
+      "notamFacility" = EXCLUDED."notamFacility",
+      "notamDService" = EXCLUDED."notamDService",
+      "activationDate" = EXCLUDED."activationDate",
+      "airportStatus" = EXCLUDED."airportStatus",
+      "arffCertification" = EXCLUDED."arffCertification",
+      "npiasAgreements" = EXCLUDED."npiasAgreements",
+      "airspaceAnalysis" = EXCLUDED."airspaceAnalysis",
+      "customsEntry" = EXCLUDED."customsEntry",
+      "customsLanding" = EXCLUDED."customsLanding",
+      "jointUse" = EXCLUDED."jointUse",
+      "militaryRights" = EXCLUDED."militaryRights",
+      "fuelTypes" = EXCLUDED."fuelTypes",
+      "airframeRepair" = EXCLUDED."airframeRepair",
+      "engineRepair" = EXCLUDED."engineRepair",
+      "bottledOxygen" = EXCLUDED."bottledOxygen",
+      "bulkOxygen" = EXCLUDED."bulkOxygen",
+      "lightingSchedule" = EXCLUDED."lightingSchedule",
+      "beaconSchedule" = EXCLUDED."beaconSchedule",
+      "controlTower" = EXCLUDED."controlTower",
+      "unicomFrequency" = EXCLUDED."unicomFrequency",
+      "ctafFrequency" = EXCLUDED."ctafFrequency",
+      "segmentedCircle" = EXCLUDED."segmentedCircle",
+      "beaconColor" = EXCLUDED."beaconColor",
+      "landingFee" = EXCLUDED."landingFee",
+      "singleEngineCount" = EXCLUDED."singleEngineCount",
+      "multiEngineCount" = EXCLUDED."multiEngineCount",
+      "jetEngineCount" = EXCLUDED."jetEngineCount",
+      "helicopterCount" = EXCLUDED."helicopterCount",
+      "gliderCount" = EXCLUDED."gliderCount",
+      "militaryCount" = EXCLUDED."militaryCount",
+      "ultralightCount" = EXCLUDED."ultralightCount",
+      "annualCommercialOps" = EXCLUDED."annualCommercialOps",
+      "annualCommuterOps" = EXCLUDED."annualCommuterOps",
+      "annualAirTaxiOps" = EXCLUDED."annualAirTaxiOps",
+      "annualGaLocalOps" = EXCLUDED."annualGaLocalOps",
+      "annualGaItinerantOps" = EXCLUDED."annualGaItinerantOps",
+      "annualMilitaryOps" = EXCLUDED."annualMilitaryOps",
+      "annualOpsDate" = EXCLUDED."annualOpsDate",
+      "contractFuel" = EXCLUDED."contractFuel",
+      "storageFacilities" = EXCLUDED."storageFacilities",
+      "otherServices" = EXCLUDED."otherServices",
+      "windIndicator" = EXCLUDED."windIndicator",
+      "minOperationalNetwork" = EXCLUDED."minOperationalNetwork",
       source = EXCLUDED.source,
       "sourceDataset" = EXCLUDED."sourceDataset",
       "sourceRecordUpdatedAt" = EXCLUDED."sourceRecordUpdatedAt",

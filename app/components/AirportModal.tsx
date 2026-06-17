@@ -12,6 +12,58 @@ interface AirportData {
   ownershipType: string | null;
   airportUse: string | null;
   elevation: number | null;
+  siteNumber: string | null;
+  faaRegionCode: string | null;
+  stateName: string | null;
+  countyName: string | null;
+  ownerName: string | null;
+  ownerPhone: string | null;
+  managerName: string | null;
+  managerPhone: string | null;
+  magVariation: string | null;
+  trafficPatternAltitude: number | null;
+  sectionalChart: string | null;
+  artccBoundaryId: string | null;
+  artccResponsibleId: string | null;
+  activationDate: string | null;
+  airportStatus: string | null;
+  arffCertification: string | null;
+  npiasAgreements: string | null;
+  customsEntry: string | null;
+  customsLanding: string | null;
+  jointUse: string | null;
+  militaryRights: string | null;
+  fuelTypes: string | null;
+  airframeRepair: string | null;
+  engineRepair: string | null;
+  bottledOxygen: string | null;
+  bulkOxygen: string | null;
+  lightingSchedule: string | null;
+  beaconSchedule: string | null;
+  controlTower: string | null;
+  unicomFrequency: string | null;
+  ctafFrequency: string | null;
+  segmentedCircle: string | null;
+  beaconColor: string | null;
+  landingFee: string | null;
+  singleEngineCount: number | null;
+  multiEngineCount: number | null;
+  jetEngineCount: number | null;
+  helicopterCount: number | null;
+  gliderCount: number | null;
+  militaryCount: number | null;
+  ultralightCount: number | null;
+  annualCommercialOps: number | null;
+  annualCommuterOps: number | null;
+  annualAirTaxiOps: number | null;
+  annualGaLocalOps: number | null;
+  annualGaItinerantOps: number | null;
+  annualMilitaryOps: number | null;
+  annualOpsDate: string | null;
+  contractFuel: string | null;
+  storageFacilities: string | null;
+  otherServices: string | null;
+  windIndicator: string | null;
   fboName: string | null;
   fboPhone: string | null;
   fboWebsite: string | null;
@@ -140,6 +192,92 @@ export default function AirportModal({ airportCode, onClose, onGetDirections }: 
 
           {data && !loading && (
             <>
+              {/* Communications & Services */}
+              {(data.airport.ctafFrequency || data.airport.unicomFrequency || data.airport.controlTower || data.airport.fuelTypes || data.airport.airportStatus) && (
+                <div className="border-b border-gray-100 bg-blue-50 p-6">
+                  <h3 className="mb-3 font-semibold text-blue-900">Airport Info</h3>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                    {data.airport.airportStatus && (
+                      <div className="col-span-2 text-sm">
+                        <span className="font-medium text-gray-700">Status: </span>
+                        <span className={data.airport.airportStatus === "O" ? "text-green-700 font-medium" : "text-red-700 font-medium"}>
+                          {data.airport.airportStatus === "O" ? "Operational" : data.airport.airportStatus === "CI" ? "Closed Indefinitely" : data.airport.airportStatus === "CP" ? "Closed Permanently" : data.airport.airportStatus}
+                        </span>
+                      </div>
+                    )}
+                    {data.airport.controlTower && (
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium text-gray-700">Tower:</span>{" "}
+                        {data.airport.controlTower === "Y" ? "Yes" : "No"}
+                      </p>
+                    )}
+                    {data.airport.ctafFrequency && (
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium text-gray-700">CTAF:</span>{" "}
+                        {data.airport.ctafFrequency}
+                      </p>
+                    )}
+                    {data.airport.unicomFrequency && (
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium text-gray-700">UNICOM:</span>{" "}
+                        {data.airport.unicomFrequency}
+                      </p>
+                    )}
+                    {data.airport.trafficPatternAltitude && (
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium text-gray-700">TPA:</span>{" "}
+                        {data.airport.trafficPatternAltitude.toLocaleString()} ft AGL
+                      </p>
+                    )}
+                    {data.airport.magVariation && (
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium text-gray-700">Mag Var:</span>{" "}
+                        {data.airport.magVariation}
+                      </p>
+                    )}
+                    {data.airport.fuelTypes && (
+                      <div className="col-span-2 text-sm text-gray-600">
+                        <span className="font-medium text-gray-700">Fuel:</span>{" "}
+                        {data.airport.fuelTypes.trim()}
+                      </div>
+                    )}
+                    {data.airport.landingFee && (
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium text-gray-700">Landing Fee:</span>{" "}
+                        {data.airport.landingFee === "Y" ? "Yes" : "No"}
+                      </p>
+                    )}
+                    {data.airport.customsEntry === "Y" && (
+                      <p className="text-sm text-blue-700 font-medium">Customs Port of Entry</p>
+                    )}
+                    {data.airport.jointUse === "Y" && (
+                      <p className="text-sm text-gray-600">Joint civil/military use</p>
+                    )}
+                  </div>
+                  {/* Based aircraft summary */}
+                  {(() => {
+                    const total = (data.airport.singleEngineCount ?? 0) +
+                      (data.airport.multiEngineCount ?? 0) +
+                      (data.airport.jetEngineCount ?? 0) +
+                      (data.airport.helicopterCount ?? 0) +
+                      (data.airport.gliderCount ?? 0) +
+                      (data.airport.ultralightCount ?? 0);
+                    if (total === 0) return null;
+                    return (
+                      <p className="mt-2 text-sm text-gray-600">
+                        <span className="font-medium text-gray-700">Based aircraft:</span>{" "}
+                        {total.toLocaleString()}
+                        {data.airport.singleEngineCount ? ` (${data.airport.singleEngineCount} SE` : ""}
+                        {data.airport.multiEngineCount ? `, ${data.airport.multiEngineCount} ME` : ""}
+                        {data.airport.jetEngineCount ? `, ${data.airport.jetEngineCount} jet` : ""}
+                        {data.airport.helicopterCount ? `, ${data.airport.helicopterCount} helo` : ""}
+                        {total > 0 ? ")" : ""}
+                      </p>
+                    );
+                  })()}
+                </div>
+              )}
+
               {/* FBO Info */}
               {(data.airport.fboName || data.airport.fboPhone || data.airport.fboWebsite || data.airport.notes) && (
                 <div className="border-b border-gray-100 bg-teal-50 p-6">
