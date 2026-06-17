@@ -58,6 +58,7 @@ export type AirportMinAggregateOutputType = {
   sourceDataset: string | null
   sourceRecordUpdatedAt: Date | null
   sourceRefreshedAt: Date | null
+  facilityType: string | null
   name: string | null
   city: string | null
   state: string | null
@@ -84,6 +85,7 @@ export type AirportMaxAggregateOutputType = {
   sourceDataset: string | null
   sourceRecordUpdatedAt: Date | null
   sourceRefreshedAt: Date | null
+  facilityType: string | null
   name: string | null
   city: string | null
   state: string | null
@@ -110,6 +112,7 @@ export type AirportCountAggregateOutputType = {
   sourceDataset: number
   sourceRecordUpdatedAt: number
   sourceRefreshedAt: number
+  facilityType: number
   name: number
   city: number
   state: number
@@ -148,6 +151,7 @@ export type AirportMinAggregateInputType = {
   sourceDataset?: true
   sourceRecordUpdatedAt?: true
   sourceRefreshedAt?: true
+  facilityType?: true
   name?: true
   city?: true
   state?: true
@@ -174,6 +178,7 @@ export type AirportMaxAggregateInputType = {
   sourceDataset?: true
   sourceRecordUpdatedAt?: true
   sourceRefreshedAt?: true
+  facilityType?: true
   name?: true
   city?: true
   state?: true
@@ -200,6 +205,7 @@ export type AirportCountAggregateInputType = {
   sourceDataset?: true
   sourceRecordUpdatedAt?: true
   sourceRefreshedAt?: true
+  facilityType?: true
   name?: true
   city?: true
   state?: true
@@ -313,6 +319,7 @@ export type AirportGroupByOutputType = {
   sourceDataset: string | null
   sourceRecordUpdatedAt: Date | null
   sourceRefreshedAt: Date | null
+  facilityType: string | null
   name: string
   city: string
   state: string | null
@@ -362,6 +369,7 @@ export type AirportWhereInput = {
   sourceDataset?: Prisma.StringNullableFilter<"Airport"> | string | null
   sourceRecordUpdatedAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
   sourceRefreshedAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
+  facilityType?: Prisma.StringNullableFilter<"Airport"> | string | null
   name?: Prisma.StringFilter<"Airport"> | string
   city?: Prisma.StringFilter<"Airport"> | string
   state?: Prisma.StringNullableFilter<"Airport"> | string | null
@@ -392,6 +400,7 @@ export type AirportOrderByWithRelationInput = {
   sourceDataset?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceRecordUpdatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceRefreshedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  facilityType?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   city?: Prisma.SortOrder
   state?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -425,6 +434,7 @@ export type AirportWhereUniqueInput = Prisma.AtLeast<{
   sourceDataset?: Prisma.StringNullableFilter<"Airport"> | string | null
   sourceRecordUpdatedAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
   sourceRefreshedAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
+  facilityType?: Prisma.StringNullableFilter<"Airport"> | string | null
   name?: Prisma.StringFilter<"Airport"> | string
   city?: Prisma.StringFilter<"Airport"> | string
   state?: Prisma.StringNullableFilter<"Airport"> | string | null
@@ -455,6 +465,7 @@ export type AirportOrderByWithAggregationInput = {
   sourceDataset?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceRecordUpdatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceRefreshedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  facilityType?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   city?: Prisma.SortOrder
   state?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -489,6 +500,7 @@ export type AirportScalarWhereWithAggregatesInput = {
   sourceDataset?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
   sourceRecordUpdatedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Airport"> | Date | string | null
   sourceRefreshedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Airport"> | Date | string | null
+  facilityType?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
   name?: Prisma.StringWithAggregatesFilter<"Airport"> | string
   city?: Prisma.StringWithAggregatesFilter<"Airport"> | string
   state?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
@@ -514,6 +526,7 @@ export type AirportUpdateInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -544,6 +557,7 @@ export type AirportUncheckedUpdateInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -573,6 +587,7 @@ export type AirportUpdateManyMutationInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -599,6 +614,7 @@ export type AirportUncheckedUpdateManyInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -625,6 +641,7 @@ export type AirportCountOrderByAggregateInput = {
   sourceDataset?: Prisma.SortOrder
   sourceRecordUpdatedAt?: Prisma.SortOrder
   sourceRefreshedAt?: Prisma.SortOrder
+  facilityType?: Prisma.SortOrder
   name?: Prisma.SortOrder
   city?: Prisma.SortOrder
   state?: Prisma.SortOrder
@@ -656,6 +673,7 @@ export type AirportMaxOrderByAggregateInput = {
   sourceDataset?: Prisma.SortOrder
   sourceRecordUpdatedAt?: Prisma.SortOrder
   sourceRefreshedAt?: Prisma.SortOrder
+  facilityType?: Prisma.SortOrder
   name?: Prisma.SortOrder
   city?: Prisma.SortOrder
   state?: Prisma.SortOrder
@@ -682,6 +700,7 @@ export type AirportMinOrderByAggregateInput = {
   sourceDataset?: Prisma.SortOrder
   sourceRecordUpdatedAt?: Prisma.SortOrder
   sourceRefreshedAt?: Prisma.SortOrder
+  facilityType?: Prisma.SortOrder
   name?: Prisma.SortOrder
   city?: Prisma.SortOrder
   state?: Prisma.SortOrder
@@ -793,6 +812,7 @@ export type AirportUpdateWithoutPoiLinksInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -822,6 +842,7 @@ export type AirportUncheckedUpdateWithoutPoiLinksInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -855,6 +876,7 @@ export type AirportUpdateWithoutAccessFactsInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -884,6 +906,7 @@ export type AirportUncheckedUpdateWithoutAccessFactsInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -917,6 +940,7 @@ export type AirportUpdateWithoutPilotReviewsInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -946,6 +970,7 @@ export type AirportUncheckedUpdateWithoutPilotReviewsInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -979,6 +1004,7 @@ export type AirportUpdateWithoutAccessReportsInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1008,6 +1034,7 @@ export type AirportUncheckedUpdateWithoutAccessReportsInput = {
   sourceDataset?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1095,6 +1122,7 @@ export type AirportSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   sourceDataset?: boolean
   sourceRecordUpdatedAt?: boolean
   sourceRefreshedAt?: boolean
+  facilityType?: boolean
   name?: boolean
   city?: boolean
   state?: boolean
@@ -1127,6 +1155,7 @@ export type AirportSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   sourceDataset?: boolean
   sourceRecordUpdatedAt?: boolean
   sourceRefreshedAt?: boolean
+  facilityType?: boolean
   name?: boolean
   city?: boolean
   state?: boolean
@@ -1153,6 +1182,7 @@ export type AirportSelectScalar = {
   sourceDataset?: boolean
   sourceRecordUpdatedAt?: boolean
   sourceRefreshedAt?: boolean
+  facilityType?: boolean
   name?: boolean
   city?: boolean
   state?: boolean
@@ -1169,7 +1199,7 @@ export type AirportSelectScalar = {
   updatedAt?: boolean
 }
 
-export type AirportOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "faaCode" | "icaoCode" | "iataCode" | "source" | "sourceDataset" | "sourceRecordUpdatedAt" | "sourceRefreshedAt" | "name" | "city" | "state" | "country" | "fboName" | "fboPhone" | "fboWebsite" | "notes" | "lastVerifiedAt" | "lastPoiSyncAt" | "nextPoiSyncAt" | "syncPriority" | "createdAt" | "updatedAt", ExtArgs["result"]["airport"]>
+export type AirportOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "faaCode" | "icaoCode" | "iataCode" | "source" | "sourceDataset" | "sourceRecordUpdatedAt" | "sourceRefreshedAt" | "facilityType" | "name" | "city" | "state" | "country" | "fboName" | "fboPhone" | "fboWebsite" | "notes" | "lastVerifiedAt" | "lastPoiSyncAt" | "nextPoiSyncAt" | "syncPriority" | "createdAt" | "updatedAt", ExtArgs["result"]["airport"]>
 export type AirportInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   accessFacts?: boolean | Prisma.Airport$accessFactsArgs<ExtArgs>
   poiLinks?: boolean | Prisma.Airport$poiLinksArgs<ExtArgs>
@@ -1197,6 +1227,7 @@ export type $AirportPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     sourceDataset: string | null
     sourceRecordUpdatedAt: Date | null
     sourceRefreshedAt: Date | null
+    facilityType: string | null
     name: string
     city: string
     state: string | null
@@ -1576,6 +1607,7 @@ export interface AirportFieldRefs {
   readonly sourceDataset: Prisma.FieldRef<"Airport", 'String'>
   readonly sourceRecordUpdatedAt: Prisma.FieldRef<"Airport", 'DateTime'>
   readonly sourceRefreshedAt: Prisma.FieldRef<"Airport", 'DateTime'>
+  readonly facilityType: Prisma.FieldRef<"Airport", 'String'>
   readonly name: Prisma.FieldRef<"Airport", 'String'>
   readonly city: Prisma.FieldRef<"Airport", 'String'>
   readonly state: Prisma.FieldRef<"Airport", 'String'>

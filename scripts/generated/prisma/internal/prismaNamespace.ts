@@ -1095,6 +1095,7 @@ export const AirportScalarFieldEnum = {
   sourceDataset: 'sourceDataset',
   sourceRecordUpdatedAt: 'sourceRecordUpdatedAt',
   sourceRefreshedAt: 'sourceRefreshedAt',
+  facilityType: 'facilityType',
   name: 'name',
   city: 'city',
   state: 'state',
