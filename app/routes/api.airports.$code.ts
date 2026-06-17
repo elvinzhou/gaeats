@@ -35,7 +35,7 @@
 
 import { createPrisma } from "~/utils/db.server";
 import { findPoisNearAirport } from "~/utils/geospatial.server";
-import { getAirportSummaryByCode } from "~/utils/postgis.server";
+import { getAirportDetailByCode } from "~/utils/postgis.server";
 import { logger } from "~/utils/logger.server";
 
 interface LoaderArgs {
@@ -53,11 +53,11 @@ export async function loader({ params, request, context }: LoaderArgs) {
 
   // Validate airport code parameter: 3-letter IATA or 4-char ICAO (letters/digits only)
   const cleanCode = code.trim().toUpperCase();
-  if (!cleanCode || !/^[A-Z0-9]{3,4}$/.test(cleanCode)) {
+  if (!cleanCode || !/^[A-Z0-9]{2,7}$/.test(cleanCode)) {
     return Response.json(
       {
         error: "Invalid airport code",
-        message: "Airport code must be a 3-letter IATA or 4-character ICAO code (e.g., SFO or KSFO)",
+        message: "Airport code must be 2–7 alphanumeric characters (e.g., SFO or KSFO)",
         example: "/api/airports/KSFO",
       },
       { status: 400 }
@@ -66,8 +66,8 @@ export async function loader({ params, request, context }: LoaderArgs) {
 
   // Parse query parameters
   const url = new URL(request.url);
-  const distance = parseFloat(url.searchParams.get("distance") || "5.0");
-  const minRating = parseFloat(url.searchParams.get("minRating") || "4.0");
+  const distance = parseFloat(url.searchParams.get("distance") || "15.0");
+  const minRating = parseFloat(url.searchParams.get("minRating") || "0");
   const requestedType = url.searchParams.get("type") || "RESTAURANT";
 
   // Validate parameters
@@ -94,8 +94,8 @@ export async function loader({ params, request, context }: LoaderArgs) {
   try {
     const db = createPrisma(context.cloudflare.env.DATABASE_URL);
 
-    // First, get the airport details
-    const airport = await getAirportSummaryByCode(db, cleanCode);
+    // First, get the airport details (includes FBO info)
+    const airport = await getAirportDetailByCode(db, cleanCode);
 
     // Check if airport exists
     if (!airport) {
@@ -126,8 +126,68 @@ export async function loader({ params, request, context }: LoaderArgs) {
         city: airport.city,
         state: airport.state,
         country: airport.country,
+        facilityType: airport.facilityType,
+        ownershipType: airport.ownershipType,
+        airportUse: airport.airportUse,
+        elevation: airport.elevation,
+        siteNumber: airport.siteNumber,
+        faaRegionCode: airport.faaRegionCode,
+        stateName: airport.stateName,
+        countyName: airport.countyName,
+        ownerName: airport.ownerName,
+        ownerPhone: airport.ownerPhone,
+        managerName: airport.managerName,
+        managerPhone: airport.managerPhone,
+        magVariation: airport.magVariation,
+        trafficPatternAltitude: airport.trafficPatternAltitude,
+        sectionalChart: airport.sectionalChart,
+        artccBoundaryId: airport.artccBoundaryId,
+        artccResponsibleId: airport.artccResponsibleId,
+        activationDate: airport.activationDate,
+        airportStatus: airport.airportStatus,
+        arffCertification: airport.arffCertification,
+        npiasAgreements: airport.npiasAgreements,
+        customsEntry: airport.customsEntry,
+        customsLanding: airport.customsLanding,
+        jointUse: airport.jointUse,
+        militaryRights: airport.militaryRights,
+        fuelTypes: airport.fuelTypes,
+        airframeRepair: airport.airframeRepair,
+        engineRepair: airport.engineRepair,
+        bottledOxygen: airport.bottledOxygen,
+        bulkOxygen: airport.bulkOxygen,
+        lightingSchedule: airport.lightingSchedule,
+        beaconSchedule: airport.beaconSchedule,
+        controlTower: airport.controlTower,
+        unicomFrequency: airport.unicomFrequency,
+        ctafFrequency: airport.ctafFrequency,
+        segmentedCircle: airport.segmentedCircle,
+        beaconColor: airport.beaconColor,
+        landingFee: airport.landingFee,
+        singleEngineCount: airport.singleEngineCount,
+        multiEngineCount: airport.multiEngineCount,
+        jetEngineCount: airport.jetEngineCount,
+        helicopterCount: airport.helicopterCount,
+        gliderCount: airport.gliderCount,
+        militaryCount: airport.militaryCount,
+        ultralightCount: airport.ultralightCount,
+        annualCommercialOps: airport.annualCommercialOps,
+        annualCommuterOps: airport.annualCommuterOps,
+        annualAirTaxiOps: airport.annualAirTaxiOps,
+        annualGaLocalOps: airport.annualGaLocalOps,
+        annualGaItinerantOps: airport.annualGaItinerantOps,
+        annualMilitaryOps: airport.annualMilitaryOps,
+        annualOpsDate: airport.annualOpsDate,
+        contractFuel: airport.contractFuel,
+        storageFacilities: airport.storageFacilities,
+        otherServices: airport.otherServices,
+        windIndicator: airport.windIndicator,
         latitude: airport.latitude,
         longitude: airport.longitude,
+        fboName: airport.fboName,
+        fboPhone: airport.fboPhone,
+        fboWebsite: airport.fboWebsite,
+        notes: airport.notes,
       },
       pois,
       search: {

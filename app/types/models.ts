@@ -28,6 +28,10 @@ export interface Poi {
 export interface Airport {
   id: number;
   code: string;
+  facilityType: string | null; // e.g. "AIRPORT", "HELIPORT", "SEAPLANE BASE"
+  ownershipType: string | null; // PU, PR, MA, MR, MN, MK, CG
+  airportUse: string | null; // PU=public, PR=private
+  elevation: number | null; // feet MSL
   name: string;
   city: string;
   state: string | null;

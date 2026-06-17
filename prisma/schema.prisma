@@ -136,6 +136,71 @@ model Airport {
   sourceDataset  String?                               @db.VarChar(255)
   sourceRecordUpdatedAt DateTime?                      @db.Timestamptz
   sourceRefreshedAt DateTime?                          @db.Timestamptz
+  facilityType          String?  @db.VarChar(20)
+  ownershipType         String?  @db.VarChar(5)
+  airportUse            String?  @db.VarChar(5)
+  elevation             Float?   @db.DoublePrecision
+  siteNumber            String?  @db.VarChar(11)
+  faaRegionCode         String?  @db.VarChar(3)
+  stateName             String?  @db.VarChar(20)
+  countyName            String?  @db.VarChar(21)
+  countyState           String?  @db.VarChar(2)
+  ownerName             String?  @db.VarChar(35)
+  ownerPhone            String?  @db.VarChar(16)
+  managerName           String?  @db.VarChar(35)
+  managerPhone          String?  @db.VarChar(16)
+  magVariation          String?  @db.VarChar(3)
+  magVariationYear      String?  @db.VarChar(4)
+  trafficPatternAltitude Int?
+  sectionalChart        String?  @db.VarChar(30)
+  distanceFromCity      Int?
+  directionFromCity     String?  @db.VarChar(3)
+  acreage               Int?
+  artccBoundaryId       String?  @db.VarChar(4)
+  artccResponsibleId    String?  @db.VarChar(4)
+  notamFacility         String?  @db.VarChar(4)
+  notamDService         String?  @db.VarChar(1)
+  activationDate        String?  @db.VarChar(7)
+  airportStatus         String?  @db.VarChar(2)
+  arffCertification     String?  @db.VarChar(15)
+  npiasAgreements       String?  @db.VarChar(7)
+  airspaceAnalysis      String?  @db.VarChar(13)
+  customsEntry          String?  @db.VarChar(1)
+  customsLanding        String?  @db.VarChar(1)
+  jointUse              String?  @db.VarChar(1)
+  militaryRights        String?  @db.VarChar(1)
+  fuelTypes             String?  @db.VarChar(40)
+  airframeRepair        String?  @db.VarChar(5)
+  engineRepair          String?  @db.VarChar(5)
+  bottledOxygen         String?  @db.VarChar(8)
+  bulkOxygen            String?  @db.VarChar(8)
+  lightingSchedule      String?  @db.VarChar(7)
+  beaconSchedule        String?  @db.VarChar(7)
+  controlTower          String?  @db.VarChar(1)
+  unicomFrequency       String?  @db.VarChar(7)
+  ctafFrequency         String?  @db.VarChar(7)
+  segmentedCircle       String?  @db.VarChar(4)
+  beaconColor           String?  @db.VarChar(3)
+  landingFee            String?  @db.VarChar(1)
+  singleEngineCount     Int?
+  multiEngineCount      Int?
+  jetEngineCount        Int?
+  helicopterCount       Int?
+  gliderCount           Int?
+  militaryCount         Int?
+  ultralightCount       Int?
+  annualCommercialOps   Int?
+  annualCommuterOps     Int?
+  annualAirTaxiOps      Int?
+  annualGaLocalOps      Int?
+  annualGaItinerantOps  Int?
+  annualMilitaryOps     Int?
+  annualOpsDate         String?  @db.VarChar(10)
+  contractFuel          String?  @db.VarChar(1)
+  storageFacilities     String?  @db.VarChar(12)
+  otherServices         String?  @db.VarChar(71)
+  windIndicator         String?  @db.VarChar(3)
+  minOperationalNetwork String?  @db.VarChar(1)
   name           String                                @db.VarChar(255)
   city           String                                @db.VarChar(100)
   state          String?                               @db.VarChar(10)

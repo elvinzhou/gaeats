@@ -18,7 +18,7 @@
 
 import type { Route } from "./+types/map";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { useNavigate, useFetcher } from "react-router";
+import { useNavigate, useFetcher, useSearchParams } from "react-router";
 import { createPrisma } from "~/utils/db.server";
 import {
   findAirportsNearby,
@@ -139,10 +139,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       };
     }
 
-    // Fetch nearby POIs and airports in parallel
+    // Fetch nearby POIs and airports in parallel (minRating=0 to include all ratings)
     const [restaurants, attractions, airports] = await Promise.all([
-      findRestaurantsNearby(db, { latitude: lat, longitude: lng }, radius, 4.0, 50),
-      findAttractionsNearby(db, { latitude: lat, longitude: lng }, radius, 4.0, 50),
+      findRestaurantsNearby(db, { latitude: lat, longitude: lng }, radius, 0, 50),
+      findAttractionsNearby(db, { latitude: lat, longitude: lng }, radius, 0, 50),
       findAirportsNearby(db, { latitude: lat, longitude: lng }, radius * 2, 20),
     ]);
 
@@ -260,7 +260,7 @@ function AirportSearchBox() {
   function selectAirport(airport: AirportSearchResult) {
     setQuery(airport.code);
     setOpen(false);
-    navigate(`/map?lat=${airport.latitude}&lng=${airport.longitude}&radius=50`);
+    navigate(`/map?lat=${airport.latitude}&lng=${airport.longitude}&radius=50&airport=${encodeURIComponent(airport.code)}`);
   }
 
   return (
@@ -318,6 +318,9 @@ function AirportSearchBox() {
  * Renders the Google Maps interface with POIs and airport search overlay
  */
 export default function MapRoute({ loaderData }: Route.ComponentProps) {
+  const [searchParams] = useSearchParams();
+  const selectedAirportCode = searchParams.get("airport");
+
   return (
     <div className="relative h-screen w-full">
       <AirportSearchBox />
@@ -327,6 +330,7 @@ export default function MapRoute({ loaderData }: Route.ComponentProps) {
           zoom={loaderData.zoom}
           pois={loaderData.pois}
           initialSelectedPoi={loaderData.initialSelectedPoi}
+          initialAirportCode={selectedAirportCode}
         />
       </Suspense>
     </div>

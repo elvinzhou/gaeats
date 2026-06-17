@@ -82,6 +82,9 @@ export async function loadAptTextFromZipBytes(archiveBuffer, targetName = "apt.t
   throw new Error(`No ${targetName} file was found in the FAA archive.`);
 }
 
+const VALID_OWNERSHIP_TYPES = new Set(["PU", "PR", "MA", "MR", "MN", "MK", "CG"]);
+const VALID_AIRPORT_USE = new Set(["PU", "PR"]);
+
 export function mapNasrAptRecord(line, sourceDataset = null) {
   if (extractField(line, 1, 3) !== "APT") {
     return null;
@@ -90,6 +93,13 @@ export function mapNasrAptRecord(line, sourceDataset = null) {
   const faaCode = normalizeCode(extractField(line, 28, 4));
   const icaoCode = normalizeCode(extractField(line, 1211, 7));
   const code = icaoCode || faaCode;
+  const facilityType = extractField(line, 14, 13) || null;
+  const ownershipTypeRaw = extractField(line, 184, 2);
+  const ownershipType = VALID_OWNERSHIP_TYPES.has(ownershipTypeRaw) ? ownershipTypeRaw : null;
+  const airportUseRaw = extractField(line, 186, 2);
+  const airportUse = VALID_AIRPORT_USE.has(airportUseRaw) ? airportUseRaw : null;
+  const elevationRaw = Number.parseFloat(extractField(line, 579, 7));
+  const elevation = Number.isNaN(elevationRaw) || elevationRaw < -1500 || elevationRaw > 25000 ? null : elevationRaw;
   const name = extractField(line, 134, 50);
   const city = extractField(line, 94, 40);
   const state = extractField(line, 49, 2) || null;
@@ -109,6 +119,82 @@ export function mapNasrAptRecord(line, sourceDataset = null) {
     code,
     faaCode,
     icaoCode,
+    facilityType,
+    ownershipType,
+    airportUse,
+    elevation,
+    // Demographic / administrative
+    siteNumber: extractField(line, 4, 11) || null,
+    faaRegionCode: extractField(line, 42, 3) || null,
+    stateName: extractField(line, 51, 20) || null,
+    countyName: extractField(line, 71, 21) || null,
+    countyState: extractField(line, 92, 2) || null,
+    // Ownership / management
+    ownerName: extractField(line, 188, 35) || null,
+    ownerPhone: extractField(line, 340, 16) || null,
+    managerName: extractField(line, 356, 35) || null,
+    managerPhone: extractField(line, 508, 16) || null,
+    // Geographic
+    magVariation: extractField(line, 587, 3) || null,
+    magVariationYear: extractField(line, 590, 4) || null,
+    trafficPatternAltitude: extractInt(line, 594, 4),
+    sectionalChart: extractField(line, 598, 30) || null,
+    distanceFromCity: extractInt(line, 628, 2),
+    directionFromCity: extractField(line, 630, 3) || null,
+    acreage: extractInt(line, 633, 5),
+    // FAA services
+    artccBoundaryId: extractField(line, 638, 4) || null,
+    artccResponsibleId: extractField(line, 675, 4) || null,
+    notamFacility: extractField(line, 829, 4) || null,
+    notamDService: extractField(line, 833, 1) || null,
+    // Federal status
+    activationDate: extractField(line, 834, 7) || null,
+    airportStatus: extractField(line, 841, 2) || null,
+    arffCertification: extractField(line, 843, 15) || null,
+    npiasAgreements: extractField(line, 858, 7) || null,
+    airspaceAnalysis: extractField(line, 865, 13) || null,
+    customsEntry: extractField(line, 878, 1) || null,
+    customsLanding: extractField(line, 879, 1) || null,
+    jointUse: extractField(line, 880, 1) || null,
+    militaryRights: extractField(line, 881, 1) || null,
+    // Airport services
+    fuelTypes: extractField(line, 901, 40) || null,
+    airframeRepair: extractField(line, 941, 5) || null,
+    engineRepair: extractField(line, 946, 5) || null,
+    bottledOxygen: extractField(line, 951, 8) || null,
+    bulkOxygen: extractField(line, 959, 8) || null,
+    // Airport facilities
+    lightingSchedule: extractField(line, 967, 7) || null,
+    beaconSchedule: extractField(line, 974, 7) || null,
+    controlTower: extractField(line, 981, 1) || null,
+    unicomFrequency: extractField(line, 982, 7) || null,
+    ctafFrequency: extractField(line, 989, 7) || null,
+    segmentedCircle: extractField(line, 996, 4) || null,
+    beaconColor: extractField(line, 1000, 3) || null,
+    landingFee: extractField(line, 1003, 1) || null,
+    // Based aircraft counts
+    singleEngineCount: extractInt(line, 1005, 3),
+    multiEngineCount: extractInt(line, 1008, 3),
+    jetEngineCount: extractInt(line, 1011, 3),
+    helicopterCount: extractInt(line, 1014, 3),
+    gliderCount: extractInt(line, 1017, 3),
+    militaryCount: extractInt(line, 1020, 3),
+    ultralightCount: extractInt(line, 1023, 3),
+    // Annual operations
+    annualCommercialOps: extractInt(line, 1026, 6),
+    annualCommuterOps: extractInt(line, 1032, 6),
+    annualAirTaxiOps: extractInt(line, 1038, 6),
+    annualGaLocalOps: extractInt(line, 1044, 6),
+    annualGaItinerantOps: extractInt(line, 1050, 6),
+    annualMilitaryOps: extractInt(line, 1056, 6),
+    annualOpsDate: extractField(line, 1062, 10) || null,
+    // Additional
+    contractFuel: extractField(line, 1124, 1) || null,
+    storageFacilities: extractField(line, 1125, 12) || null,
+    otherServices: extractField(line, 1137, 71) || null,
+    windIndicator: extractField(line, 1208, 3) || null,
+    minOperationalNetwork: extractField(line, 1218, 1) || null,
+    // Core fields
     name,
     city,
     state,
@@ -198,6 +284,11 @@ export function parseNasrDate(value) {
 
 function extractField(line, start, length) {
   return line.slice(start - 1, start - 1 + length).trim();
+}
+
+function extractInt(line, start, length) {
+  const raw = Number.parseInt(extractField(line, start, length), 10);
+  return Number.isNaN(raw) ? null : raw;
 }
 
 function normalizeCode(value) {
