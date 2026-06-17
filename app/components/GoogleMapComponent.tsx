@@ -42,18 +42,26 @@ function getMarkerColors(type: string) {
   return MARKER_COLORS[type] ?? MARKER_COLORS.default;
 }
 
-function isHeliport(poi: POI): boolean {
-  const airport = poi.data as Airport;
-  // Prefer the structured facilityType from the FAA data when available;
-  // fall back to name-matching for airports imported before the migration.
-  if (airport.facilityType) return airport.facilityType.toUpperCase() === "HELIPORT";
-  return /heliport|helipad/i.test(poi.title);
-}
+// FAA NASR facility type helpers.
+// When facilityType is NULL (pre-migration rows) we fall back to name patterns.
 
-function isPrivateAirport(poi: POI): boolean {
-  // FAA NASR does not expose a public/private use flag in the fields we currently
-  // import, so we rely on name patterns as a best-effort filter.
-  return /\bprivate\b|\bpriv\b|\bpvt\b/i.test(poi.title);
+const SPECIALTY_TYPES = new Set(["GLIDERPORT", "BALLOONPORT", "ULTRALIGHT", "STOLPORT"]);
+
+function getFacilityCategory(poi: POI): "airport" | "heliport" | "seaplane" | "specialty" | null {
+  if (poi.type !== "airport") return null;
+  const ft = (poi.data as Airport).facilityType?.toUpperCase().trim();
+  if (!ft) {
+    // Legacy fallback: classify by name
+    if (/heliport|helipad/i.test(poi.title)) return "heliport";
+    if (/seaplane|sea\s*base|float/i.test(poi.title)) return "seaplane";
+    if (/glider|balloon|ultralight|stolport/i.test(poi.title)) return "specialty";
+    return "airport";
+  }
+  if (ft === "AIRPORT") return "airport";
+  if (ft === "HELIPORT") return "heliport";
+  if (ft === "SEAPLANE BASE") return "seaplane";
+  if (SPECIALTY_TYPES.has(ft)) return "specialty";
+  return "airport"; // unknown future types: treat as standard
 }
 
 // ---------- Custom SVG pin + inline tooltip ----------
@@ -266,9 +274,10 @@ export default function GoogleMapComponent({
   // Airport modal state
   const [modalAirportCode, setModalAirportCode] = useState<string | null>(initialAirportCode);
 
-  // Heliport / private airport filter state
+  // Non-standard facility type filters — all hidden by default
   const [showHeliports, setShowHeliports] = useState(false);
-  const [showPrivateAirports, setShowPrivateAirports] = useState(false);
+  const [showSeaplanes, setShowSeaplanes] = useState(false);
+  const [showSpecialty, setShowSpecialty] = useState(false);
 
   // Local POI state seeded from server, augmented by viewport fetches.
   const [localPois, setLocalPois] = useState<POI[]>(pois);
@@ -294,11 +303,14 @@ export default function GoogleMapComponent({
     });
   }, []);
 
-  // Apply heliport / private airport filters before rendering markers.
+  // Apply facility-type filters before rendering markers.
   const visiblePois = localPois.filter((poi) => {
-    if (poi.type !== "airport") return true;
-    if (!showHeliports && isHeliport(poi)) return false;
-    if (!showPrivateAirports && isPrivateAirport(poi)) return false;
+    const cat = getFacilityCategory(poi);
+    if (cat === null) return true; // non-airport POI — always show
+    if (cat === "airport") return true;
+    if (cat === "heliport") return showHeliports;
+    if (cat === "seaplane") return showSeaplanes;
+    if (cat === "specialty") return showSpecialty;
     return true;
   });
 
@@ -388,7 +400,7 @@ export default function GoogleMapComponent({
             </div>
 
             <div className="border-t border-gray-200 pt-3">
-              <h3 className="mb-2 font-semibold text-sm text-gray-700">Show on map</h3>
+              <h3 className="mb-2 font-semibold text-sm text-gray-700">Also show</h3>
               <div className="space-y-2">
                 <label className="flex cursor-pointer items-center gap-2 text-sm select-none">
                   <input
@@ -402,11 +414,22 @@ export default function GoogleMapComponent({
                 <label className="flex cursor-pointer items-center gap-2 text-sm select-none">
                   <input
                     type="checkbox"
-                    checked={showPrivateAirports}
-                    onChange={(e) => setShowPrivateAirports(e.target.checked)}
+                    checked={showSeaplanes}
+                    onChange={(e) => setShowSeaplanes(e.target.checked)}
                     className="h-3.5 w-3.5 accent-teal-600"
                   />
-                  Private airports
+                  Seaplane bases
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm select-none">
+                  <input
+                    type="checkbox"
+                    checked={showSpecialty}
+                    onChange={(e) => setShowSpecialty(e.target.checked)}
+                    className="h-3.5 w-3.5 accent-teal-600"
+                  />
+                  <span title="Gliderports, balloonports, ultralights, STOLports">
+                    Specialty fields
+                  </span>
                 </label>
               </div>
             </div>

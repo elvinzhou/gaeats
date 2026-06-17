@@ -474,6 +474,8 @@ export async function listAirportsForPoiSync(
 
   // Prioritize NorCal (Bay Area) first, then West Coast states (CA, OR, WA)
   // This helps with the initial launch strategy focused on the West Coast.
+  // Only sync standard airports — heliports, seaplane bases, gliderports, etc.
+  // have no nearby restaurants worth indexing.
   return prisma.$queryRaw<DueAirportRow[]>`
     SELECT
       id,
@@ -490,6 +492,7 @@ export async function listAirportsForPoiSync(
         ELSE 3
       END as "regionPriority"
     FROM "airports"
+    WHERE "facilityType" = 'AIRPORT' OR "facilityType" IS NULL
     ORDER BY "regionPriority" ASC, "syncPriority" ASC
   `;
 }
