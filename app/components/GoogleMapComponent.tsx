@@ -278,6 +278,7 @@ export default function GoogleMapComponent({
   const [showHeliports, setShowHeliports] = useState(false);
   const [showSeaplanes, setShowSeaplanes] = useState(false);
   const [showSpecialty, setShowSpecialty] = useState(false);
+  const [showPrivate, setShowPrivate] = useState(false);
 
   // Local POI state seeded from server, augmented by viewport fetches.
   const [localPois, setLocalPois] = useState<POI[]>(pois);
@@ -307,10 +308,14 @@ export default function GoogleMapComponent({
   const visiblePois = localPois.filter((poi) => {
     const cat = getFacilityCategory(poi);
     if (cat === null) return true; // non-airport POI — always show
-    if (cat === "airport") return true;
     if (cat === "heliport") return showHeliports;
     if (cat === "seaplane") return showSeaplanes;
     if (cat === "specialty") return showSpecialty;
+    // Private-use airports: hide unless opted in (only when airportUse is known)
+    if (cat === "airport") {
+      const au = (poi.data as Airport).airportUse;
+      if (au === "PR" && !showPrivate) return false;
+    }
     return true;
   });
 
@@ -430,6 +435,15 @@ export default function GoogleMapComponent({
                   <span title="Gliderports, balloonports, ultralights, STOLports">
                     Specialty fields
                   </span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm select-none">
+                  <input
+                    type="checkbox"
+                    checked={showPrivate}
+                    onChange={(e) => setShowPrivate(e.target.checked)}
+                    className="h-3.5 w-3.5 accent-teal-600"
+                  />
+                  Private airports
                 </label>
               </div>
             </div>

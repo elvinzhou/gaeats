@@ -31,6 +31,9 @@ export interface AirportWithDistance {
   id: number;
   code: string;
   facilityType: string | null;
+  ownershipType: string | null;
+  airportUse: string | null;
+  elevation: number | null;
   name: string;
   city: string;
   state: string | null;
@@ -51,6 +54,9 @@ export interface AirportDetailRow {
   id: number;
   code: string;
   facilityType: string | null;
+  ownershipType: string | null;
+  airportUse: string | null;
+  elevation: number | null;
   name: string;
   city: string;
   state: string | null;
@@ -208,6 +214,9 @@ export async function findAirportsNearbyQuery(
       id,
       code,
       "facilityType",
+      "ownershipType",
+      "airportUse",
+      "elevation",
       name,
       city,
       state,
@@ -234,6 +243,9 @@ export interface AirportMapRow {
   id: number;
   code: string;
   facilityType: string | null;
+  ownershipType: string | null;
+  airportUse: string | null;
+  elevation: number | null;
   name: string;
   city: string;
   state: string | null;
@@ -251,6 +263,9 @@ export async function listAllAirports(prisma: AppPrismaClient, limit = 2000) {
       id,
       code,
       "facilityType",
+      "ownershipType",
+      "airportUse",
+      "elevation",
       name,
       city,
       state,
@@ -287,6 +302,9 @@ export async function getAirportDetailByCode(
       id,
       code,
       "facilityType",
+      "ownershipType",
+      "airportUse",
+      "elevation",
       name,
       city,
       state,
@@ -607,6 +625,9 @@ export async function upsertFaaAirportWithLocation(
     faaCode: string | null;
     icaoCode: string | null;
     facilityType: string | null;
+    ownershipType: string | null;
+    airportUse: string | null;
+    elevation: number | null;
     name: string;
     city: string;
     state: string | null;
@@ -626,6 +647,9 @@ export async function upsertFaaAirportWithLocation(
       "faaCode",
       "icaoCode",
       "facilityType",
+      "ownershipType",
+      "airportUse",
+      "elevation",
       source,
       "sourceDataset",
       "sourceRecordUpdatedAt",
@@ -645,6 +669,9 @@ export async function upsertFaaAirportWithLocation(
       ${airport.faaCode},
       ${airport.icaoCode},
       ${airport.facilityType},
+      ${airport.ownershipType},
+      ${airport.airportUse},
+      ${airport.elevation},
       'FAA'::"AirportSource",
       ${airport.sourceDataset},
       ${airport.sourceRecordUpdatedAt},
@@ -663,6 +690,9 @@ export async function upsertFaaAirportWithLocation(
       "faaCode" = EXCLUDED."faaCode",
       "icaoCode" = EXCLUDED."icaoCode",
       "facilityType" = EXCLUDED."facilityType",
+      "ownershipType" = EXCLUDED."ownershipType",
+      "airportUse" = EXCLUDED."airportUse",
+      "elevation" = EXCLUDED."elevation",
       source = EXCLUDED.source,
       "sourceDataset" = EXCLUDED."sourceDataset",
       "sourceRecordUpdatedAt" = EXCLUDED."sourceRecordUpdatedAt",

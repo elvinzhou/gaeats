@@ -8,6 +8,10 @@ interface AirportData {
   country: string;
   latitude: number;
   longitude: number;
+  facilityType: string | null;
+  ownershipType: string | null;
+  airportUse: string | null;
+  elevation: number | null;
   fboName: string | null;
   fboPhone: string | null;
   fboWebsite: string | null;
@@ -97,10 +101,16 @@ export default function AirportModal({ airportCode, onClose, onGetDirections }: 
                     {data?.airport.code}
                   </span>
                   <h2 className="truncate text-xl font-bold text-gray-900">{data?.airport.name}</h2>
+                  {data?.airport.airportUse === "PR" && (
+                    <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                      Private
+                    </span>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-gray-500">
                   {data?.airport.city}
                   {data?.airport.state ? `, ${data.airport.state}` : ""} &bull; {data?.airport.country}
+                  {data?.airport.elevation != null ? ` · ${data.airport.elevation.toLocaleString()} ft MSL` : ""}
                 </p>
               </>
             )}

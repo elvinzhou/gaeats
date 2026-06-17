@@ -137,6 +137,9 @@ model Airport {
   sourceRecordUpdatedAt DateTime?                      @db.Timestamptz
   sourceRefreshedAt DateTime?                          @db.Timestamptz
   facilityType   String?                               @db.VarChar(20) // e.g. AIRPORT, HELIPORT, SEAPLANE BASE
+  ownershipType  String?                               @db.VarChar(5) // PU, PR, MA, MR, MN, MK, CG
+  airportUse     String?                               @db.VarChar(5) // PU=public, PR=private
+  elevation      Int? // feet MSL
   name           String                                @db.VarChar(255)
   city           String                                @db.VarChar(100)
   state          String?                               @db.VarChar(10)

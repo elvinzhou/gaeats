@@ -82,6 +82,9 @@ export async function loadAptTextFromZipBytes(archiveBuffer, targetName = "apt.t
   throw new Error(`No ${targetName} file was found in the FAA archive.`);
 }
 
+const VALID_OWNERSHIP_TYPES = new Set(["PU", "PR", "MA", "MR", "MN", "MK", "CG"]);
+const VALID_AIRPORT_USE = new Set(["PU", "PR"]);
+
 export function mapNasrAptRecord(line, sourceDataset = null) {
   if (extractField(line, 1, 3) !== "APT") {
     return null;
@@ -92,6 +95,15 @@ export function mapNasrAptRecord(line, sourceDataset = null) {
   const code = icaoCode || faaCode;
   // FAA NASR APT.txt col 14-26: facility type (AIRPORT, HELIPORT, SEAPLANE BASE, etc.)
   const facilityType = extractField(line, 14, 13) || null;
+  // Col 184-185: ownership type (PU=publicly owned, PR=privately owned, MA/MR/MN/MK/CG=military)
+  const ownershipTypeRaw = extractField(line, 184, 2);
+  const ownershipType = VALID_OWNERSHIP_TYPES.has(ownershipTypeRaw) ? ownershipTypeRaw : null;
+  // Col 186-187: facility use (PU=public, PR=private)
+  const airportUseRaw = extractField(line, 186, 2);
+  const airportUse = VALID_AIRPORT_USE.has(airportUseRaw) ? airportUseRaw : null;
+  // Col 579-585: elevation in feet MSL (7-char integer field)
+  const elevationRaw = Number.parseInt(extractField(line, 579, 7), 10);
+  const elevation = Number.isNaN(elevationRaw) || elevationRaw < -1500 || elevationRaw > 25000 ? null : elevationRaw;
   const name = extractField(line, 134, 50);
   const city = extractField(line, 94, 40);
   const state = extractField(line, 49, 2) || null;
@@ -112,6 +124,9 @@ export function mapNasrAptRecord(line, sourceDataset = null) {
     faaCode,
     icaoCode,
     facilityType,
+    ownershipType,
+    airportUse,
+    elevation,
     name,
     city,
     state,

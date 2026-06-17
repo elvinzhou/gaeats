@@ -67,8 +67,11 @@ describe("faa-utils", () => {
       [49, 2, "CA"],
       [94, 40, "Palo Alto"],
       [134, 50, "Palo Alto Airport"],
+      [184, 2, "PU"],   // ownershipType: publicly owned
+      [186, 2, "PU"],   // airportUse: public use
       [524, 15, "37-46-28.0000N"],
       [551, 15, "122-06-54.0000W"],
+      [579, 7, "7"],    // elevation: 7 feet MSL (Palo Alto is near sea level)
       [885, 8, "03182026"],
       [1211, 7, "KPAO"],
     ]);
@@ -79,6 +82,9 @@ describe("faa-utils", () => {
       faaCode: "PAO",
       icaoCode: "KPAO",
       facilityType: "AIRPORT",
+      ownershipType: "PU",
+      airportUse: "PU",
+      elevation: 7,
       city: "Palo Alto",
       state: "CA",
       source: "FAA",
@@ -87,6 +93,28 @@ describe("faa-utils", () => {
     // Coordinates must be parsed from the dash-separated DMS fields.
     expect(record.latitude).toBeCloseTo(37.7744, 3);
     expect(record.longitude).toBeCloseTo(-122.115, 3);
+  });
+
+  it("rejects out-of-range or invalid values for ownershipType, airportUse, and elevation", () => {
+    const line = buildAptLine([
+      [1, 3, "APT"],
+      [14, 13, "AIRPORT"],
+      [28, 4, "TST"],
+      [49, 2, "CA"],
+      [94, 40, "Test City"],
+      [134, 50, "Test Airport"],
+      [184, 2, "XX"],   // invalid ownership type — should be null
+      [186, 2, "ZZ"],   // invalid airport use — should be null
+      [524, 15, "37-46-28.0000N"],
+      [551, 15, "122-06-54.0000W"],
+      [579, 7, "99999"], // elevation out of range — should be null
+      [1211, 7, "KTST"],
+    ]);
+
+    const record = mapNasrAptRecord(line, null);
+    expect(record?.ownershipType).toBeNull();
+    expect(record?.airportUse).toBeNull();
+    expect(record?.elevation).toBeNull();
   });
 });
 
