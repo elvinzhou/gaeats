@@ -19,6 +19,8 @@ export async function listAirportsForPoiSync(prisma, airportCode) {
   // Skip non-AIRPORT facility types — heliports, seaplane bases, gliderports,
   // etc. have no nearby restaurants worth indexing. NULL means pre-migration
   // rows where the type was not yet recorded; include them as a safe fallback.
+  // Also restrict to airports with transient storage (hangar or tie-down), or
+  // those that haven't been re-imported with CSV data yet (IS NULL fallback).
   return prisma.$queryRaw`
     SELECT
       id,
@@ -35,7 +37,8 @@ export async function listAirportsForPoiSync(prisma, airportCode) {
         ELSE 3
       END as "regionPriority"
     FROM "airports"
-    WHERE "facilityType" = 'AIRPORT' OR "facilityType" IS NULL
+    WHERE ("facilityType" = 'AIRPORT' OR "facilityType" IS NULL)
+      AND ("transientStorageHangar" = true OR "transientStorageTiedown" = true OR "facilityType" IS NULL)
     ORDER BY "regionPriority" ASC, "syncPriority" ASC
   `;
 }
@@ -213,6 +216,9 @@ export async function upsertFaaAirportWithLocation(prisma, airport, nextPoiSyncA
         "otherServices" = ${airport.otherServices ?? null},
         "windIndicator" = ${airport.windIndicator ?? null},
         "minOperationalNetwork" = ${airport.minOperationalNetwork ?? null},
+        "transientStorageHangar" = ${airport.transientStorageHangar ?? null},
+        "transientStorageTiedown" = ${airport.transientStorageTiedown ?? null},
+        "transientStorageBuoy" = ${airport.transientStorageBuoy ?? null},
         source = 'FAA'::"AirportSource",
         "sourceDataset" = ${airport.sourceDataset},
         "sourceRecordUpdatedAt" = ${airport.sourceRecordUpdatedAt},
@@ -299,6 +305,9 @@ export async function upsertFaaAirportWithLocation(prisma, airport, nextPoiSyncA
       "otherServices",
       "windIndicator",
       "minOperationalNetwork",
+      "transientStorageHangar",
+      "transientStorageTiedown",
+      "transientStorageBuoy",
       source,
       "sourceDataset",
       "sourceRecordUpdatedAt",
@@ -381,6 +390,9 @@ export async function upsertFaaAirportWithLocation(prisma, airport, nextPoiSyncA
       ${airport.otherServices ?? null},
       ${airport.windIndicator ?? null},
       ${airport.minOperationalNetwork ?? null},
+      ${airport.transientStorageHangar ?? null},
+      ${airport.transientStorageTiedown ?? null},
+      ${airport.transientStorageBuoy ?? null},
       'FAA'::"AirportSource",
       ${airport.sourceDataset},
       ${airport.sourceRecordUpdatedAt},
