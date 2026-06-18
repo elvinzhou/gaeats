@@ -1096,6 +1096,70 @@ export const AirportScalarFieldEnum = {
   sourceRecordUpdatedAt: 'sourceRecordUpdatedAt',
   sourceRefreshedAt: 'sourceRefreshedAt',
   facilityType: 'facilityType',
+  ownershipType: 'ownershipType',
+  airportUse: 'airportUse',
+  elevation: 'elevation',
+  siteNumber: 'siteNumber',
+  faaRegionCode: 'faaRegionCode',
+  stateName: 'stateName',
+  countyName: 'countyName',
+  countyState: 'countyState',
+  ownerName: 'ownerName',
+  ownerPhone: 'ownerPhone',
+  managerName: 'managerName',
+  managerPhone: 'managerPhone',
+  magVariation: 'magVariation',
+  magVariationYear: 'magVariationYear',
+  trafficPatternAltitude: 'trafficPatternAltitude',
+  sectionalChart: 'sectionalChart',
+  distanceFromCity: 'distanceFromCity',
+  directionFromCity: 'directionFromCity',
+  acreage: 'acreage',
+  artccBoundaryId: 'artccBoundaryId',
+  artccResponsibleId: 'artccResponsibleId',
+  notamFacility: 'notamFacility',
+  notamDService: 'notamDService',
+  activationDate: 'activationDate',
+  airportStatus: 'airportStatus',
+  arffCertification: 'arffCertification',
+  npiasAgreements: 'npiasAgreements',
+  airspaceAnalysis: 'airspaceAnalysis',
+  customsEntry: 'customsEntry',
+  customsLanding: 'customsLanding',
+  jointUse: 'jointUse',
+  militaryRights: 'militaryRights',
+  fuelTypes: 'fuelTypes',
+  airframeRepair: 'airframeRepair',
+  engineRepair: 'engineRepair',
+  bottledOxygen: 'bottledOxygen',
+  bulkOxygen: 'bulkOxygen',
+  lightingSchedule: 'lightingSchedule',
+  beaconSchedule: 'beaconSchedule',
+  controlTower: 'controlTower',
+  unicomFrequency: 'unicomFrequency',
+  ctafFrequency: 'ctafFrequency',
+  segmentedCircle: 'segmentedCircle',
+  beaconColor: 'beaconColor',
+  landingFee: 'landingFee',
+  singleEngineCount: 'singleEngineCount',
+  multiEngineCount: 'multiEngineCount',
+  jetEngineCount: 'jetEngineCount',
+  helicopterCount: 'helicopterCount',
+  gliderCount: 'gliderCount',
+  militaryCount: 'militaryCount',
+  ultralightCount: 'ultralightCount',
+  annualCommercialOps: 'annualCommercialOps',
+  annualCommuterOps: 'annualCommuterOps',
+  annualAirTaxiOps: 'annualAirTaxiOps',
+  annualGaLocalOps: 'annualGaLocalOps',
+  annualGaItinerantOps: 'annualGaItinerantOps',
+  annualMilitaryOps: 'annualMilitaryOps',
+  annualOpsDate: 'annualOpsDate',
+  contractFuel: 'contractFuel',
+  storageFacilities: 'storageFacilities',
+  otherServices: 'otherServices',
+  windIndicator: 'windIndicator',
+  minOperationalNetwork: 'minOperationalNetwork',
   name: 'name',
   city: 'city',
   state: 'state',
@@ -1382,6 +1446,20 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+/**
  * Reference to a field of type 'ExternalSource'
  */
 export type EnumExternalSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ExternalSource'>
@@ -1406,20 +1484,6 @@ export type EnumPoiTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMo
  * Reference to a field of type 'PoiType[]'
  */
 export type ListEnumPoiTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PoiType[]'>
-    
-
-
-/**
- * Reference to a field of type 'Float'
- */
-export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
-    
-
-
-/**
- * Reference to a field of type 'Float[]'
- */
-export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 
