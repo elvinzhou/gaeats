@@ -1,5 +1,4 @@
 import { createRequestHandler } from "react-router";
-import type { SyncMessage } from "../env";
 
 declare module "react-router" {
   export interface AppLoadContext {
@@ -94,33 +93,4 @@ export default {
     }
   },
 
-  async scheduled(_controller, env, _ctx) {
-    // POI sync: fan out one queue message per due airport (near-zero CPU each).
-    await env.SYNC_QUEUE.send({ job: "poi-dispatch" });
-  },
-
-  async queue(batch: MessageBatch<unknown>, env: Env, ctx: ExecutionContext) {
-    const { dispatchPoiSync, syncAirportPois } = await import("~/utils/google-poi-sync.server");
-
-    for (const message of batch.messages) {
-      const msg = message.body as SyncMessage;
-      try {
-        if (msg.job === "poi-dispatch") {
-          await dispatchPoiSync({ env, ctx });
-        } else if (msg.job === "poi") {
-          await syncAirportPois(msg.airportId, { env, ctx });
-        }
-        message.ack();
-      } catch (error) {
-        console.error(JSON.stringify({
-          level: "error",
-          message: "Sync queue job failed",
-          job: msg.job,
-          error: String(error),
-          timestamp: new Date().toISOString(),
-        }));
-        message.retry();
-      }
-    }
-  },
 } satisfies ExportedHandler<Env>;

@@ -1,0 +1,70 @@
+name: POI Sync
+
+on:
+  schedule:
+    # Daily at 03:00 UTC
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      type:
+        description: "POI type to sync (leave blank for both)"
+        required: false
+        default: ""
+        type: choice
+        options:
+          - ""
+          - RESTAURANT
+          - ATTRACTION
+      airport:
+        description: "Sync a specific airport by ICAO code (e.g. KSFO)"
+        required: false
+        default: ""
+      limit:
+        description: "Max airports to process per type"
+        required: false
+        default: "100"
+      dry_run:
+        description: "Dry run (log without writing to DB)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  poi-sync:
+    name: Sync POIs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync RESTAURANT POIs
+        if: ${{ !inputs.type || inputs.type == 'RESTAURANT' }}
+        run: |
+          ARGS="--type=RESTAURANT --limit=${{ inputs.limit || '100' }}"
+          if [ -n "${{ inputs.airport }}" ]; then ARGS="$ARGS --airport=${{ inputs.airport }}"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          node scripts/sync-google-pois.js $ARGS
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          GOOGLE_MAPS_SERVER_API_KEY: ${{ secrets.GOOGLE_MAPS_SERVER_API_KEY }}
+
+      - name: Sync ATTRACTION POIs
+        if: ${{ !inputs.type || inputs.type == 'ATTRACTION' }}
+        run: |
+          ARGS="--type=ATTRACTION --limit=${{ inputs.limit || '100' }}"
+          if [ -n "${{ inputs.airport }}" ]; then ARGS="$ARGS --airport=${{ inputs.airport }}"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          node scripts/sync-google-pois.js $ARGS
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          GOOGLE_MAPS_SERVER_API_KEY: ${{ secrets.GOOGLE_MAPS_SERVER_API_KEY }}

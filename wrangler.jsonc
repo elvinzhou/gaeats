@@ -4,23 +4,6 @@
   "compatibility_date": "2026-04-06",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./workers/app.ts",
-  "triggers": {
-    "crons": ["0 3 * * *"]
-  },
-  "queues": {
-    "producers": [
-      { "queue": "gaeats-sync", "binding": "SYNC_QUEUE" }
-    ],
-    "consumers": [
-      {
-        "queue": "gaeats-sync",
-        "max_batch_size": 1,      // one sync job at a time
-        "max_batch_timeout": 0,   // process immediately
-        "max_retries": 2,
-        "dead_letter_queue": "gaeats-sync-dlq"
-      }
-    ]
-  },
   "observability": {
     "enabled": false,
     "head_sampling_rate": 1,
@@ -38,6 +21,4 @@
   }
   // Secrets (set via CLI):
   //   wrangler secret put DATABASE_URL
-  //   wrangler secret put SYNC_SECRET
-  //   wrangler secret put GOOGLE_MAPS_SERVER_API_KEY
 }
