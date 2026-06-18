@@ -38,6 +38,8 @@ export interface Airport {
   country: string;
   latitude: number;
   longitude: number;
+  rampLatitude: number | null;
+  rampLongitude: number | null;
   distance?: number; // Distance in meters (from geospatial queries)
   createdAt: Date;
   updatedAt: Date;

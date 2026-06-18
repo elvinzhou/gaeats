@@ -67,7 +67,6 @@ interface AirportPanelProps {
   airportCode: string;
   imperial: boolean;
   onClose: () => void;
-  onGetDirections: (destination: { lat: number; lng: number; name: string }) => void;
 }
 
 function TravelBadge({ poi }: { poi: NearbyPoi }) {
@@ -107,7 +106,7 @@ function TravelBadge({ poi }: { poi: NearbyPoi }) {
   );
 }
 
-export default function AirportPanel({ airportCode, imperial, onClose, onGetDirections }: AirportPanelProps) {
+export default function AirportPanel({ airportCode, imperial, onClose }: AirportPanelProps) {
   const [data, setData] = useState<PanelApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -128,17 +127,17 @@ export default function AirportPanel({ airportCode, imperial, onClose, onGetDire
       });
   }, [airportCode, poiType]);
 
-  function handleGetDirections() {
+  function handleOpenMaps() {
     if (!data) return;
     const { airport } = data;
-    // Use ramp/FBO coordinates when available — the same origin used for
-    // Distance Matrix travel time calculations. Falls back to the ARP.
-    onGetDirections({
-      lat: airport.rampLatitude ?? airport.latitude,
-      lng: airport.rampLongitude ?? airport.longitude,
-      name: `${airport.code} – ${airport.name}`,
-    });
-    onClose();
+    const lat = airport.rampLatitude ?? airport.latitude;
+    const lng = airport.rampLongitude ?? airport.longitude;
+    const label = encodeURIComponent(`${airport.code} – ${airport.name}`);
+    window.open(
+      `https://maps.google.com/maps?daddr=${lat},${lng}&q=${label}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   }
 
   const airport = data?.airport;
@@ -393,10 +392,10 @@ export default function AirportPanel({ airportCode, imperial, onClose, onGetDire
       {data && !loading && (
         <div className="border-t border-gray-200 p-4">
           <button
-            onClick={handleGetDirections}
+            onClick={handleOpenMaps}
             className="w-full rounded-xl bg-teal-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-700"
           >
-            ✈️ Get Directions to Airport
+            🗺️ Navigate to Airport
           </button>
         </div>
       )}

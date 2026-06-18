@@ -40,6 +40,8 @@ export interface AirportWithDistance {
   country: string;
   latitude: number;
   longitude: number;
+  rampLatitude: number | null;
+  rampLongitude: number | null;
   distance: number;
   createdAt: Date;
   updatedAt: Date;
@@ -375,6 +377,8 @@ export async function findAirportsNearbyQuery(
       country,
       ST_Y(location::geometry) as latitude,
       ST_X(location::geometry) as longitude,
+      "rampLatitude",
+      "rampLongitude",
       ST_DistanceSphere(
         location::geometry,
         ST_MakePoint(${point.longitude}, ${point.latitude})
@@ -403,6 +407,8 @@ export interface AirportMapRow {
   state: string | null;
   latitude: number;
   longitude: number;
+  rampLatitude: number | null;
+  rampLongitude: number | null;
 }
 
 /**
@@ -422,7 +428,9 @@ export async function listAllAirports(prisma: AppPrismaClient, limit = 2000) {
       city,
       state,
       ST_Y(location::geometry) AS latitude,
-      ST_X(location::geometry) AS longitude
+      ST_X(location::geometry) AS longitude,
+      "rampLatitude",
+      "rampLongitude"
     FROM "airports"
     ORDER BY "syncPriority" ASC, id ASC
     LIMIT ${limit}
