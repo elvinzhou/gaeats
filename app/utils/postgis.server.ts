@@ -151,6 +151,91 @@ export interface PoiWithTravelTimes extends PoiWithDistance {
   needsRideshare: boolean | null;
   needsCrewCar: boolean | null;
 }
+
+export interface AccessiblePoi {
+  id: number;
+  name: string;
+  type: string;
+  category: string | null;
+  subcategory: string | null;
+  cuisine: string | null;
+  externalRating: number | null;
+  address: string;
+  city: string;
+  state: string | null;
+  latitude: number;
+  longitude: number;
+  distance: number;
+  walkingMinutes: number | null;
+  bikingMinutes: number | null;
+  transitMinutes: number | null;
+  preferredMode: string;
+}
+
+export async function findAccessiblePoisNearbyQuery(
+  prisma: AppPrismaClient,
+  point: GeoPoint,
+  radiusKm: number,
+  minRating: number,
+  maxMinutes: number,
+  limit: number
+): Promise<AccessiblePoi[]> {
+  const radiusMeters = radiusKm * 1000;
+
+  // DISTINCT ON p.id picks the closest airport link for each POI.
+  // The outer ORDER BY then sorts the deduplicated set by rating DESC, distance ASC.
+  const rows = await prisma.$queryRaw<AccessiblePoi[]>`
+    SELECT *
+    FROM (
+      SELECT DISTINCT ON (p.id)
+        p.id,
+        p.name,
+        p.type,
+        p.category,
+        p.subcategory,
+        p.cuisine,
+        p."externalRating",
+        p.address,
+        p.city,
+        p.state,
+        ST_Y(p.location::geometry) AS latitude,
+        ST_X(p.location::geometry) AS longitude,
+        ST_DistanceSphere(
+          p.location::geometry,
+          ST_MakePoint(${point.longitude}, ${point.latitude})
+        ) AS distance,
+        ap."walkingMinutes",
+        ap."bikingMinutes",
+        ap."transitMinutes",
+        ap."preferredMode"
+      FROM "pois" p
+      INNER JOIN "airport_pois" ap ON ap."poiId" = p.id
+      WHERE p.active = true
+        AND p.type = 'RESTAURANT'
+        AND ap."preferredMode" IN ('WALKING', 'BIKING', 'TRANSIT')
+        AND COALESCE(p."externalRating", 0) >= ${minRating}
+        AND ST_DistanceSphere(
+          p.location::geometry,
+          ST_MakePoint(${point.longitude}, ${point.latitude})
+        ) <= ${radiusMeters}
+        AND CASE ap."preferredMode"
+              WHEN 'WALKING' THEN COALESCE(ap."walkingMinutes", 999)
+              WHEN 'BIKING'  THEN COALESCE(ap."bikingMinutes",  999)
+              WHEN 'TRANSIT' THEN COALESCE(ap."transitMinutes", 999)
+              ELSE 999
+            END <= ${maxMinutes}
+      ORDER BY p.id, ST_DistanceSphere(
+        p.location::geometry,
+        ST_MakePoint(${point.longitude}, ${point.latitude})
+      ) ASC
+    ) sub
+    ORDER BY "externalRating" DESC NULLS LAST, distance ASC
+    LIMIT ${limit}
+  `;
+
+  return rows;
+}
+
 export async function findPoisNearbyQuery(
   prisma: AppPrismaClient,
   point: GeoPoint,

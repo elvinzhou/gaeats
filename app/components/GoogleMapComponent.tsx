@@ -15,7 +15,7 @@ export interface POI {
   id: number;
   position: { lat: number; lng: number };
   title: string;
-  type: "restaurant" | "airport" | "attraction";
+  type: "restaurant" | "airport" | "attraction" | "accessible";
   data: Poi | Airport;
 }
 
@@ -35,11 +35,20 @@ const MARKER_COLORS: Record<string, { background: string; border: string }> = {
   restaurant: { background: "#FF6B6B", border: "#D64545" },
   airport:    { background: "#4ECDC4", border: "#399E97" },
   attraction: { background: "#FFD93D", border: "#C9A71A" },
+  accessible: { background: "#F59E0B", border: "#D97706" },
   default:    { background: "#4D96FF", border: "#2E76E6" },
 };
 
 function getMarkerColors(type: string) {
   return MARKER_COLORS[type] ?? MARKER_COLORS.default;
+}
+
+function getAccessThresholds(zoom: number): { minRating: number; maxMinutes: number } | null {
+  if (zoom >= 14) return { minRating: 3.5, maxMinutes: 30 };
+  if (zoom >= 12) return { minRating: 4.0, maxMinutes: 20 };
+  if (zoom >= 10) return { minRating: 4.3, maxMinutes: 15 };
+  if (zoom >= 9)  return { minRating: 4.6, maxMinutes: 10 };
+  return null;
 }
 
 // FAA NASR facility type helpers.
@@ -142,6 +151,17 @@ function MarkerWithTooltip({ poi, isHovered, onMouseEnter, onMouseLeave, onClick
                 ⭐ {(poi.data as Poi).externalRating!.toFixed(1)} / 5.0
               </p>
             )}
+            {poi.type === "accessible" && (poi.data as any).preferredMode && (
+              <p style={{ margin: "2px 0 0", fontSize: 11, color: "#666" }}>
+                {(poi.data as any).preferredMode === "WALKING" ? "🚶" :
+                 (poi.data as any).preferredMode === "BIKING" ? "🚲" : "🚌"}{" "}
+                {(poi.data as any).preferredMode === "WALKING"
+                  ? `${(poi.data as any).walkingMinutes ?? "?"} min walk`
+                  : (poi.data as any).preferredMode === "BIKING"
+                  ? `${(poi.data as any).bikingMinutes ?? "?"} min bike`
+                  : `${(poi.data as any).transitMinutes ?? "?"} min transit`}
+              </p>
+            )}
           </div>
         )}
         <MapPinSvg colors={colors} scale={scale} />
@@ -226,6 +246,79 @@ function MapController({
   return null;
 }
 
+// ---------- AccessiblePoiController ----------
+
+function AccessiblePoiController({
+  onPoisFetched,
+}: {
+  onPoisFetched: (pois: POI[]) => void;
+}) {
+  const map = useMap();
+  const lastFetchRef = useRef<{ lat: number; lng: number; zoom: number; radius: number } | null>(null);
+  const onPoisFetchedRef = useRef(onPoisFetched);
+  useEffect(() => { onPoisFetchedRef.current = onPoisFetched; }, [onPoisFetched]);
+
+  useEffect(() => {
+    if (!map) return;
+
+    const listener = map.addListener("idle", async () => {
+      const bounds = map.getBounds();
+      const zoom = map.getZoom() ?? 0;
+      const center = map.getCenter()?.toJSON();
+      if (!bounds || !center) return;
+
+      const thresholds = getAccessThresholds(zoom);
+      if (!thresholds) {
+        onPoisFetchedRef.current([]);
+        lastFetchRef.current = null;
+        return;
+      }
+
+      const ne = bounds.getNorthEast().toJSON();
+      const latDiff = Math.abs(ne.lat - center.lat);
+      const lngDiff = Math.abs(ne.lng - center.lng);
+      const radiusKm = Math.min(Math.sqrt(latDiff ** 2 + lngDiff ** 2) * 111, 150);
+
+      // Skip if we haven't moved or zoomed significantly
+      if (lastFetchRef.current) {
+        const { lat, lng, zoom: prevZoom, radius } = lastFetchRef.current;
+        const movedKm = Math.sqrt((lat - center.lat) ** 2 + (lng - center.lng) ** 2) * 111;
+        if (movedKm < radius * 0.3 && prevZoom === zoom) return;
+      }
+      lastFetchRef.current = { lat: center.lat, lng: center.lng, zoom, radius: radiusKm };
+
+      try {
+        const params = new URLSearchParams({
+          lat: String(center.lat),
+          lng: String(center.lng),
+          distance: String(Math.ceil(radiusKm)),
+          minRating: String(thresholds.minRating),
+          maxMinutes: String(thresholds.maxMinutes),
+          limit: "60",
+        });
+        const res = await fetch(`/api/pois/accessible?${params}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as { pois: Array<{ id: number; name: string; latitude: number; longitude: number; externalRating: number | null; preferredMode: string; walkingMinutes: number | null; bikingMinutes: number | null; transitMinutes: number | null; cuisine: string | null; category: string | null }> };
+
+        const newPOIs: POI[] = data.pois.map((p) => ({
+          id: p.id,
+          position: { lat: p.latitude, lng: p.longitude },
+          title: p.name,
+          type: "accessible" as const,
+          data: p as any,
+        }));
+        onPoisFetchedRef.current(newPOIs);
+      } catch {
+        // non-fatal; keep existing markers
+      }
+    });
+
+    return () => listener.remove();
+  }, [map]);
+
+  return null;
+}
+
 // ---------- Map Type Controls ----------
 
 function MapTypeControls({
@@ -282,6 +375,11 @@ export default function GoogleMapComponent({
 
   // Local POI state seeded from server, augmented by viewport fetches.
   const [localPois, setLocalPois] = useState<POI[]>(pois);
+  const [accessiblePois, setAccessiblePois] = useState<POI[]>([]);
+
+  const handleAccessiblePoisFetched = useCallback((incoming: POI[]) => {
+    setAccessiblePois(incoming);
+  }, []);
 
   // Refresh local pois when the loader delivers new data (e.g. after airport search).
   useEffect(() => {
@@ -304,10 +402,14 @@ export default function GoogleMapComponent({
     });
   }, []);
 
+  // IDs of accessible restaurants — exclude their generic red markers so there's no double pin
+  const accessibleIds = new Set(accessiblePois.map((p) => p.id));
+
   // Apply facility-type filters before rendering markers.
-  const visiblePois = localPois.filter((poi) => {
+  const visiblePois = [...localPois.filter((poi) => {
     const cat = getFacilityCategory(poi);
-    if (cat === null) return true; // non-airport POI — always show
+    // Suppress the generic red marker when we have an amber accessible version
+    if (cat === null) return !accessibleIds.has(poi.id);
     if (cat === "heliport") return showHeliports;
     if (cat === "seaplane") return showSeaplanes;
     if (cat === "specialty") return showSpecialty;
@@ -317,7 +419,7 @@ export default function GoogleMapComponent({
       if (au === "PR" && !showPrivate) return false;
     }
     return true;
-  });
+  }), ...accessiblePois];
 
   function handleMarkerClick(poi: POI) {
     if (poi.type === "airport") {
@@ -363,6 +465,7 @@ export default function GoogleMapComponent({
             className="h-full w-full google-maps-container"
           >
             <MapController center={center} zoom={zoom} onAirportsFetched={handleAirportsFetched} />
+            <AccessiblePoiController onPoisFetched={handleAccessiblePoisFetched} />
 
             {visiblePois.map((poi) => (
               <MarkerWithTooltip
@@ -393,6 +496,10 @@ export default function GoogleMapComponent({
               <div className="flex items-center gap-2">
                 <div className="h-3.5 w-3.5 rounded-full bg-[#FF6B6B] shrink-0" />
                 <span className="text-sm">Restaurants</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3.5 w-3.5 rounded-full bg-[#F59E0B] shrink-0" />
+                <span className="text-sm">Accessible eats</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-3.5 w-3.5 rounded-full bg-[#4ECDC4] shrink-0" />
