@@ -128,6 +128,8 @@ export interface AirportDetailRow {
   notes: string | null;
   latitude: number;
   longitude: number;
+  rampLatitude: number | null;
+  rampLongitude: number | null;
 }
 
 export interface DueAirportRow {
@@ -525,7 +527,9 @@ export async function getAirportDetailByCode(
       "fboWebsite",
       notes,
       ST_Y(location::geometry) as latitude,
-      ST_X(location::geometry) as longitude
+      ST_X(location::geometry) as longitude,
+      "rampLatitude",
+      "rampLongitude"
     FROM "airports"
     WHERE UPPER(code) = UPPER(${airportCode})
     LIMIT 1
