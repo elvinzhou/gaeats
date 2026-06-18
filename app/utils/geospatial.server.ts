@@ -12,12 +12,14 @@ import {
   findAirportsNearbyQuery,
   findPoisNearbyQuery,
   findPoisNearAirportQuery,
+  findAccessiblePoisNearbyQuery,
   getAirportDetailByCode,
   getAirportCoordinatesByCode,
   type AirportWithDistance,
   type GeoPoint,
   type PoiWithDistance,
   type PoiWithTravelTimes,
+  type AccessiblePoi,
 } from "~/utils/postgis.server";
 
 export type {
@@ -25,6 +27,7 @@ export type {
   GeoPoint,
   PoiWithDistance,
   PoiWithTravelTimes,
+  AccessiblePoi,
 } from "~/utils/postgis.server";
 
 export async function findRestaurantsNearby(
@@ -150,6 +153,17 @@ export async function createAirportWithLocation(
   }
 ) {
   await createAirportWithLocationQuery(prisma, data);
+}
+
+export async function findAccessiblePoisNearby(
+  db: AppPrismaClient,
+  point: GeoPoint,
+  radiusKm: number,
+  minRating: number,
+  maxMinutes: number,
+  limit = 60
+) {
+  return findAccessiblePoisNearbyQuery(db, point, radiusKm, minRating, maxMinutes, limit);
 }
 
 export function calculateHaversineDistance(
