@@ -130,6 +130,7 @@ try {
         continue;
       }
 
+      // Straight-line distance is always measured from the ARP for consistency
       const distanceMeters = calculateDistanceMeters(
         { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
         { latitude, longitude }
@@ -183,14 +184,19 @@ try {
         },
       });
 
-      // Only calculate real travel times for the top 5
+      // Only calculate real travel times for the top 5.
+      // Use ramp/FBO coordinates when available — they're a more accurate
+      // departure point than the FAA airport reference point (ARP).
       if (i < MAX_TRAVEL_TIME_POIS_PER_AIRPORT) {
+        const travelOrigin = (airport.rampLatitude != null && airport.rampLongitude != null)
+          ? { latitude: Number(airport.rampLatitude), longitude: Number(airport.rampLongitude) }
+          : { latitude: Number(airport.latitude), longitude: Number(airport.longitude) };
         metricUpdatePromises.push(
           updateAirportPoiMetrics({
             prisma,
             apiKey,
             airportPoiId: airportPoi.id,
-            origin: { latitude: Number(airport.latitude), longitude: Number(airport.longitude) },
+            origin: travelOrigin,
             destination: { latitude, longitude },
           })
         );

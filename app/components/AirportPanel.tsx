@@ -32,6 +32,8 @@ interface AirportData {
   fboPhone: string | null;
   fboWebsite: string | null;
   notes: string | null;
+  rampLatitude: number | null;
+  rampLongitude: number | null;
 }
 
 interface NearbyPoi {
@@ -128,10 +130,13 @@ export default function AirportPanel({ airportCode, imperial, onClose, onGetDire
 
   function handleGetDirections() {
     if (!data) return;
+    const { airport } = data;
+    // Use ramp/FBO coordinates when available — the same origin used for
+    // Distance Matrix travel time calculations. Falls back to the ARP.
     onGetDirections({
-      lat: data.airport.latitude,
-      lng: data.airport.longitude,
-      name: `${data.airport.code} – ${data.airport.name}`,
+      lat: airport.rampLatitude ?? airport.latitude,
+      lng: airport.rampLongitude ?? airport.longitude,
+      name: `${airport.code} – ${airport.name}`,
     });
     onClose();
   }

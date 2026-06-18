@@ -49,29 +49,37 @@ export function DirectionsPanel({
   const [routes, setRoutes] = useState<google.maps.DirectionsRoute[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
-  const [userLocation, setUserLocation] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
 
-  // Get user's current location
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.error("Error getting user location:", error);
-          // Fallback location (center of USA)
-          setUserLocation({ lat: 39.8283, lng: -98.5795 });
-        }
-      );
+  const requestLocation = () => {
+    if (!("geolocation" in navigator)) {
+      setLocationError("Geolocation is not supported by your browser.");
+      return;
     }
-  }, []);
+    setLocating(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setLocating(false);
+      },
+      (error) => {
+        setLocating(false);
+        if (error.code === 1 /* PERMISSION_DENIED */) {
+          setLocationError("Location access denied. Enable location in your browser settings, then retry.");
+        } else if (error.code === 2 /* POSITION_UNAVAILABLE */) {
+          setLocationError("Your location is currently unavailable.");
+        } else {
+          setLocationError("Timed out getting your location. Please retry.");
+        }
+      },
+      { timeout: 10000, maximumAge: 60000 }
+    );
+  };
+
+  useEffect(() => { requestLocation(); }, []);
 
   // Fetch directions when travel mode or destination changes
   useEffect(() => {
@@ -154,8 +162,29 @@ export function DirectionsPanel({
           </div>
         </div>
 
+        {/* Location error */}
+        {!userLocation && !locating && locationError && (
+          <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-4 text-center">
+            <p className="text-sm text-yellow-800 mb-3">{locationError}</p>
+            <button
+              onClick={requestLocation}
+              className="rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Locating */}
+        {locating && (
+          <div className="flex items-center justify-center py-4 text-sm text-gray-500 gap-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+            Getting your location…
+          </div>
+        )}
+
         {/* Loading State */}
-        {loading && (
+        {userLocation && loading && (
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
               <div className="mb-2 h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mx-auto"></div>

@@ -184,6 +184,8 @@ export async function loader({ params, request, context }: LoaderArgs) {
         windIndicator: airport.windIndicator,
         latitude: airport.latitude,
         longitude: airport.longitude,
+        rampLatitude: airport.rampLatitude,
+        rampLongitude: airport.rampLongitude,
         fboName: airport.fboName,
         fboPhone: airport.fboPhone,
         fboWebsite: airport.fboWebsite,
