@@ -211,6 +211,11 @@ model Airport {
   fboName        String?                               @db.VarChar(255)
   fboPhone       String?                               @db.VarChar(50)
   fboWebsite     String?                               @db.VarChar(500)
+  websiteUrl     String?                               @db.VarChar(512)
+  transientParkingNotes      String?                   @db.Text
+  transientParkingSource     String?                   @db.VarChar(200)
+  transientParkingConfidence String?                   @db.VarChar(10)
+  transientParkingLastSyncAt DateTime?                 @db.Timestamptz
   notes          String?                               @db.Text
   lastVerifiedAt DateTime?                             @db.Timestamptz
   lastPoiSyncAt  DateTime?                             @db.Timestamptz

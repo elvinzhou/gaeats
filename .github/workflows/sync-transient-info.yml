@@ -1,0 +1,57 @@
+name: Transient Parking Sync
+
+on:
+  schedule:
+    # Daily at 04:00 UTC — after POI sync (03:00) completes
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+    inputs:
+      airport:
+        description: "Sync a specific airport by ICAO code (e.g. KPAO)"
+        required: false
+        default: ""
+      limit:
+        description: "Max airports to process per run"
+        required: false
+        default: "15"
+      max_searches:
+        description: "Max Brave Search calls (URL discovery)"
+        required: false
+        default: "3"
+      dry_run:
+        description: "Dry run (log without writing to DB)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  sync-transient-info:
+    name: Sync Transient Parking Info
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync transient parking info
+        run: |
+          ARGS="--limit=${{ inputs.limit || '15' }} --max-searches=${{ inputs.max_searches || '3' }}"
+          if [ -n "${{ inputs.airport }}" ]; then ARGS="$ARGS --airport=${{ inputs.airport }}"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          node scripts/sync-transient-info.js $ARGS
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
