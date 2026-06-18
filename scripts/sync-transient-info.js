@@ -10,7 +10,7 @@ if (args.has("--help")) {
   console.log("");
   console.log("  --airport=CODE    Sync a single airport");
   console.log("  --limit=N         Max airports to process per run (default: 15)");
-  console.log("  --max-searches=N  Max Brave Search calls per run for URL discovery (default: 3)");
+  console.log("  --max-searches=N  Max Google CSE calls per run for URL discovery (default: 3)");
   console.log("  --dry-run         Print what would be written, do not modify DB");
   process.exit(0);
 }
@@ -31,7 +31,8 @@ const dryRun = args.has("--dry-run");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const BRAVE_API_KEY = process.env.BRAVE_API_KEY;
+const GOOGLE_CSE_KEY = process.env.GOOGLE_CSE_KEY;
+const GOOGLE_CSE_ID = process.env.GOOGLE_CSE_ID;
 const REDDIT_CLIENT_ID = process.env.REDDIT_CLIENT_ID;
 const REDDIT_CLIENT_SECRET = process.env.REDDIT_CLIENT_SECRET;
 
@@ -43,7 +44,7 @@ const prisma = createScriptPrisma();
 try {
   const airports = await listAirportsForTransientSync(airportFilter);
 
-  let braveSearchesUsed = 0;
+  let cseSearchesUsed = 0;
   let processed = 0;
   let failed = 0;
 
@@ -54,14 +55,14 @@ try {
       // Step 1: Discover airport website if not already known
       let websiteUrl = airport.websiteUrl ?? null;
       if (!websiteUrl) {
-        websiteUrl = await discoverWebsiteUrl(airport, braveSearchesUsed, maxSearches);
-        if (websiteUrl) {
+        const { url, usedSearch } = await discoverWebsiteUrl(airport, cseSearchesUsed, maxSearches);
+        if (usedSearch) cseSearchesUsed++;
+        if (url) {
+          websiteUrl = url;
           console.log(`  website: ${websiteUrl}`);
           if (!dryRun) {
             await prisma.airport.update({ where: { id: airport.id }, data: { websiteUrl } });
           }
-        } else if (braveSearchesUsed < maxSearches) {
-          braveSearchesUsed++;
         }
       } else {
         console.log(`  website (cached): ${websiteUrl}`);
@@ -178,10 +179,13 @@ try {
       console.error(`  FAILED: ${err.message}`);
       failed++;
     }
+
+    // Polite delay between airports — avoids hammering AirNav/POA sequentially
+    if (!airportFilter) await new Promise((r) => setTimeout(r, 1000));
   }
 
   console.log(
-    `\nDone — processed: ${processed}  failed: ${failed}  brave searches used: ${braveSearchesUsed}`
+    `\nDone — processed: ${processed}  failed: ${failed}  CSE searches used: ${cseSearchesUsed}`
   );
   if (failed > 0) process.exitCode = 1;
 } finally {
@@ -235,26 +239,28 @@ async function listAirportsForTransientSync(airportCode) {
 // Website URL discovery
 // ---------------------------------------------------------------------------
 
+// Returns { url: string|null, usedSearch: boolean }
 async function discoverWebsiteUrl(airport, searchesUsed, maxSearches) {
-  // Try AirNav first — it lists official airport website links in its header
+  // Try AirNav first — it lists official airport website links in its header; free
   try {
     const url = await extractWebsiteFromAirNav(airport.code);
-    if (url) return url;
+    if (url) return { url, usedSearch: false };
   } catch {
     // fall through
   }
 
-  // Brave Search fallback — consume one quota slot
-  if (BRAVE_API_KEY && searchesUsed < maxSearches) {
+  // Google Custom Search fallback — 100/day free, consume one quota slot
+  if (GOOGLE_CSE_KEY && GOOGLE_CSE_ID && searchesUsed < maxSearches) {
     try {
-      const url = await braveSearchAirportWebsite(airport);
-      if (url) return url;
+      const url = await googleCseSearchAirportWebsite(airport);
+      return { url, usedSearch: true };
     } catch (err) {
-      console.warn(`  Brave Search failed: ${err.message}`);
+      console.warn(`  Google CSE failed: ${err.message}`);
+      return { url: null, usedSearch: true };
     }
   }
 
-  return null;
+  return { url: null, usedSearch: false };
 }
 
 async function extractWebsiteFromAirNav(code) {
@@ -267,37 +273,32 @@ async function extractWebsiteFromAirNav(code) {
   return match?.[1] ?? null;
 }
 
-async function braveSearchAirportWebsite(airport, attempt = 1) {
+async function googleCseSearchAirportWebsite(airport, attempt = 1) {
   const query = `${airport.name} ${airport.code} airport official website`;
-  const url = new URL("https://api.search.brave.com/res/v1/web/search");
+  const url = new URL("https://www.googleapis.com/customsearch/v1");
+  url.searchParams.set("key", GOOGLE_CSE_KEY);
+  url.searchParams.set("cx", GOOGLE_CSE_ID);
   url.searchParams.set("q", query);
-  url.searchParams.set("count", "3");
-  url.searchParams.set("result_filter", "web");
+  url.searchParams.set("num", "3");
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      "Accept": "application/json",
-      "Accept-Encoding": "gzip",
-      "X-Subscription-Token": BRAVE_API_KEY,
-    },
-  });
+  const response = await fetch(url.toString());
 
   if ((response.status === 429 || response.status >= 500) && attempt < 3) {
     await new Promise((r) => setTimeout(r, attempt * 3000));
-    return braveSearchAirportWebsite(airport, attempt + 1);
+    return googleCseSearchAirportWebsite(airport, attempt + 1);
   }
 
-  if (!response.ok) throw new Error(`Brave Search HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`Google CSE HTTP ${response.status}`);
 
   const data = await response.json();
-  const results = data.web?.results ?? [];
+  const results = data.items ?? [];
 
   // Prefer results whose URL contains the airport code or obvious airport domain patterns
   const codePattern = new RegExp(airport.code.replace(/^K/, ""), "i");
   const preferred = results.find(
-    (r) => codePattern.test(r.url) || /airport\.(org|com|gov|net)/.test(r.url)
+    (r) => codePattern.test(r.link) || /airport\.(org|com|gov|net)/.test(r.link)
   );
-  return (preferred ?? results[0])?.url ?? null;
+  return (preferred ?? results[0])?.link ?? null;
 }
 
 // ---------------------------------------------------------------------------
