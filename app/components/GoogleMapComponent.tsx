@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams } from "react-router";
 import {
   APIProvider,
   Map,
@@ -10,6 +9,7 @@ import { DirectionsRenderer } from "./DirectionsRenderer";
 import { DirectionsPanel } from "./DirectionsPanel";
 import AirportPanel from "./AirportPanel";
 import { useUnits } from "~/hooks/useUnits";
+import { MARKER_COLORS, getMarkerColor } from "~/utils/markerColors";
 import type { Poi, Airport } from "~/types/models";
 
 export interface POI {
@@ -31,18 +31,6 @@ interface GoogleMapComponentProps {
 }
 
 // ---------- helpers ----------
-
-const MARKER_COLORS: Record<string, { background: string; border: string }> = {
-  restaurant: { background: "#FF6B6B", border: "#D64545" },
-  airport:    { background: "#4ECDC4", border: "#399E97" },
-  attraction: { background: "#FFD93D", border: "#C9A71A" },
-  accessible: { background: "#F59E0B", border: "#D97706" },
-  default:    { background: "#4D96FF", border: "#2E76E6" },
-};
-
-function getMarkerColors(type: string) {
-  return MARKER_COLORS[type] ?? MARKER_COLORS.default;
-}
 
 function getAccessThresholds(zoom: number): { minRating: number; maxMinutes: number } | null {
   if (zoom >= 14) return { minRating: 3.5, maxMinutes: 30 };
@@ -116,7 +104,7 @@ interface MarkerWithTooltipProps {
 }
 
 function MarkerWithTooltip({ poi, isHovered, onMouseEnter, onMouseLeave, onClick }: MarkerWithTooltipProps) {
-  const colors = getMarkerColors(poi.type);
+  const colors = getMarkerColor(poi.type);
   const scale = isHovered ? 1.25 : 1;
 
   return (
@@ -362,10 +350,9 @@ export default function GoogleMapComponent({
 }: GoogleMapComponentProps) {
   const { imperial, setImperial } = useUnits();
   const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
+  const [selectedOriginAirport, setSelectedOriginAirport] = useState<Airport | null>(null);
   const [mapTypeId, setMapTypeId] = useState<MapTypeId>("roadmap");
   const [hoveredPOI, setHoveredPOI] = useState<POI | null>(null);
-  const [searchParams] = useSearchParams();
-
   // Airport modal state
   const [modalAirportCode, setModalAirportCode] = useState<string | null>(initialAirportCode);
 
@@ -445,25 +432,35 @@ export default function GoogleMapComponent({
     return true;
   }), ...filteredAccessiblePois];
 
-  function handleMarkerClick(poi: POI) {
-    if (poi.type === "airport") {
-      const airport = poi.data as Airport;
-      setModalAirportCode(airport.code);
-    } else {
-      setSelectedPOI(poi);
+  function findClosestAirport(position: { lat: number; lng: number }): Airport | null {
+    let closest: Airport | null = null;
+    let closestDist = Infinity;
+    for (const p of localPois) {
+      if (p.type !== "airport") continue;
+      const dlat = p.position.lat - position.lat;
+      const dlng = p.position.lng - position.lng;
+      const d = dlat * dlat + dlng * dlng;
+      if (d < closestDist) { closestDist = d; closest = p.data as Airport; }
     }
+    return closest;
   }
 
-  function handleGetDirections(destination: { lat: number; lng: number; name: string }) {
-    setModalAirportCode(null);
-    const airportPOI: POI = {
-      id: -1,
-      position: { lat: destination.lat, lng: destination.lng },
-      title: destination.name,
-      type: "airport",
-      data: {} as Airport,
-    };
-    setSelectedPOI(airportPOI);
+  function handleMarkerClick(poi: POI) {
+    if (poi.type === "airport") {
+      setModalAirportCode((poi.data as Airport).code);
+      return;
+    }
+    // For accessible POIs use the specific linked airport; otherwise nearest.
+    let originAirport: Airport | null = null;
+    if (poi.type === "accessible") {
+      const airportId = (poi.data as any).airportId as number;
+      const found = localPois.find((p) => p.type === "airport" && p.id === airportId);
+      originAirport = found ? (found.data as Airport) : findClosestAirport(poi.position);
+    } else {
+      originAirport = findClosestAirport(poi.position);
+    }
+    setSelectedPOI(poi);
+    setSelectedOriginAirport(originAirport);
   }
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -502,11 +499,15 @@ export default function GoogleMapComponent({
               />
             ))}
 
-            {/* Directions route overlay — only for restaurant/attraction selections */}
-            {selectedPOI && (
+            {/* Directions route overlay */}
+            {selectedPOI && selectedOriginAirport && (
               <DirectionsRenderer
+                origin={{
+                  lat: selectedOriginAirport.rampLatitude ?? selectedOriginAirport.latitude,
+                  lng: selectedOriginAirport.rampLongitude ?? selectedOriginAirport.longitude,
+                }}
                 destination={selectedPOI.position}
-                travelMode={(searchParams.get("mode") as any) || "DRIVING"}
+                unitSystem={imperial ? "IMPERIAL" : "METRIC"}
               />
             )}
           </Map>
@@ -591,11 +592,12 @@ export default function GoogleMapComponent({
         </div>
 
         {/* Directions panel for restaurant / attraction clicks */}
-        {selectedPOI && (
+        {selectedPOI && selectedOriginAirport && (
           <DirectionsPanel
             destination={selectedPOI}
+            originAirport={selectedOriginAirport}
             imperial={imperial}
-            onClose={() => setSelectedPOI(null)}
+            onClose={() => { setSelectedPOI(null); setSelectedOriginAirport(null); }}
           />
         )}
 
@@ -605,7 +607,6 @@ export default function GoogleMapComponent({
             airportCode={modalAirportCode}
             imperial={imperial}
             onClose={() => setModalAirportCode(null)}
-            onGetDirections={handleGetDirections}
           />
         )}
       </div>

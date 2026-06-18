@@ -1,269 +1,224 @@
-/**
- * Directions Panel Component
- *
- * Side panel that displays turn-by-turn directions, route information,
- * and travel mode selection. Updates in real-time when travel mode changes.
- *
- * Features:
- * - Multiple travel modes (driving, walking, bicycling, transit)
- * - Alternative route display
- * - Turn-by-turn directions
- * - Distance and duration estimates
- * - Traffic-aware timing (when available)
- *
- * @module DirectionsPanel
- */
-
 import { useState, useEffect } from "react";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
+import { getMarkerColor } from "~/utils/markerColors";
 import type { POI } from "./GoogleMapComponent";
+import type { Airport } from "~/types/models";
 import type { TravelMode } from "./DirectionsRenderer";
 
-/**
- * Props for DirectionsPanel component
- */
 interface DirectionsPanelProps {
-  /** Selected destination POI */
   destination: POI;
-  /** Use imperial units (miles) vs metric (km) */
+  originAirport: Airport;
   imperial: boolean;
-  /** Callback when panel is closed */
   onClose: () => void;
-  /** Optional callback when travel mode changes */
-  onTravelModeChange?: (mode: TravelMode) => void;
 }
 
-/**
- * DirectionsPanel Component
- *
- * Displays a side panel with route details and travel mode selection
- */
-export function DirectionsPanel({
-  destination,
-  imperial,
-  onClose,
-  onTravelModeChange,
-}: DirectionsPanelProps) {
+function sanitizeInstructions(html: string): string {
+  return html
+    .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, "")
+    .replace(/<(?!\/?(?:b|wbr|div)(?:\s|\/?>))[^>]*>/gi, "");
+}
+
+const MODE_ICONS: Record<TravelMode, string> = {
+  DRIVING: "🚗",
+  WALKING: "🚶",
+  BICYCLING: "🚴",
+  TRANSIT: "🚌",
+};
+
+function travelBadgeLabel(poi: POI): string | null {
+  if (poi.type !== "accessible") return null;
+  const d = poi.data as any;
+  if (d.preferredMode === "WALKING" && d.walkingMinutes)
+    return `🚶 ${d.walkingMinutes} min walk`;
+  if (d.preferredMode === "BIKING" && d.bikingMinutes)
+    return `🚲 ${d.bikingMinutes} min bike`;
+  if (d.preferredMode === "TRANSIT" && d.transitMinutes)
+    return `🚌 ${d.transitMinutes} min transit`;
+  return null;
+}
+
+export function DirectionsPanel({ destination, originAirport, imperial, onClose }: DirectionsPanelProps) {
   const routesLibrary = useMapsLibrary("routes");
   const [travelMode, setTravelMode] = useState<TravelMode>("DRIVING");
   const [routes, setRoutes] = useState<google.maps.DirectionsRoute[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [locating, setLocating] = useState(false);
 
-  const requestLocation = () => {
-    if (!("geolocation" in navigator)) {
-      setLocationError("Geolocation is not supported by your browser.");
-      return;
-    }
-    setLocating(true);
-    setLocationError(null);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setLocating(false);
-      },
-      (error) => {
-        setLocating(false);
-        if (error.code === 1 /* PERMISSION_DENIED */) {
-          setLocationError("Location access denied. Enable location in your browser settings, then retry.");
-        } else if (error.code === 2 /* POSITION_UNAVAILABLE */) {
-          setLocationError("Your location is currently unavailable.");
-        } else {
-          setLocationError("Timed out getting your location. Please retry.");
-        }
-      },
-      { timeout: 10000, maximumAge: 60000 }
-    );
+  const effectiveOrigin = {
+    lat: originAirport.rampLatitude ?? originAirport.latitude,
+    lng: originAirport.rampLongitude ?? originAirport.longitude,
   };
+  const usingRamp = originAirport.rampLatitude != null;
 
-  useEffect(() => { requestLocation(); }, []);
-
-  // Fetch directions when travel mode or destination changes
   useEffect(() => {
-    if (!routesLibrary || !userLocation) return;
-
+    if (!routesLibrary) return;
     setLoading(true);
+    setRoutes([]);
+    setSelectedRouteIndex(0);
     const service = new routesLibrary.DirectionsService();
-
     service.route(
       {
-        origin: userLocation,
+        origin: effectiveOrigin,
         destination: destination.position,
         travelMode: google.maps.TravelMode[travelMode],
-        provideRouteAlternatives: true,
         unitSystem: imperial
           ? google.maps.UnitSystem.IMPERIAL
           : google.maps.UnitSystem.METRIC,
+        provideRouteAlternatives: true,
       },
       (response, status) => {
         setLoading(false);
         if (status === "OK" && response) {
           setRoutes(response.routes);
-          setSelectedRouteIndex(0);
         } else {
-          console.error("Directions request failed:", status);
           setRoutes([]);
         }
       }
     );
-  }, [routesLibrary, destination, travelMode, userLocation, imperial]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routesLibrary, destination.position, travelMode, imperial,
+      effectiveOrigin.lat, effectiveOrigin.lng]);
 
-  // Handle travel mode change
-  const handleTravelModeChange = (mode: TravelMode) => {
-    setTravelMode(mode);
-    onTravelModeChange?.(mode);
-  };
+  const colors = getMarkerColor(destination.type);
+  const poiData = destination.data as any;
+  const travelLabel = travelBadgeLabel(destination);
+
+  const typeLabel =
+    destination.type === "restaurant" ? "Restaurant" :
+    destination.type === "accessible" ? "Accessible restaurant" :
+    destination.type === "attraction" ? "Attraction" : "";
 
   return (
-    <div className="h-full w-96 overflow-y-auto bg-white shadow-xl">
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white p-4">
-        <div>
-          <h2 className="text-xl font-semibold">Directions</h2>
-          <p className="text-sm text-gray-600">{destination.title}</p>
+    <div className="flex h-full w-96 shrink-0 flex-col border-l border-gray-200 bg-white shadow-xl overflow-hidden">
+      {/* Colored POI header */}
+      <div
+        className="px-5 py-4 flex items-start justify-between gap-3"
+        style={{ backgroundColor: colors.background + "22", borderBottom: `3px solid ${colors.background}` }}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span
+              className="h-3 w-3 rounded-full shrink-0"
+              style={{ backgroundColor: colors.background, border: `2px solid ${colors.border}` }}
+            />
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              {typeLabel}
+            </span>
+            {poiData.externalRating != null && (
+              <span className="ml-auto text-sm font-bold text-amber-600">
+                ⭐ {Number(poiData.externalRating).toFixed(1)}
+              </span>
+            )}
+          </div>
+          <p className="font-bold text-gray-900 leading-snug text-base">{destination.title}</p>
+          {(poiData.cuisine || poiData.category) && (
+            <p className="mt-0.5 text-xs text-gray-500">
+              {poiData.cuisine || poiData.category}
+            </p>
+          )}
+          {poiData.address && (
+            <p className="mt-0.5 text-xs text-gray-400 truncate">{poiData.address}</p>
+          )}
+          {travelLabel && (
+            <span className="mt-1.5 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+              {travelLabel}
+            </span>
+          )}
         </div>
         <button
           onClick={onClose}
-          className="rounded-full p-2 hover:bg-gray-100 transition-colors"
-          title="Close directions"
+          className="shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          aria-label="Close"
         >
-          <span className="text-2xl">×</span>
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+            <path d="M1 1l16 16M17 1L1 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
         </button>
       </div>
 
-      <div className="p-4">
-        {/* Travel Mode Selector */}
-        <div className="mb-6">
-          <label className="mb-2 block text-sm font-semibold text-gray-700">
-            Travel Mode
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {(["DRIVING", "WALKING", "BICYCLING", "TRANSIT"] as TravelMode[]).map(
-              (mode) => (
-                <button
-                  key={mode}
-                  onClick={() => handleTravelModeChange(mode)}
-                  className={`flex flex-col items-center gap-1 rounded-lg border-2 p-3 transition-all ${
-                    travelMode === mode
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <span className="text-2xl">{getModeIcon(mode)}</span>
-                  <span className="text-xs font-medium capitalize">
-                    {mode.toLowerCase()}
-                  </span>
-                </button>
-              )
-            )}
-          </div>
+      {/* Origin callout */}
+      <div className="flex items-center gap-2 bg-teal-50 border-b border-teal-100 px-5 py-2.5">
+        <span className="text-teal-600 text-sm">✈️</span>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-teal-800">
+            From {originAirport.code}
+            {usingRamp && <span className="ml-1 font-normal text-teal-600">(FBO/ramp)</span>}
+          </p>
+          <p className="text-xs text-teal-600 truncate">{originAirport.name}</p>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Travel mode selector */}
+        <div className="grid grid-cols-4 gap-1.5">
+          {(["DRIVING", "WALKING", "BICYCLING", "TRANSIT"] as TravelMode[]).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setTravelMode(mode)}
+              className={`flex flex-col items-center gap-0.5 rounded-lg border-2 py-2 transition-all text-xs font-medium ${
+                travelMode === mode
+                  ? "border-blue-500 bg-blue-50 text-blue-700"
+                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600"
+              }`}
+            >
+              <span className="text-lg leading-none">{MODE_ICONS[mode]}</span>
+              <span className="capitalize">{mode.toLowerCase().replace("bicycling", "bike")}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Location error */}
-        {!userLocation && !locating && locationError && (
-          <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-4 text-center">
-            <p className="text-sm text-yellow-800 mb-3">{locationError}</p>
-            <button
-              onClick={requestLocation}
-              className="rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700 transition-colors"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* Locating */}
-        {locating && (
-          <div className="flex items-center justify-center py-4 text-sm text-gray-500 gap-2">
+        {/* Loading */}
+        {loading && (
+          <div className="flex items-center justify-center py-6 gap-2 text-sm text-gray-500">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-            Getting your location…
+            Getting directions…
           </div>
         )}
 
-        {/* Loading State */}
-        {userLocation && loading && (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="mb-2 h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 mx-auto"></div>
-              <p className="text-sm text-gray-600">Loading directions...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Routes List */}
+        {/* Routes */}
         {!loading && routes.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">
-              Available Routes ({routes.length})
-            </h3>
-
+          <div className="space-y-3">
             {routes.map((route, index) => (
               <div
                 key={index}
                 onClick={() => setSelectedRouteIndex(index)}
-                className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                className={`cursor-pointer rounded-xl border-2 p-3.5 transition-all ${
                   selectedRouteIndex === index
                     ? "border-blue-500 bg-blue-50"
                     : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 }`}
               >
-                {/* Route Summary */}
-                <h4 className="mb-2 font-medium text-gray-900">
+                <p className="text-sm font-semibold text-gray-800 mb-2">
                   {route.summary || `Route ${index + 1}`}
-                </h4>
-
-                <div className="space-y-1 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">📏 Distance:</span>
-                    <span>{route.legs[0].distance?.text}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">⏱️ Duration:</span>
-                    <span>{route.legs[0].duration?.text}</span>
-                  </div>
-                  {route.legs[0].duration_in_traffic && (
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">🚦 In Traffic:</span>
-                      <span>{route.legs[0].duration_in_traffic.text}</span>
-                    </div>
-                  )}
+                </p>
+                <div className="flex gap-4 text-sm text-gray-600">
+                  <span>📏 {route.legs[0].distance?.text}</span>
+                  <span>⏱️ {route.legs[0].duration?.text}</span>
                 </div>
+                {route.legs[0].duration_in_traffic && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    🚦 In traffic: {route.legs[0].duration_in_traffic.text}
+                  </p>
+                )}
 
-                {/* Turn-by-Turn Directions (for selected route) */}
                 {selectedRouteIndex === index && (
-                  <div className="mt-4 border-t pt-4">
-                    <h5 className="mb-3 font-semibold text-gray-900">
-                      Turn-by-Turn Directions
-                    </h5>
-                    <div className="space-y-3">
-                      {route.legs[0].steps.map((step, stepIndex) => (
-                        <div
-                          key={stepIndex}
-                          className="flex gap-3 pb-3 border-b border-gray-100 last:border-0"
-                        >
-                          {/* Step Number */}
-                          <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
-                            {stepIndex + 1}
-                          </div>
-
-                          {/* Step Details */}
-                          <div className="flex-1">
-                            <div
-                              dangerouslySetInnerHTML={{
-                                __html: sanitizeInstructions(step.instructions),
-                              }}
-                              className="mb-1 text-sm text-gray-900"
-                            />
-                            <div className="text-xs text-gray-500">
-                              {step.distance?.text} • {step.duration?.text}
-                            </div>
-                          </div>
+                  <div className="mt-3 border-t border-blue-200 pt-3 space-y-2.5">
+                    {route.legs[0].steps.map((step, i) => (
+                      <div key={i} className="flex gap-2.5 pb-2.5 border-b border-gray-100 last:border-0 last:pb-0">
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
+                          {i + 1}
                         </div>
-                      ))}
-                    </div>
+                        <div className="flex-1 min-w-0">
+                          <div
+                            dangerouslySetInnerHTML={{ __html: sanitizeInstructions(step.instructions) }}
+                            className="text-xs text-gray-800"
+                          />
+                          <p className="mt-0.5 text-xs text-gray-400">
+                            {step.distance?.text} · {step.duration?.text}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -271,39 +226,15 @@ export function DirectionsPanel({
           </div>
         )}
 
-        {/* No Routes Found */}
-        {!loading && routes.length === 0 && userLocation && (
-          <div className="rounded-lg bg-yellow-50 p-4 text-center">
+        {/* No routes */}
+        {!loading && routes.length === 0 && (
+          <div className="rounded-xl bg-yellow-50 border border-yellow-200 p-4 text-center">
             <p className="text-sm text-yellow-800">
-              No routes found for this travel mode. Try a different mode or check the destination.
+              No {travelMode.toLowerCase()} route found. Try a different travel mode.
             </p>
           </div>
         )}
       </div>
     </div>
   );
-}
-
-/**
- * Sanitize Google Maps step instructions to prevent XSS.
- * Only allows the subset of HTML tags Google Maps actually uses (<b>, <wbr>, <div>).
- * All event handlers and other tags are stripped.
- */
-function sanitizeInstructions(html: string): string {
-  return html
-    .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, "") // strip event handlers
-    .replace(/<(?!\/?(?:b|wbr|div)(?:\s|\/?>))[^>]*>/gi, "");     // strip disallowed tags
-}
-
-/**
- * Get emoji icon for travel mode
- */
-function getModeIcon(mode: TravelMode): string {
-  const icons: Record<TravelMode, string> = {
-    DRIVING: "🚗",
-    WALKING: "🚶",
-    BICYCLING: "🚴",
-    TRANSIT: "🚌",
-  };
-  return icons[mode];
 }
