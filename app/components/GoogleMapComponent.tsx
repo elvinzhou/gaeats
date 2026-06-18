@@ -8,7 +8,7 @@ import {
 } from "@vis.gl/react-google-maps";
 import { DirectionsRenderer } from "./DirectionsRenderer";
 import { DirectionsPanel } from "./DirectionsPanel";
-import AirportModal from "./AirportModal";
+import AirportPanel from "./AirportPanel";
 import type { Poi, Airport } from "~/types/models";
 
 export interface POI {
@@ -329,7 +329,7 @@ export default function GoogleMapComponent({
   }
 
   function handleGetDirections(destination: { lat: number; lng: number; name: string }) {
-    // Create a synthetic POI for the DirectionsPanel
+    setModalAirportCode(null);
     const airportPOI: POI = {
       id: -1,
       position: { lat: destination.lat, lng: destination.lng },
@@ -454,16 +454,16 @@ export default function GoogleMapComponent({
         {selectedPOI && (
           <DirectionsPanel destination={selectedPOI} onClose={() => setSelectedPOI(null)} />
         )}
-      </div>
 
-      {/* Airport info modal */}
-      {modalAirportCode && (
-        <AirportModal
-          airportCode={modalAirportCode}
-          onClose={() => setModalAirportCode(null)}
-          onGetDirections={handleGetDirections}
-        />
-      )}
+        {/* Airport detail panel */}
+        {modalAirportCode && (
+          <AirportPanel
+            airportCode={modalAirportCode}
+            onClose={() => setModalAirportCode(null)}
+            onGetDirections={handleGetDirections}
+          />
+        )}
+      </div>
     </APIProvider>
   );
 }
