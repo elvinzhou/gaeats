@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatDistance, formatRadius } from "~/utils/units";
 
 interface AirportData {
   code: string;
@@ -62,6 +63,7 @@ type PoiType = "RESTAURANT" | "ATTRACTION";
 
 interface AirportPanelProps {
   airportCode: string;
+  imperial: boolean;
   onClose: () => void;
   onGetDirections: (destination: { lat: number; lng: number; name: string }) => void;
 }
@@ -103,7 +105,7 @@ function TravelBadge({ poi }: { poi: NearbyPoi }) {
   );
 }
 
-export default function AirportPanel({ airportCode, onClose, onGetDirections }: AirportPanelProps) {
+export default function AirportPanel({ airportCode, imperial, onClose, onGetDirections }: AirportPanelProps) {
   const [data, setData] = useState<PanelApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -332,7 +334,7 @@ export default function AirportPanel({ airportCode, onClose, onGetDirections }: 
                 <h3 className="text-sm font-semibold text-gray-900">
                   {poiType === "RESTAURANT" ? "Nearby Restaurants" : "Nearby Attractions"}
                 </h3>
-                <span className="text-xs text-gray-400">within 15 km</span>
+                <span className="text-xs text-gray-400">within {formatRadius(15, imperial)}</span>
               </div>
 
               {/* Loading state for tab switch */}
@@ -365,7 +367,7 @@ export default function AirportPanel({ airportCode, onClose, onGetDirections }: 
                       </div>
                       <p className="mt-0.5 text-xs text-gray-500">
                         {poi.cuisine || poi.category || (poiType === "RESTAURANT" ? "Restaurant" : "Attraction")}
-                        {poi.distance != null ? ` · ${(poi.distance / 1000).toFixed(1)} km` : ""}
+                        {poi.distance != null ? ` · ${formatDistance(poi.distance, imperial)}` : ""}
                       </p>
                       {poi.address && (
                         <p className="mt-0.5 truncate text-xs text-gray-400">{poi.address}</p>

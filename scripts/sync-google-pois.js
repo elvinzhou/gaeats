@@ -284,6 +284,9 @@ async function updateAirportPoiMetrics(options) {
   });
 }
 
+// TODO: Google is deprecating the Distance Matrix API in favor of the Routes API
+// (computeRouteMatrix endpoint). Migrate before the deprecation deadline to avoid breakage.
+// Requires enabling "Routes API" in Cloud Console and updating the server key restrictions.
 async function fetchDistanceMatrix(options) {
   const url = new URL("https://maps.googleapis.com/maps/api/distancematrix/json");
   url.searchParams.set("origins", `${options.origin.latitude},${options.origin.longitude}`);

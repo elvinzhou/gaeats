@@ -9,6 +9,7 @@ import {
 import { DirectionsRenderer } from "./DirectionsRenderer";
 import { DirectionsPanel } from "./DirectionsPanel";
 import AirportPanel from "./AirportPanel";
+import { useUnits } from "~/hooks/useUnits";
 import type { Poi, Airport } from "~/types/models";
 
 export interface POI {
@@ -359,6 +360,7 @@ export default function GoogleMapComponent({
   initialSelectedPoi = null,
   initialAirportCode = null,
 }: GoogleMapComponentProps) {
+  const { imperial, setImperial } = useUnits();
   const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
   const [mapTypeId, setMapTypeId] = useState<MapTypeId>("roadmap");
   const [hoveredPOI, setHoveredPOI] = useState<POI | null>(null);
@@ -491,7 +493,16 @@ export default function GoogleMapComponent({
 
           {/* Legend + filters */}
           <div className="absolute bottom-6 left-6 rounded-lg bg-white p-4 shadow-lg min-w-[160px]">
-            <h3 className="mb-2 font-semibold text-sm">Legend</h3>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="font-semibold text-sm">Legend</h3>
+              <button
+                onClick={() => setImperial(!imperial)}
+                className="rounded-md border border-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                title={imperial ? "Switch to metric" : "Switch to imperial"}
+              >
+                {imperial ? "mi" : "km"}
+              </button>
+            </div>
             <div className="space-y-1.5 mb-4">
               <div className="flex items-center gap-2">
                 <div className="h-3.5 w-3.5 rounded-full bg-[#FF6B6B] shrink-0" />
@@ -559,13 +570,18 @@ export default function GoogleMapComponent({
 
         {/* Directions panel for restaurant / attraction clicks */}
         {selectedPOI && (
-          <DirectionsPanel destination={selectedPOI} onClose={() => setSelectedPOI(null)} />
+          <DirectionsPanel
+            destination={selectedPOI}
+            imperial={imperial}
+            onClose={() => setSelectedPOI(null)}
+          />
         )}
 
         {/* Airport detail panel */}
         {modalAirportCode && (
           <AirportPanel
             airportCode={modalAirportCode}
+            imperial={imperial}
             onClose={() => setModalAirportCode(null)}
             onGetDirections={handleGetDirections}
           />

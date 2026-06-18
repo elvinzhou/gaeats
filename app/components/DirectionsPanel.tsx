@@ -25,6 +25,8 @@ import type { TravelMode } from "./DirectionsRenderer";
 interface DirectionsPanelProps {
   /** Selected destination POI */
   destination: POI;
+  /** Use imperial units (miles) vs metric (km) */
+  imperial: boolean;
   /** Callback when panel is closed */
   onClose: () => void;
   /** Optional callback when travel mode changes */
@@ -38,6 +40,7 @@ interface DirectionsPanelProps {
  */
 export function DirectionsPanel({
   destination,
+  imperial,
   onClose,
   onTravelModeChange,
 }: DirectionsPanelProps) {
@@ -83,6 +86,9 @@ export function DirectionsPanel({
         destination: destination.position,
         travelMode: google.maps.TravelMode[travelMode],
         provideRouteAlternatives: true,
+        unitSystem: imperial
+          ? google.maps.UnitSystem.IMPERIAL
+          : google.maps.UnitSystem.METRIC,
       },
       (response, status) => {
         setLoading(false);
@@ -95,7 +101,7 @@ export function DirectionsPanel({
         }
       }
     );
-  }, [routesLibrary, destination, travelMode, userLocation]);
+  }, [routesLibrary, destination, travelMode, userLocation, imperial]);
 
   // Handle travel mode change
   const handleTravelModeChange = (mode: TravelMode) => {
