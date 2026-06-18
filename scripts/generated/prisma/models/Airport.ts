@@ -40,11 +40,45 @@ export type AggregateAirport = {
 
 export type AirportAvgAggregateOutputType = {
   id: number | null
+  elevation: number | null
+  trafficPatternAltitude: number | null
+  distanceFromCity: number | null
+  acreage: number | null
+  singleEngineCount: number | null
+  multiEngineCount: number | null
+  jetEngineCount: number | null
+  helicopterCount: number | null
+  gliderCount: number | null
+  militaryCount: number | null
+  ultralightCount: number | null
+  annualCommercialOps: number | null
+  annualCommuterOps: number | null
+  annualAirTaxiOps: number | null
+  annualGaLocalOps: number | null
+  annualGaItinerantOps: number | null
+  annualMilitaryOps: number | null
   syncPriority: number | null
 }
 
 export type AirportSumAggregateOutputType = {
   id: number | null
+  elevation: number | null
+  trafficPatternAltitude: number | null
+  distanceFromCity: number | null
+  acreage: number | null
+  singleEngineCount: number | null
+  multiEngineCount: number | null
+  jetEngineCount: number | null
+  helicopterCount: number | null
+  gliderCount: number | null
+  militaryCount: number | null
+  ultralightCount: number | null
+  annualCommercialOps: number | null
+  annualCommuterOps: number | null
+  annualAirTaxiOps: number | null
+  annualGaLocalOps: number | null
+  annualGaItinerantOps: number | null
+  annualMilitaryOps: number | null
   syncPriority: number | null
 }
 
@@ -59,6 +93,70 @@ export type AirportMinAggregateOutputType = {
   sourceRecordUpdatedAt: Date | null
   sourceRefreshedAt: Date | null
   facilityType: string | null
+  ownershipType: string | null
+  airportUse: string | null
+  elevation: number | null
+  siteNumber: string | null
+  faaRegionCode: string | null
+  stateName: string | null
+  countyName: string | null
+  countyState: string | null
+  ownerName: string | null
+  ownerPhone: string | null
+  managerName: string | null
+  managerPhone: string | null
+  magVariation: string | null
+  magVariationYear: string | null
+  trafficPatternAltitude: number | null
+  sectionalChart: string | null
+  distanceFromCity: number | null
+  directionFromCity: string | null
+  acreage: number | null
+  artccBoundaryId: string | null
+  artccResponsibleId: string | null
+  notamFacility: string | null
+  notamDService: string | null
+  activationDate: string | null
+  airportStatus: string | null
+  arffCertification: string | null
+  npiasAgreements: string | null
+  airspaceAnalysis: string | null
+  customsEntry: string | null
+  customsLanding: string | null
+  jointUse: string | null
+  militaryRights: string | null
+  fuelTypes: string | null
+  airframeRepair: string | null
+  engineRepair: string | null
+  bottledOxygen: string | null
+  bulkOxygen: string | null
+  lightingSchedule: string | null
+  beaconSchedule: string | null
+  controlTower: string | null
+  unicomFrequency: string | null
+  ctafFrequency: string | null
+  segmentedCircle: string | null
+  beaconColor: string | null
+  landingFee: string | null
+  singleEngineCount: number | null
+  multiEngineCount: number | null
+  jetEngineCount: number | null
+  helicopterCount: number | null
+  gliderCount: number | null
+  militaryCount: number | null
+  ultralightCount: number | null
+  annualCommercialOps: number | null
+  annualCommuterOps: number | null
+  annualAirTaxiOps: number | null
+  annualGaLocalOps: number | null
+  annualGaItinerantOps: number | null
+  annualMilitaryOps: number | null
+  annualOpsDate: string | null
+  contractFuel: string | null
+  storageFacilities: string | null
+  otherServices: string | null
+  windIndicator: string | null
+  minOperationalNetwork: string | null
   name: string | null
   city: string | null
   state: string | null
@@ -86,6 +184,70 @@ export type AirportMaxAggregateOutputType = {
   sourceRecordUpdatedAt: Date | null
   sourceRefreshedAt: Date | null
   facilityType: string | null
+  ownershipType: string | null
+  airportUse: string | null
+  elevation: number | null
+  siteNumber: string | null
+  faaRegionCode: string | null
+  stateName: string | null
+  countyName: string | null
+  countyState: string | null
+  ownerName: string | null
+  ownerPhone: string | null
+  managerName: string | null
+  managerPhone: string | null
+  magVariation: string | null
+  magVariationYear: string | null
+  trafficPatternAltitude: number | null
+  sectionalChart: string | null
+  distanceFromCity: number | null
+  directionFromCity: string | null
+  acreage: number | null
+  artccBoundaryId: string | null
+  artccResponsibleId: string | null
+  notamFacility: string | null
+  notamDService: string | null
+  activationDate: string | null
+  airportStatus: string | null
+  arffCertification: string | null
+  npiasAgreements: string | null
+  airspaceAnalysis: string | null
+  customsEntry: string | null
+  customsLanding: string | null
+  jointUse: string | null
+  militaryRights: string | null
+  fuelTypes: string | null
+  airframeRepair: string | null
+  engineRepair: string | null
+  bottledOxygen: string | null
+  bulkOxygen: string | null
+  lightingSchedule: string | null
+  beaconSchedule: string | null
+  controlTower: string | null
+  unicomFrequency: string | null
+  ctafFrequency: string | null
+  segmentedCircle: string | null
+  beaconColor: string | null
+  landingFee: string | null
+  singleEngineCount: number | null
+  multiEngineCount: number | null
+  jetEngineCount: number | null
+  helicopterCount: number | null
+  gliderCount: number | null
+  militaryCount: number | null
+  ultralightCount: number | null
+  annualCommercialOps: number | null
+  annualCommuterOps: number | null
+  annualAirTaxiOps: number | null
+  annualGaLocalOps: number | null
+  annualGaItinerantOps: number | null
+  annualMilitaryOps: number | null
+  annualOpsDate: string | null
+  contractFuel: string | null
+  storageFacilities: string | null
+  otherServices: string | null
+  windIndicator: string | null
+  minOperationalNetwork: string | null
   name: string | null
   city: string | null
   state: string | null
@@ -113,6 +275,70 @@ export type AirportCountAggregateOutputType = {
   sourceRecordUpdatedAt: number
   sourceRefreshedAt: number
   facilityType: number
+  ownershipType: number
+  airportUse: number
+  elevation: number
+  siteNumber: number
+  faaRegionCode: number
+  stateName: number
+  countyName: number
+  countyState: number
+  ownerName: number
+  ownerPhone: number
+  managerName: number
+  managerPhone: number
+  magVariation: number
+  magVariationYear: number
+  trafficPatternAltitude: number
+  sectionalChart: number
+  distanceFromCity: number
+  directionFromCity: number
+  acreage: number
+  artccBoundaryId: number
+  artccResponsibleId: number
+  notamFacility: number
+  notamDService: number
+  activationDate: number
+  airportStatus: number
+  arffCertification: number
+  npiasAgreements: number
+  airspaceAnalysis: number
+  customsEntry: number
+  customsLanding: number
+  jointUse: number
+  militaryRights: number
+  fuelTypes: number
+  airframeRepair: number
+  engineRepair: number
+  bottledOxygen: number
+  bulkOxygen: number
+  lightingSchedule: number
+  beaconSchedule: number
+  controlTower: number
+  unicomFrequency: number
+  ctafFrequency: number
+  segmentedCircle: number
+  beaconColor: number
+  landingFee: number
+  singleEngineCount: number
+  multiEngineCount: number
+  jetEngineCount: number
+  helicopterCount: number
+  gliderCount: number
+  militaryCount: number
+  ultralightCount: number
+  annualCommercialOps: number
+  annualCommuterOps: number
+  annualAirTaxiOps: number
+  annualGaLocalOps: number
+  annualGaItinerantOps: number
+  annualMilitaryOps: number
+  annualOpsDate: number
+  contractFuel: number
+  storageFacilities: number
+  otherServices: number
+  windIndicator: number
+  minOperationalNetwork: number
   name: number
   city: number
   state: number
@@ -133,11 +359,45 @@ export type AirportCountAggregateOutputType = {
 
 export type AirportAvgAggregateInputType = {
   id?: true
+  elevation?: true
+  trafficPatternAltitude?: true
+  distanceFromCity?: true
+  acreage?: true
+  singleEngineCount?: true
+  multiEngineCount?: true
+  jetEngineCount?: true
+  helicopterCount?: true
+  gliderCount?: true
+  militaryCount?: true
+  ultralightCount?: true
+  annualCommercialOps?: true
+  annualCommuterOps?: true
+  annualAirTaxiOps?: true
+  annualGaLocalOps?: true
+  annualGaItinerantOps?: true
+  annualMilitaryOps?: true
   syncPriority?: true
 }
 
 export type AirportSumAggregateInputType = {
   id?: true
+  elevation?: true
+  trafficPatternAltitude?: true
+  distanceFromCity?: true
+  acreage?: true
+  singleEngineCount?: true
+  multiEngineCount?: true
+  jetEngineCount?: true
+  helicopterCount?: true
+  gliderCount?: true
+  militaryCount?: true
+  ultralightCount?: true
+  annualCommercialOps?: true
+  annualCommuterOps?: true
+  annualAirTaxiOps?: true
+  annualGaLocalOps?: true
+  annualGaItinerantOps?: true
+  annualMilitaryOps?: true
   syncPriority?: true
 }
 
@@ -152,6 +412,70 @@ export type AirportMinAggregateInputType = {
   sourceRecordUpdatedAt?: true
   sourceRefreshedAt?: true
   facilityType?: true
+  ownershipType?: true
+  airportUse?: true
+  elevation?: true
+  siteNumber?: true
+  faaRegionCode?: true
+  stateName?: true
+  countyName?: true
+  countyState?: true
+  ownerName?: true
+  ownerPhone?: true
+  managerName?: true
+  managerPhone?: true
+  magVariation?: true
+  magVariationYear?: true
+  trafficPatternAltitude?: true
+  sectionalChart?: true
+  distanceFromCity?: true
+  directionFromCity?: true
+  acreage?: true
+  artccBoundaryId?: true
+  artccResponsibleId?: true
+  notamFacility?: true
+  notamDService?: true
+  activationDate?: true
+  airportStatus?: true
+  arffCertification?: true
+  npiasAgreements?: true
+  airspaceAnalysis?: true
+  customsEntry?: true
+  customsLanding?: true
+  jointUse?: true
+  militaryRights?: true
+  fuelTypes?: true
+  airframeRepair?: true
+  engineRepair?: true
+  bottledOxygen?: true
+  bulkOxygen?: true
+  lightingSchedule?: true
+  beaconSchedule?: true
+  controlTower?: true
+  unicomFrequency?: true
+  ctafFrequency?: true
+  segmentedCircle?: true
+  beaconColor?: true
+  landingFee?: true
+  singleEngineCount?: true
+  multiEngineCount?: true
+  jetEngineCount?: true
+  helicopterCount?: true
+  gliderCount?: true
+  militaryCount?: true
+  ultralightCount?: true
+  annualCommercialOps?: true
+  annualCommuterOps?: true
+  annualAirTaxiOps?: true
+  annualGaLocalOps?: true
+  annualGaItinerantOps?: true
+  annualMilitaryOps?: true
+  annualOpsDate?: true
+  contractFuel?: true
+  storageFacilities?: true
+  otherServices?: true
+  windIndicator?: true
+  minOperationalNetwork?: true
   name?: true
   city?: true
   state?: true
@@ -179,6 +503,70 @@ export type AirportMaxAggregateInputType = {
   sourceRecordUpdatedAt?: true
   sourceRefreshedAt?: true
   facilityType?: true
+  ownershipType?: true
+  airportUse?: true
+  elevation?: true
+  siteNumber?: true
+  faaRegionCode?: true
+  stateName?: true
+  countyName?: true
+  countyState?: true
+  ownerName?: true
+  ownerPhone?: true
+  managerName?: true
+  managerPhone?: true
+  magVariation?: true
+  magVariationYear?: true
+  trafficPatternAltitude?: true
+  sectionalChart?: true
+  distanceFromCity?: true
+  directionFromCity?: true
+  acreage?: true
+  artccBoundaryId?: true
+  artccResponsibleId?: true
+  notamFacility?: true
+  notamDService?: true
+  activationDate?: true
+  airportStatus?: true
+  arffCertification?: true
+  npiasAgreements?: true
+  airspaceAnalysis?: true
+  customsEntry?: true
+  customsLanding?: true
+  jointUse?: true
+  militaryRights?: true
+  fuelTypes?: true
+  airframeRepair?: true
+  engineRepair?: true
+  bottledOxygen?: true
+  bulkOxygen?: true
+  lightingSchedule?: true
+  beaconSchedule?: true
+  controlTower?: true
+  unicomFrequency?: true
+  ctafFrequency?: true
+  segmentedCircle?: true
+  beaconColor?: true
+  landingFee?: true
+  singleEngineCount?: true
+  multiEngineCount?: true
+  jetEngineCount?: true
+  helicopterCount?: true
+  gliderCount?: true
+  militaryCount?: true
+  ultralightCount?: true
+  annualCommercialOps?: true
+  annualCommuterOps?: true
+  annualAirTaxiOps?: true
+  annualGaLocalOps?: true
+  annualGaItinerantOps?: true
+  annualMilitaryOps?: true
+  annualOpsDate?: true
+  contractFuel?: true
+  storageFacilities?: true
+  otherServices?: true
+  windIndicator?: true
+  minOperationalNetwork?: true
   name?: true
   city?: true
   state?: true
@@ -206,6 +594,70 @@ export type AirportCountAggregateInputType = {
   sourceRecordUpdatedAt?: true
   sourceRefreshedAt?: true
   facilityType?: true
+  ownershipType?: true
+  airportUse?: true
+  elevation?: true
+  siteNumber?: true
+  faaRegionCode?: true
+  stateName?: true
+  countyName?: true
+  countyState?: true
+  ownerName?: true
+  ownerPhone?: true
+  managerName?: true
+  managerPhone?: true
+  magVariation?: true
+  magVariationYear?: true
+  trafficPatternAltitude?: true
+  sectionalChart?: true
+  distanceFromCity?: true
+  directionFromCity?: true
+  acreage?: true
+  artccBoundaryId?: true
+  artccResponsibleId?: true
+  notamFacility?: true
+  notamDService?: true
+  activationDate?: true
+  airportStatus?: true
+  arffCertification?: true
+  npiasAgreements?: true
+  airspaceAnalysis?: true
+  customsEntry?: true
+  customsLanding?: true
+  jointUse?: true
+  militaryRights?: true
+  fuelTypes?: true
+  airframeRepair?: true
+  engineRepair?: true
+  bottledOxygen?: true
+  bulkOxygen?: true
+  lightingSchedule?: true
+  beaconSchedule?: true
+  controlTower?: true
+  unicomFrequency?: true
+  ctafFrequency?: true
+  segmentedCircle?: true
+  beaconColor?: true
+  landingFee?: true
+  singleEngineCount?: true
+  multiEngineCount?: true
+  jetEngineCount?: true
+  helicopterCount?: true
+  gliderCount?: true
+  militaryCount?: true
+  ultralightCount?: true
+  annualCommercialOps?: true
+  annualCommuterOps?: true
+  annualAirTaxiOps?: true
+  annualGaLocalOps?: true
+  annualGaItinerantOps?: true
+  annualMilitaryOps?: true
+  annualOpsDate?: true
+  contractFuel?: true
+  storageFacilities?: true
+  otherServices?: true
+  windIndicator?: true
+  minOperationalNetwork?: true
   name?: true
   city?: true
   state?: true
@@ -320,6 +772,70 @@ export type AirportGroupByOutputType = {
   sourceRecordUpdatedAt: Date | null
   sourceRefreshedAt: Date | null
   facilityType: string | null
+  ownershipType: string | null
+  airportUse: string | null
+  elevation: number | null
+  siteNumber: string | null
+  faaRegionCode: string | null
+  stateName: string | null
+  countyName: string | null
+  countyState: string | null
+  ownerName: string | null
+  ownerPhone: string | null
+  managerName: string | null
+  managerPhone: string | null
+  magVariation: string | null
+  magVariationYear: string | null
+  trafficPatternAltitude: number | null
+  sectionalChart: string | null
+  distanceFromCity: number | null
+  directionFromCity: string | null
+  acreage: number | null
+  artccBoundaryId: string | null
+  artccResponsibleId: string | null
+  notamFacility: string | null
+  notamDService: string | null
+  activationDate: string | null
+  airportStatus: string | null
+  arffCertification: string | null
+  npiasAgreements: string | null
+  airspaceAnalysis: string | null
+  customsEntry: string | null
+  customsLanding: string | null
+  jointUse: string | null
+  militaryRights: string | null
+  fuelTypes: string | null
+  airframeRepair: string | null
+  engineRepair: string | null
+  bottledOxygen: string | null
+  bulkOxygen: string | null
+  lightingSchedule: string | null
+  beaconSchedule: string | null
+  controlTower: string | null
+  unicomFrequency: string | null
+  ctafFrequency: string | null
+  segmentedCircle: string | null
+  beaconColor: string | null
+  landingFee: string | null
+  singleEngineCount: number | null
+  multiEngineCount: number | null
+  jetEngineCount: number | null
+  helicopterCount: number | null
+  gliderCount: number | null
+  militaryCount: number | null
+  ultralightCount: number | null
+  annualCommercialOps: number | null
+  annualCommuterOps: number | null
+  annualAirTaxiOps: number | null
+  annualGaLocalOps: number | null
+  annualGaItinerantOps: number | null
+  annualMilitaryOps: number | null
+  annualOpsDate: string | null
+  contractFuel: string | null
+  storageFacilities: string | null
+  otherServices: string | null
+  windIndicator: string | null
+  minOperationalNetwork: string | null
   name: string
   city: string
   state: string | null
@@ -370,6 +886,70 @@ export type AirportWhereInput = {
   sourceRecordUpdatedAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
   sourceRefreshedAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
   facilityType?: Prisma.StringNullableFilter<"Airport"> | string | null
+  ownershipType?: Prisma.StringNullableFilter<"Airport"> | string | null
+  airportUse?: Prisma.StringNullableFilter<"Airport"> | string | null
+  elevation?: Prisma.FloatNullableFilter<"Airport"> | number | null
+  siteNumber?: Prisma.StringNullableFilter<"Airport"> | string | null
+  faaRegionCode?: Prisma.StringNullableFilter<"Airport"> | string | null
+  stateName?: Prisma.StringNullableFilter<"Airport"> | string | null
+  countyName?: Prisma.StringNullableFilter<"Airport"> | string | null
+  countyState?: Prisma.StringNullableFilter<"Airport"> | string | null
+  ownerName?: Prisma.StringNullableFilter<"Airport"> | string | null
+  ownerPhone?: Prisma.StringNullableFilter<"Airport"> | string | null
+  managerName?: Prisma.StringNullableFilter<"Airport"> | string | null
+  managerPhone?: Prisma.StringNullableFilter<"Airport"> | string | null
+  magVariation?: Prisma.StringNullableFilter<"Airport"> | string | null
+  magVariationYear?: Prisma.StringNullableFilter<"Airport"> | string | null
+  trafficPatternAltitude?: Prisma.IntNullableFilter<"Airport"> | number | null
+  sectionalChart?: Prisma.StringNullableFilter<"Airport"> | string | null
+  distanceFromCity?: Prisma.IntNullableFilter<"Airport"> | number | null
+  directionFromCity?: Prisma.StringNullableFilter<"Airport"> | string | null
+  acreage?: Prisma.IntNullableFilter<"Airport"> | number | null
+  artccBoundaryId?: Prisma.StringNullableFilter<"Airport"> | string | null
+  artccResponsibleId?: Prisma.StringNullableFilter<"Airport"> | string | null
+  notamFacility?: Prisma.StringNullableFilter<"Airport"> | string | null
+  notamDService?: Prisma.StringNullableFilter<"Airport"> | string | null
+  activationDate?: Prisma.StringNullableFilter<"Airport"> | string | null
+  airportStatus?: Prisma.StringNullableFilter<"Airport"> | string | null
+  arffCertification?: Prisma.StringNullableFilter<"Airport"> | string | null
+  npiasAgreements?: Prisma.StringNullableFilter<"Airport"> | string | null
+  airspaceAnalysis?: Prisma.StringNullableFilter<"Airport"> | string | null
+  customsEntry?: Prisma.StringNullableFilter<"Airport"> | string | null
+  customsLanding?: Prisma.StringNullableFilter<"Airport"> | string | null
+  jointUse?: Prisma.StringNullableFilter<"Airport"> | string | null
+  militaryRights?: Prisma.StringNullableFilter<"Airport"> | string | null
+  fuelTypes?: Prisma.StringNullableFilter<"Airport"> | string | null
+  airframeRepair?: Prisma.StringNullableFilter<"Airport"> | string | null
+  engineRepair?: Prisma.StringNullableFilter<"Airport"> | string | null
+  bottledOxygen?: Prisma.StringNullableFilter<"Airport"> | string | null
+  bulkOxygen?: Prisma.StringNullableFilter<"Airport"> | string | null
+  lightingSchedule?: Prisma.StringNullableFilter<"Airport"> | string | null
+  beaconSchedule?: Prisma.StringNullableFilter<"Airport"> | string | null
+  controlTower?: Prisma.StringNullableFilter<"Airport"> | string | null
+  unicomFrequency?: Prisma.StringNullableFilter<"Airport"> | string | null
+  ctafFrequency?: Prisma.StringNullableFilter<"Airport"> | string | null
+  segmentedCircle?: Prisma.StringNullableFilter<"Airport"> | string | null
+  beaconColor?: Prisma.StringNullableFilter<"Airport"> | string | null
+  landingFee?: Prisma.StringNullableFilter<"Airport"> | string | null
+  singleEngineCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  multiEngineCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  jetEngineCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  helicopterCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  gliderCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  militaryCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  ultralightCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualCommercialOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualCommuterOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualAirTaxiOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualGaLocalOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualGaItinerantOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualMilitaryOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualOpsDate?: Prisma.StringNullableFilter<"Airport"> | string | null
+  contractFuel?: Prisma.StringNullableFilter<"Airport"> | string | null
+  storageFacilities?: Prisma.StringNullableFilter<"Airport"> | string | null
+  otherServices?: Prisma.StringNullableFilter<"Airport"> | string | null
+  windIndicator?: Prisma.StringNullableFilter<"Airport"> | string | null
+  minOperationalNetwork?: Prisma.StringNullableFilter<"Airport"> | string | null
   name?: Prisma.StringFilter<"Airport"> | string
   city?: Prisma.StringFilter<"Airport"> | string
   state?: Prisma.StringNullableFilter<"Airport"> | string | null
@@ -401,6 +981,70 @@ export type AirportOrderByWithRelationInput = {
   sourceRecordUpdatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceRefreshedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   facilityType?: Prisma.SortOrderInput | Prisma.SortOrder
+  ownershipType?: Prisma.SortOrderInput | Prisma.SortOrder
+  airportUse?: Prisma.SortOrderInput | Prisma.SortOrder
+  elevation?: Prisma.SortOrderInput | Prisma.SortOrder
+  siteNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  faaRegionCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  stateName?: Prisma.SortOrderInput | Prisma.SortOrder
+  countyName?: Prisma.SortOrderInput | Prisma.SortOrder
+  countyState?: Prisma.SortOrderInput | Prisma.SortOrder
+  ownerName?: Prisma.SortOrderInput | Prisma.SortOrder
+  ownerPhone?: Prisma.SortOrderInput | Prisma.SortOrder
+  managerName?: Prisma.SortOrderInput | Prisma.SortOrder
+  managerPhone?: Prisma.SortOrderInput | Prisma.SortOrder
+  magVariation?: Prisma.SortOrderInput | Prisma.SortOrder
+  magVariationYear?: Prisma.SortOrderInput | Prisma.SortOrder
+  trafficPatternAltitude?: Prisma.SortOrderInput | Prisma.SortOrder
+  sectionalChart?: Prisma.SortOrderInput | Prisma.SortOrder
+  distanceFromCity?: Prisma.SortOrderInput | Prisma.SortOrder
+  directionFromCity?: Prisma.SortOrderInput | Prisma.SortOrder
+  acreage?: Prisma.SortOrderInput | Prisma.SortOrder
+  artccBoundaryId?: Prisma.SortOrderInput | Prisma.SortOrder
+  artccResponsibleId?: Prisma.SortOrderInput | Prisma.SortOrder
+  notamFacility?: Prisma.SortOrderInput | Prisma.SortOrder
+  notamDService?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  airportStatus?: Prisma.SortOrderInput | Prisma.SortOrder
+  arffCertification?: Prisma.SortOrderInput | Prisma.SortOrder
+  npiasAgreements?: Prisma.SortOrderInput | Prisma.SortOrder
+  airspaceAnalysis?: Prisma.SortOrderInput | Prisma.SortOrder
+  customsEntry?: Prisma.SortOrderInput | Prisma.SortOrder
+  customsLanding?: Prisma.SortOrderInput | Prisma.SortOrder
+  jointUse?: Prisma.SortOrderInput | Prisma.SortOrder
+  militaryRights?: Prisma.SortOrderInput | Prisma.SortOrder
+  fuelTypes?: Prisma.SortOrderInput | Prisma.SortOrder
+  airframeRepair?: Prisma.SortOrderInput | Prisma.SortOrder
+  engineRepair?: Prisma.SortOrderInput | Prisma.SortOrder
+  bottledOxygen?: Prisma.SortOrderInput | Prisma.SortOrder
+  bulkOxygen?: Prisma.SortOrderInput | Prisma.SortOrder
+  lightingSchedule?: Prisma.SortOrderInput | Prisma.SortOrder
+  beaconSchedule?: Prisma.SortOrderInput | Prisma.SortOrder
+  controlTower?: Prisma.SortOrderInput | Prisma.SortOrder
+  unicomFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
+  ctafFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
+  segmentedCircle?: Prisma.SortOrderInput | Prisma.SortOrder
+  beaconColor?: Prisma.SortOrderInput | Prisma.SortOrder
+  landingFee?: Prisma.SortOrderInput | Prisma.SortOrder
+  singleEngineCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  multiEngineCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  jetEngineCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  helicopterCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  gliderCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  militaryCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  ultralightCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualCommercialOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualCommuterOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualAirTaxiOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualGaLocalOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualGaItinerantOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualMilitaryOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualOpsDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  contractFuel?: Prisma.SortOrderInput | Prisma.SortOrder
+  storageFacilities?: Prisma.SortOrderInput | Prisma.SortOrder
+  otherServices?: Prisma.SortOrderInput | Prisma.SortOrder
+  windIndicator?: Prisma.SortOrderInput | Prisma.SortOrder
+  minOperationalNetwork?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   city?: Prisma.SortOrder
   state?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -435,6 +1079,70 @@ export type AirportWhereUniqueInput = Prisma.AtLeast<{
   sourceRecordUpdatedAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
   sourceRefreshedAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
   facilityType?: Prisma.StringNullableFilter<"Airport"> | string | null
+  ownershipType?: Prisma.StringNullableFilter<"Airport"> | string | null
+  airportUse?: Prisma.StringNullableFilter<"Airport"> | string | null
+  elevation?: Prisma.FloatNullableFilter<"Airport"> | number | null
+  siteNumber?: Prisma.StringNullableFilter<"Airport"> | string | null
+  faaRegionCode?: Prisma.StringNullableFilter<"Airport"> | string | null
+  stateName?: Prisma.StringNullableFilter<"Airport"> | string | null
+  countyName?: Prisma.StringNullableFilter<"Airport"> | string | null
+  countyState?: Prisma.StringNullableFilter<"Airport"> | string | null
+  ownerName?: Prisma.StringNullableFilter<"Airport"> | string | null
+  ownerPhone?: Prisma.StringNullableFilter<"Airport"> | string | null
+  managerName?: Prisma.StringNullableFilter<"Airport"> | string | null
+  managerPhone?: Prisma.StringNullableFilter<"Airport"> | string | null
+  magVariation?: Prisma.StringNullableFilter<"Airport"> | string | null
+  magVariationYear?: Prisma.StringNullableFilter<"Airport"> | string | null
+  trafficPatternAltitude?: Prisma.IntNullableFilter<"Airport"> | number | null
+  sectionalChart?: Prisma.StringNullableFilter<"Airport"> | string | null
+  distanceFromCity?: Prisma.IntNullableFilter<"Airport"> | number | null
+  directionFromCity?: Prisma.StringNullableFilter<"Airport"> | string | null
+  acreage?: Prisma.IntNullableFilter<"Airport"> | number | null
+  artccBoundaryId?: Prisma.StringNullableFilter<"Airport"> | string | null
+  artccResponsibleId?: Prisma.StringNullableFilter<"Airport"> | string | null
+  notamFacility?: Prisma.StringNullableFilter<"Airport"> | string | null
+  notamDService?: Prisma.StringNullableFilter<"Airport"> | string | null
+  activationDate?: Prisma.StringNullableFilter<"Airport"> | string | null
+  airportStatus?: Prisma.StringNullableFilter<"Airport"> | string | null
+  arffCertification?: Prisma.StringNullableFilter<"Airport"> | string | null
+  npiasAgreements?: Prisma.StringNullableFilter<"Airport"> | string | null
+  airspaceAnalysis?: Prisma.StringNullableFilter<"Airport"> | string | null
+  customsEntry?: Prisma.StringNullableFilter<"Airport"> | string | null
+  customsLanding?: Prisma.StringNullableFilter<"Airport"> | string | null
+  jointUse?: Prisma.StringNullableFilter<"Airport"> | string | null
+  militaryRights?: Prisma.StringNullableFilter<"Airport"> | string | null
+  fuelTypes?: Prisma.StringNullableFilter<"Airport"> | string | null
+  airframeRepair?: Prisma.StringNullableFilter<"Airport"> | string | null
+  engineRepair?: Prisma.StringNullableFilter<"Airport"> | string | null
+  bottledOxygen?: Prisma.StringNullableFilter<"Airport"> | string | null
+  bulkOxygen?: Prisma.StringNullableFilter<"Airport"> | string | null
+  lightingSchedule?: Prisma.StringNullableFilter<"Airport"> | string | null
+  beaconSchedule?: Prisma.StringNullableFilter<"Airport"> | string | null
+  controlTower?: Prisma.StringNullableFilter<"Airport"> | string | null
+  unicomFrequency?: Prisma.StringNullableFilter<"Airport"> | string | null
+  ctafFrequency?: Prisma.StringNullableFilter<"Airport"> | string | null
+  segmentedCircle?: Prisma.StringNullableFilter<"Airport"> | string | null
+  beaconColor?: Prisma.StringNullableFilter<"Airport"> | string | null
+  landingFee?: Prisma.StringNullableFilter<"Airport"> | string | null
+  singleEngineCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  multiEngineCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  jetEngineCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  helicopterCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  gliderCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  militaryCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  ultralightCount?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualCommercialOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualCommuterOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualAirTaxiOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualGaLocalOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualGaItinerantOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualMilitaryOps?: Prisma.IntNullableFilter<"Airport"> | number | null
+  annualOpsDate?: Prisma.StringNullableFilter<"Airport"> | string | null
+  contractFuel?: Prisma.StringNullableFilter<"Airport"> | string | null
+  storageFacilities?: Prisma.StringNullableFilter<"Airport"> | string | null
+  otherServices?: Prisma.StringNullableFilter<"Airport"> | string | null
+  windIndicator?: Prisma.StringNullableFilter<"Airport"> | string | null
+  minOperationalNetwork?: Prisma.StringNullableFilter<"Airport"> | string | null
   name?: Prisma.StringFilter<"Airport"> | string
   city?: Prisma.StringFilter<"Airport"> | string
   state?: Prisma.StringNullableFilter<"Airport"> | string | null
@@ -466,6 +1174,70 @@ export type AirportOrderByWithAggregationInput = {
   sourceRecordUpdatedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceRefreshedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   facilityType?: Prisma.SortOrderInput | Prisma.SortOrder
+  ownershipType?: Prisma.SortOrderInput | Prisma.SortOrder
+  airportUse?: Prisma.SortOrderInput | Prisma.SortOrder
+  elevation?: Prisma.SortOrderInput | Prisma.SortOrder
+  siteNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  faaRegionCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  stateName?: Prisma.SortOrderInput | Prisma.SortOrder
+  countyName?: Prisma.SortOrderInput | Prisma.SortOrder
+  countyState?: Prisma.SortOrderInput | Prisma.SortOrder
+  ownerName?: Prisma.SortOrderInput | Prisma.SortOrder
+  ownerPhone?: Prisma.SortOrderInput | Prisma.SortOrder
+  managerName?: Prisma.SortOrderInput | Prisma.SortOrder
+  managerPhone?: Prisma.SortOrderInput | Prisma.SortOrder
+  magVariation?: Prisma.SortOrderInput | Prisma.SortOrder
+  magVariationYear?: Prisma.SortOrderInput | Prisma.SortOrder
+  trafficPatternAltitude?: Prisma.SortOrderInput | Prisma.SortOrder
+  sectionalChart?: Prisma.SortOrderInput | Prisma.SortOrder
+  distanceFromCity?: Prisma.SortOrderInput | Prisma.SortOrder
+  directionFromCity?: Prisma.SortOrderInput | Prisma.SortOrder
+  acreage?: Prisma.SortOrderInput | Prisma.SortOrder
+  artccBoundaryId?: Prisma.SortOrderInput | Prisma.SortOrder
+  artccResponsibleId?: Prisma.SortOrderInput | Prisma.SortOrder
+  notamFacility?: Prisma.SortOrderInput | Prisma.SortOrder
+  notamDService?: Prisma.SortOrderInput | Prisma.SortOrder
+  activationDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  airportStatus?: Prisma.SortOrderInput | Prisma.SortOrder
+  arffCertification?: Prisma.SortOrderInput | Prisma.SortOrder
+  npiasAgreements?: Prisma.SortOrderInput | Prisma.SortOrder
+  airspaceAnalysis?: Prisma.SortOrderInput | Prisma.SortOrder
+  customsEntry?: Prisma.SortOrderInput | Prisma.SortOrder
+  customsLanding?: Prisma.SortOrderInput | Prisma.SortOrder
+  jointUse?: Prisma.SortOrderInput | Prisma.SortOrder
+  militaryRights?: Prisma.SortOrderInput | Prisma.SortOrder
+  fuelTypes?: Prisma.SortOrderInput | Prisma.SortOrder
+  airframeRepair?: Prisma.SortOrderInput | Prisma.SortOrder
+  engineRepair?: Prisma.SortOrderInput | Prisma.SortOrder
+  bottledOxygen?: Prisma.SortOrderInput | Prisma.SortOrder
+  bulkOxygen?: Prisma.SortOrderInput | Prisma.SortOrder
+  lightingSchedule?: Prisma.SortOrderInput | Prisma.SortOrder
+  beaconSchedule?: Prisma.SortOrderInput | Prisma.SortOrder
+  controlTower?: Prisma.SortOrderInput | Prisma.SortOrder
+  unicomFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
+  ctafFrequency?: Prisma.SortOrderInput | Prisma.SortOrder
+  segmentedCircle?: Prisma.SortOrderInput | Prisma.SortOrder
+  beaconColor?: Prisma.SortOrderInput | Prisma.SortOrder
+  landingFee?: Prisma.SortOrderInput | Prisma.SortOrder
+  singleEngineCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  multiEngineCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  jetEngineCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  helicopterCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  gliderCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  militaryCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  ultralightCount?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualCommercialOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualCommuterOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualAirTaxiOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualGaLocalOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualGaItinerantOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualMilitaryOps?: Prisma.SortOrderInput | Prisma.SortOrder
+  annualOpsDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  contractFuel?: Prisma.SortOrderInput | Prisma.SortOrder
+  storageFacilities?: Prisma.SortOrderInput | Prisma.SortOrder
+  otherServices?: Prisma.SortOrderInput | Prisma.SortOrder
+  windIndicator?: Prisma.SortOrderInput | Prisma.SortOrder
+  minOperationalNetwork?: Prisma.SortOrderInput | Prisma.SortOrder
   name?: Prisma.SortOrder
   city?: Prisma.SortOrder
   state?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -501,6 +1273,70 @@ export type AirportScalarWhereWithAggregatesInput = {
   sourceRecordUpdatedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Airport"> | Date | string | null
   sourceRefreshedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Airport"> | Date | string | null
   facilityType?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  ownershipType?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  airportUse?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  elevation?: Prisma.FloatNullableWithAggregatesFilter<"Airport"> | number | null
+  siteNumber?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  faaRegionCode?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  stateName?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  countyName?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  countyState?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  ownerName?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  ownerPhone?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  managerName?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  managerPhone?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  magVariation?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  magVariationYear?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  trafficPatternAltitude?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  sectionalChart?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  distanceFromCity?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  directionFromCity?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  acreage?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  artccBoundaryId?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  artccResponsibleId?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  notamFacility?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  notamDService?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  activationDate?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  airportStatus?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  arffCertification?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  npiasAgreements?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  airspaceAnalysis?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  customsEntry?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  customsLanding?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  jointUse?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  militaryRights?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  fuelTypes?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  airframeRepair?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  engineRepair?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  bottledOxygen?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  bulkOxygen?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  lightingSchedule?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  beaconSchedule?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  controlTower?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  unicomFrequency?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  ctafFrequency?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  segmentedCircle?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  beaconColor?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  landingFee?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  singleEngineCount?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  multiEngineCount?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  jetEngineCount?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  helicopterCount?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  gliderCount?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  militaryCount?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  ultralightCount?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  annualCommercialOps?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  annualCommuterOps?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  annualAirTaxiOps?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  annualGaLocalOps?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  annualGaItinerantOps?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  annualMilitaryOps?: Prisma.IntNullableWithAggregatesFilter<"Airport"> | number | null
+  annualOpsDate?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  contractFuel?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  storageFacilities?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  otherServices?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  windIndicator?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  minOperationalNetwork?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
   name?: Prisma.StringWithAggregatesFilter<"Airport"> | string
   city?: Prisma.StringWithAggregatesFilter<"Airport"> | string
   state?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
@@ -527,6 +1363,70 @@ export type AirportUpdateInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -558,6 +1458,70 @@ export type AirportUncheckedUpdateInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -588,6 +1552,70 @@ export type AirportUpdateManyMutationInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -615,6 +1643,70 @@ export type AirportUncheckedUpdateManyInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -642,6 +1734,70 @@ export type AirportCountOrderByAggregateInput = {
   sourceRecordUpdatedAt?: Prisma.SortOrder
   sourceRefreshedAt?: Prisma.SortOrder
   facilityType?: Prisma.SortOrder
+  ownershipType?: Prisma.SortOrder
+  airportUse?: Prisma.SortOrder
+  elevation?: Prisma.SortOrder
+  siteNumber?: Prisma.SortOrder
+  faaRegionCode?: Prisma.SortOrder
+  stateName?: Prisma.SortOrder
+  countyName?: Prisma.SortOrder
+  countyState?: Prisma.SortOrder
+  ownerName?: Prisma.SortOrder
+  ownerPhone?: Prisma.SortOrder
+  managerName?: Prisma.SortOrder
+  managerPhone?: Prisma.SortOrder
+  magVariation?: Prisma.SortOrder
+  magVariationYear?: Prisma.SortOrder
+  trafficPatternAltitude?: Prisma.SortOrder
+  sectionalChart?: Prisma.SortOrder
+  distanceFromCity?: Prisma.SortOrder
+  directionFromCity?: Prisma.SortOrder
+  acreage?: Prisma.SortOrder
+  artccBoundaryId?: Prisma.SortOrder
+  artccResponsibleId?: Prisma.SortOrder
+  notamFacility?: Prisma.SortOrder
+  notamDService?: Prisma.SortOrder
+  activationDate?: Prisma.SortOrder
+  airportStatus?: Prisma.SortOrder
+  arffCertification?: Prisma.SortOrder
+  npiasAgreements?: Prisma.SortOrder
+  airspaceAnalysis?: Prisma.SortOrder
+  customsEntry?: Prisma.SortOrder
+  customsLanding?: Prisma.SortOrder
+  jointUse?: Prisma.SortOrder
+  militaryRights?: Prisma.SortOrder
+  fuelTypes?: Prisma.SortOrder
+  airframeRepair?: Prisma.SortOrder
+  engineRepair?: Prisma.SortOrder
+  bottledOxygen?: Prisma.SortOrder
+  bulkOxygen?: Prisma.SortOrder
+  lightingSchedule?: Prisma.SortOrder
+  beaconSchedule?: Prisma.SortOrder
+  controlTower?: Prisma.SortOrder
+  unicomFrequency?: Prisma.SortOrder
+  ctafFrequency?: Prisma.SortOrder
+  segmentedCircle?: Prisma.SortOrder
+  beaconColor?: Prisma.SortOrder
+  landingFee?: Prisma.SortOrder
+  singleEngineCount?: Prisma.SortOrder
+  multiEngineCount?: Prisma.SortOrder
+  jetEngineCount?: Prisma.SortOrder
+  helicopterCount?: Prisma.SortOrder
+  gliderCount?: Prisma.SortOrder
+  militaryCount?: Prisma.SortOrder
+  ultralightCount?: Prisma.SortOrder
+  annualCommercialOps?: Prisma.SortOrder
+  annualCommuterOps?: Prisma.SortOrder
+  annualAirTaxiOps?: Prisma.SortOrder
+  annualGaLocalOps?: Prisma.SortOrder
+  annualGaItinerantOps?: Prisma.SortOrder
+  annualMilitaryOps?: Prisma.SortOrder
+  annualOpsDate?: Prisma.SortOrder
+  contractFuel?: Prisma.SortOrder
+  storageFacilities?: Prisma.SortOrder
+  otherServices?: Prisma.SortOrder
+  windIndicator?: Prisma.SortOrder
+  minOperationalNetwork?: Prisma.SortOrder
   name?: Prisma.SortOrder
   city?: Prisma.SortOrder
   state?: Prisma.SortOrder
@@ -660,6 +1816,23 @@ export type AirportCountOrderByAggregateInput = {
 
 export type AirportAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  elevation?: Prisma.SortOrder
+  trafficPatternAltitude?: Prisma.SortOrder
+  distanceFromCity?: Prisma.SortOrder
+  acreage?: Prisma.SortOrder
+  singleEngineCount?: Prisma.SortOrder
+  multiEngineCount?: Prisma.SortOrder
+  jetEngineCount?: Prisma.SortOrder
+  helicopterCount?: Prisma.SortOrder
+  gliderCount?: Prisma.SortOrder
+  militaryCount?: Prisma.SortOrder
+  ultralightCount?: Prisma.SortOrder
+  annualCommercialOps?: Prisma.SortOrder
+  annualCommuterOps?: Prisma.SortOrder
+  annualAirTaxiOps?: Prisma.SortOrder
+  annualGaLocalOps?: Prisma.SortOrder
+  annualGaItinerantOps?: Prisma.SortOrder
+  annualMilitaryOps?: Prisma.SortOrder
   syncPriority?: Prisma.SortOrder
 }
 
@@ -674,6 +1847,70 @@ export type AirportMaxOrderByAggregateInput = {
   sourceRecordUpdatedAt?: Prisma.SortOrder
   sourceRefreshedAt?: Prisma.SortOrder
   facilityType?: Prisma.SortOrder
+  ownershipType?: Prisma.SortOrder
+  airportUse?: Prisma.SortOrder
+  elevation?: Prisma.SortOrder
+  siteNumber?: Prisma.SortOrder
+  faaRegionCode?: Prisma.SortOrder
+  stateName?: Prisma.SortOrder
+  countyName?: Prisma.SortOrder
+  countyState?: Prisma.SortOrder
+  ownerName?: Prisma.SortOrder
+  ownerPhone?: Prisma.SortOrder
+  managerName?: Prisma.SortOrder
+  managerPhone?: Prisma.SortOrder
+  magVariation?: Prisma.SortOrder
+  magVariationYear?: Prisma.SortOrder
+  trafficPatternAltitude?: Prisma.SortOrder
+  sectionalChart?: Prisma.SortOrder
+  distanceFromCity?: Prisma.SortOrder
+  directionFromCity?: Prisma.SortOrder
+  acreage?: Prisma.SortOrder
+  artccBoundaryId?: Prisma.SortOrder
+  artccResponsibleId?: Prisma.SortOrder
+  notamFacility?: Prisma.SortOrder
+  notamDService?: Prisma.SortOrder
+  activationDate?: Prisma.SortOrder
+  airportStatus?: Prisma.SortOrder
+  arffCertification?: Prisma.SortOrder
+  npiasAgreements?: Prisma.SortOrder
+  airspaceAnalysis?: Prisma.SortOrder
+  customsEntry?: Prisma.SortOrder
+  customsLanding?: Prisma.SortOrder
+  jointUse?: Prisma.SortOrder
+  militaryRights?: Prisma.SortOrder
+  fuelTypes?: Prisma.SortOrder
+  airframeRepair?: Prisma.SortOrder
+  engineRepair?: Prisma.SortOrder
+  bottledOxygen?: Prisma.SortOrder
+  bulkOxygen?: Prisma.SortOrder
+  lightingSchedule?: Prisma.SortOrder
+  beaconSchedule?: Prisma.SortOrder
+  controlTower?: Prisma.SortOrder
+  unicomFrequency?: Prisma.SortOrder
+  ctafFrequency?: Prisma.SortOrder
+  segmentedCircle?: Prisma.SortOrder
+  beaconColor?: Prisma.SortOrder
+  landingFee?: Prisma.SortOrder
+  singleEngineCount?: Prisma.SortOrder
+  multiEngineCount?: Prisma.SortOrder
+  jetEngineCount?: Prisma.SortOrder
+  helicopterCount?: Prisma.SortOrder
+  gliderCount?: Prisma.SortOrder
+  militaryCount?: Prisma.SortOrder
+  ultralightCount?: Prisma.SortOrder
+  annualCommercialOps?: Prisma.SortOrder
+  annualCommuterOps?: Prisma.SortOrder
+  annualAirTaxiOps?: Prisma.SortOrder
+  annualGaLocalOps?: Prisma.SortOrder
+  annualGaItinerantOps?: Prisma.SortOrder
+  annualMilitaryOps?: Prisma.SortOrder
+  annualOpsDate?: Prisma.SortOrder
+  contractFuel?: Prisma.SortOrder
+  storageFacilities?: Prisma.SortOrder
+  otherServices?: Prisma.SortOrder
+  windIndicator?: Prisma.SortOrder
+  minOperationalNetwork?: Prisma.SortOrder
   name?: Prisma.SortOrder
   city?: Prisma.SortOrder
   state?: Prisma.SortOrder
@@ -701,6 +1938,70 @@ export type AirportMinOrderByAggregateInput = {
   sourceRecordUpdatedAt?: Prisma.SortOrder
   sourceRefreshedAt?: Prisma.SortOrder
   facilityType?: Prisma.SortOrder
+  ownershipType?: Prisma.SortOrder
+  airportUse?: Prisma.SortOrder
+  elevation?: Prisma.SortOrder
+  siteNumber?: Prisma.SortOrder
+  faaRegionCode?: Prisma.SortOrder
+  stateName?: Prisma.SortOrder
+  countyName?: Prisma.SortOrder
+  countyState?: Prisma.SortOrder
+  ownerName?: Prisma.SortOrder
+  ownerPhone?: Prisma.SortOrder
+  managerName?: Prisma.SortOrder
+  managerPhone?: Prisma.SortOrder
+  magVariation?: Prisma.SortOrder
+  magVariationYear?: Prisma.SortOrder
+  trafficPatternAltitude?: Prisma.SortOrder
+  sectionalChart?: Prisma.SortOrder
+  distanceFromCity?: Prisma.SortOrder
+  directionFromCity?: Prisma.SortOrder
+  acreage?: Prisma.SortOrder
+  artccBoundaryId?: Prisma.SortOrder
+  artccResponsibleId?: Prisma.SortOrder
+  notamFacility?: Prisma.SortOrder
+  notamDService?: Prisma.SortOrder
+  activationDate?: Prisma.SortOrder
+  airportStatus?: Prisma.SortOrder
+  arffCertification?: Prisma.SortOrder
+  npiasAgreements?: Prisma.SortOrder
+  airspaceAnalysis?: Prisma.SortOrder
+  customsEntry?: Prisma.SortOrder
+  customsLanding?: Prisma.SortOrder
+  jointUse?: Prisma.SortOrder
+  militaryRights?: Prisma.SortOrder
+  fuelTypes?: Prisma.SortOrder
+  airframeRepair?: Prisma.SortOrder
+  engineRepair?: Prisma.SortOrder
+  bottledOxygen?: Prisma.SortOrder
+  bulkOxygen?: Prisma.SortOrder
+  lightingSchedule?: Prisma.SortOrder
+  beaconSchedule?: Prisma.SortOrder
+  controlTower?: Prisma.SortOrder
+  unicomFrequency?: Prisma.SortOrder
+  ctafFrequency?: Prisma.SortOrder
+  segmentedCircle?: Prisma.SortOrder
+  beaconColor?: Prisma.SortOrder
+  landingFee?: Prisma.SortOrder
+  singleEngineCount?: Prisma.SortOrder
+  multiEngineCount?: Prisma.SortOrder
+  jetEngineCount?: Prisma.SortOrder
+  helicopterCount?: Prisma.SortOrder
+  gliderCount?: Prisma.SortOrder
+  militaryCount?: Prisma.SortOrder
+  ultralightCount?: Prisma.SortOrder
+  annualCommercialOps?: Prisma.SortOrder
+  annualCommuterOps?: Prisma.SortOrder
+  annualAirTaxiOps?: Prisma.SortOrder
+  annualGaLocalOps?: Prisma.SortOrder
+  annualGaItinerantOps?: Prisma.SortOrder
+  annualMilitaryOps?: Prisma.SortOrder
+  annualOpsDate?: Prisma.SortOrder
+  contractFuel?: Prisma.SortOrder
+  storageFacilities?: Prisma.SortOrder
+  otherServices?: Prisma.SortOrder
+  windIndicator?: Prisma.SortOrder
+  minOperationalNetwork?: Prisma.SortOrder
   name?: Prisma.SortOrder
   city?: Prisma.SortOrder
   state?: Prisma.SortOrder
@@ -719,6 +2020,23 @@ export type AirportMinOrderByAggregateInput = {
 
 export type AirportSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  elevation?: Prisma.SortOrder
+  trafficPatternAltitude?: Prisma.SortOrder
+  distanceFromCity?: Prisma.SortOrder
+  acreage?: Prisma.SortOrder
+  singleEngineCount?: Prisma.SortOrder
+  multiEngineCount?: Prisma.SortOrder
+  jetEngineCount?: Prisma.SortOrder
+  helicopterCount?: Prisma.SortOrder
+  gliderCount?: Prisma.SortOrder
+  militaryCount?: Prisma.SortOrder
+  ultralightCount?: Prisma.SortOrder
+  annualCommercialOps?: Prisma.SortOrder
+  annualCommuterOps?: Prisma.SortOrder
+  annualAirTaxiOps?: Prisma.SortOrder
+  annualGaLocalOps?: Prisma.SortOrder
+  annualGaItinerantOps?: Prisma.SortOrder
+  annualMilitaryOps?: Prisma.SortOrder
   syncPriority?: Prisma.SortOrder
 }
 
@@ -746,6 +2064,22 @@ export type EnumAirportSourceFieldUpdateOperationsInput = {
 
 export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
+}
+
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type IntFieldUpdateOperationsInput = {
@@ -813,6 +2147,70 @@ export type AirportUpdateWithoutPoiLinksInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -843,6 +2241,70 @@ export type AirportUncheckedUpdateWithoutPoiLinksInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -877,6 +2339,70 @@ export type AirportUpdateWithoutAccessFactsInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -907,6 +2433,70 @@ export type AirportUncheckedUpdateWithoutAccessFactsInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -941,6 +2531,70 @@ export type AirportUpdateWithoutPilotReviewsInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -971,6 +2625,70 @@ export type AirportUncheckedUpdateWithoutPilotReviewsInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1005,6 +2723,70 @@ export type AirportUpdateWithoutAccessReportsInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1035,6 +2817,70 @@ export type AirportUncheckedUpdateWithoutAccessReportsInput = {
   sourceRecordUpdatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sourceRefreshedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   facilityType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownershipType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  elevation?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  siteNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faaRegionCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  countyState?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ownerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  managerPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  magVariationYear?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  trafficPatternAltitude?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  sectionalChart?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  distanceFromCity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  directionFromCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  acreage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  artccBoundaryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artccResponsibleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamFacility?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notamDService?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activationDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airportStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  arffCertification?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  npiasAgreements?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airspaceAnalysis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsEntry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  customsLanding?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  jointUse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  militaryRights?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fuelTypes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  airframeRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engineRepair?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bottledOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bulkOxygen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lightingSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconSchedule?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  controlTower?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unicomFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctafFrequency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  segmentedCircle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  beaconColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  landingFee?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  singleEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  multiEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  jetEngineCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  helicopterCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  gliderCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  militaryCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  ultralightCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommercialOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualCommuterOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualAirTaxiOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaLocalOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualGaItinerantOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualMilitaryOps?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  annualOpsDate?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contractFuel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  storageFacilities?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  otherServices?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  windIndicator?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minOperationalNetwork?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   name?: Prisma.StringFieldUpdateOperationsInput | string
   city?: Prisma.StringFieldUpdateOperationsInput | string
   state?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1123,6 +2969,70 @@ export type AirportSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   sourceRecordUpdatedAt?: boolean
   sourceRefreshedAt?: boolean
   facilityType?: boolean
+  ownershipType?: boolean
+  airportUse?: boolean
+  elevation?: boolean
+  siteNumber?: boolean
+  faaRegionCode?: boolean
+  stateName?: boolean
+  countyName?: boolean
+  countyState?: boolean
+  ownerName?: boolean
+  ownerPhone?: boolean
+  managerName?: boolean
+  managerPhone?: boolean
+  magVariation?: boolean
+  magVariationYear?: boolean
+  trafficPatternAltitude?: boolean
+  sectionalChart?: boolean
+  distanceFromCity?: boolean
+  directionFromCity?: boolean
+  acreage?: boolean
+  artccBoundaryId?: boolean
+  artccResponsibleId?: boolean
+  notamFacility?: boolean
+  notamDService?: boolean
+  activationDate?: boolean
+  airportStatus?: boolean
+  arffCertification?: boolean
+  npiasAgreements?: boolean
+  airspaceAnalysis?: boolean
+  customsEntry?: boolean
+  customsLanding?: boolean
+  jointUse?: boolean
+  militaryRights?: boolean
+  fuelTypes?: boolean
+  airframeRepair?: boolean
+  engineRepair?: boolean
+  bottledOxygen?: boolean
+  bulkOxygen?: boolean
+  lightingSchedule?: boolean
+  beaconSchedule?: boolean
+  controlTower?: boolean
+  unicomFrequency?: boolean
+  ctafFrequency?: boolean
+  segmentedCircle?: boolean
+  beaconColor?: boolean
+  landingFee?: boolean
+  singleEngineCount?: boolean
+  multiEngineCount?: boolean
+  jetEngineCount?: boolean
+  helicopterCount?: boolean
+  gliderCount?: boolean
+  militaryCount?: boolean
+  ultralightCount?: boolean
+  annualCommercialOps?: boolean
+  annualCommuterOps?: boolean
+  annualAirTaxiOps?: boolean
+  annualGaLocalOps?: boolean
+  annualGaItinerantOps?: boolean
+  annualMilitaryOps?: boolean
+  annualOpsDate?: boolean
+  contractFuel?: boolean
+  storageFacilities?: boolean
+  otherServices?: boolean
+  windIndicator?: boolean
+  minOperationalNetwork?: boolean
   name?: boolean
   city?: boolean
   state?: boolean
@@ -1156,6 +3066,70 @@ export type AirportSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   sourceRecordUpdatedAt?: boolean
   sourceRefreshedAt?: boolean
   facilityType?: boolean
+  ownershipType?: boolean
+  airportUse?: boolean
+  elevation?: boolean
+  siteNumber?: boolean
+  faaRegionCode?: boolean
+  stateName?: boolean
+  countyName?: boolean
+  countyState?: boolean
+  ownerName?: boolean
+  ownerPhone?: boolean
+  managerName?: boolean
+  managerPhone?: boolean
+  magVariation?: boolean
+  magVariationYear?: boolean
+  trafficPatternAltitude?: boolean
+  sectionalChart?: boolean
+  distanceFromCity?: boolean
+  directionFromCity?: boolean
+  acreage?: boolean
+  artccBoundaryId?: boolean
+  artccResponsibleId?: boolean
+  notamFacility?: boolean
+  notamDService?: boolean
+  activationDate?: boolean
+  airportStatus?: boolean
+  arffCertification?: boolean
+  npiasAgreements?: boolean
+  airspaceAnalysis?: boolean
+  customsEntry?: boolean
+  customsLanding?: boolean
+  jointUse?: boolean
+  militaryRights?: boolean
+  fuelTypes?: boolean
+  airframeRepair?: boolean
+  engineRepair?: boolean
+  bottledOxygen?: boolean
+  bulkOxygen?: boolean
+  lightingSchedule?: boolean
+  beaconSchedule?: boolean
+  controlTower?: boolean
+  unicomFrequency?: boolean
+  ctafFrequency?: boolean
+  segmentedCircle?: boolean
+  beaconColor?: boolean
+  landingFee?: boolean
+  singleEngineCount?: boolean
+  multiEngineCount?: boolean
+  jetEngineCount?: boolean
+  helicopterCount?: boolean
+  gliderCount?: boolean
+  militaryCount?: boolean
+  ultralightCount?: boolean
+  annualCommercialOps?: boolean
+  annualCommuterOps?: boolean
+  annualAirTaxiOps?: boolean
+  annualGaLocalOps?: boolean
+  annualGaItinerantOps?: boolean
+  annualMilitaryOps?: boolean
+  annualOpsDate?: boolean
+  contractFuel?: boolean
+  storageFacilities?: boolean
+  otherServices?: boolean
+  windIndicator?: boolean
+  minOperationalNetwork?: boolean
   name?: boolean
   city?: boolean
   state?: boolean
@@ -1183,6 +3157,70 @@ export type AirportSelectScalar = {
   sourceRecordUpdatedAt?: boolean
   sourceRefreshedAt?: boolean
   facilityType?: boolean
+  ownershipType?: boolean
+  airportUse?: boolean
+  elevation?: boolean
+  siteNumber?: boolean
+  faaRegionCode?: boolean
+  stateName?: boolean
+  countyName?: boolean
+  countyState?: boolean
+  ownerName?: boolean
+  ownerPhone?: boolean
+  managerName?: boolean
+  managerPhone?: boolean
+  magVariation?: boolean
+  magVariationYear?: boolean
+  trafficPatternAltitude?: boolean
+  sectionalChart?: boolean
+  distanceFromCity?: boolean
+  directionFromCity?: boolean
+  acreage?: boolean
+  artccBoundaryId?: boolean
+  artccResponsibleId?: boolean
+  notamFacility?: boolean
+  notamDService?: boolean
+  activationDate?: boolean
+  airportStatus?: boolean
+  arffCertification?: boolean
+  npiasAgreements?: boolean
+  airspaceAnalysis?: boolean
+  customsEntry?: boolean
+  customsLanding?: boolean
+  jointUse?: boolean
+  militaryRights?: boolean
+  fuelTypes?: boolean
+  airframeRepair?: boolean
+  engineRepair?: boolean
+  bottledOxygen?: boolean
+  bulkOxygen?: boolean
+  lightingSchedule?: boolean
+  beaconSchedule?: boolean
+  controlTower?: boolean
+  unicomFrequency?: boolean
+  ctafFrequency?: boolean
+  segmentedCircle?: boolean
+  beaconColor?: boolean
+  landingFee?: boolean
+  singleEngineCount?: boolean
+  multiEngineCount?: boolean
+  jetEngineCount?: boolean
+  helicopterCount?: boolean
+  gliderCount?: boolean
+  militaryCount?: boolean
+  ultralightCount?: boolean
+  annualCommercialOps?: boolean
+  annualCommuterOps?: boolean
+  annualAirTaxiOps?: boolean
+  annualGaLocalOps?: boolean
+  annualGaItinerantOps?: boolean
+  annualMilitaryOps?: boolean
+  annualOpsDate?: boolean
+  contractFuel?: boolean
+  storageFacilities?: boolean
+  otherServices?: boolean
+  windIndicator?: boolean
+  minOperationalNetwork?: boolean
   name?: boolean
   city?: boolean
   state?: boolean
@@ -1199,7 +3237,7 @@ export type AirportSelectScalar = {
   updatedAt?: boolean
 }
 
-export type AirportOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "faaCode" | "icaoCode" | "iataCode" | "source" | "sourceDataset" | "sourceRecordUpdatedAt" | "sourceRefreshedAt" | "facilityType" | "name" | "city" | "state" | "country" | "fboName" | "fboPhone" | "fboWebsite" | "notes" | "lastVerifiedAt" | "lastPoiSyncAt" | "nextPoiSyncAt" | "syncPriority" | "createdAt" | "updatedAt", ExtArgs["result"]["airport"]>
+export type AirportOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "faaCode" | "icaoCode" | "iataCode" | "source" | "sourceDataset" | "sourceRecordUpdatedAt" | "sourceRefreshedAt" | "facilityType" | "ownershipType" | "airportUse" | "elevation" | "siteNumber" | "faaRegionCode" | "stateName" | "countyName" | "countyState" | "ownerName" | "ownerPhone" | "managerName" | "managerPhone" | "magVariation" | "magVariationYear" | "trafficPatternAltitude" | "sectionalChart" | "distanceFromCity" | "directionFromCity" | "acreage" | "artccBoundaryId" | "artccResponsibleId" | "notamFacility" | "notamDService" | "activationDate" | "airportStatus" | "arffCertification" | "npiasAgreements" | "airspaceAnalysis" | "customsEntry" | "customsLanding" | "jointUse" | "militaryRights" | "fuelTypes" | "airframeRepair" | "engineRepair" | "bottledOxygen" | "bulkOxygen" | "lightingSchedule" | "beaconSchedule" | "controlTower" | "unicomFrequency" | "ctafFrequency" | "segmentedCircle" | "beaconColor" | "landingFee" | "singleEngineCount" | "multiEngineCount" | "jetEngineCount" | "helicopterCount" | "gliderCount" | "militaryCount" | "ultralightCount" | "annualCommercialOps" | "annualCommuterOps" | "annualAirTaxiOps" | "annualGaLocalOps" | "annualGaItinerantOps" | "annualMilitaryOps" | "annualOpsDate" | "contractFuel" | "storageFacilities" | "otherServices" | "windIndicator" | "minOperationalNetwork" | "name" | "city" | "state" | "country" | "fboName" | "fboPhone" | "fboWebsite" | "notes" | "lastVerifiedAt" | "lastPoiSyncAt" | "nextPoiSyncAt" | "syncPriority" | "createdAt" | "updatedAt", ExtArgs["result"]["airport"]>
 export type AirportInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   accessFacts?: boolean | Prisma.Airport$accessFactsArgs<ExtArgs>
   poiLinks?: boolean | Prisma.Airport$poiLinksArgs<ExtArgs>
@@ -1228,6 +3266,70 @@ export type $AirportPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     sourceRecordUpdatedAt: Date | null
     sourceRefreshedAt: Date | null
     facilityType: string | null
+    ownershipType: string | null
+    airportUse: string | null
+    elevation: number | null
+    siteNumber: string | null
+    faaRegionCode: string | null
+    stateName: string | null
+    countyName: string | null
+    countyState: string | null
+    ownerName: string | null
+    ownerPhone: string | null
+    managerName: string | null
+    managerPhone: string | null
+    magVariation: string | null
+    magVariationYear: string | null
+    trafficPatternAltitude: number | null
+    sectionalChart: string | null
+    distanceFromCity: number | null
+    directionFromCity: string | null
+    acreage: number | null
+    artccBoundaryId: string | null
+    artccResponsibleId: string | null
+    notamFacility: string | null
+    notamDService: string | null
+    activationDate: string | null
+    airportStatus: string | null
+    arffCertification: string | null
+    npiasAgreements: string | null
+    airspaceAnalysis: string | null
+    customsEntry: string | null
+    customsLanding: string | null
+    jointUse: string | null
+    militaryRights: string | null
+    fuelTypes: string | null
+    airframeRepair: string | null
+    engineRepair: string | null
+    bottledOxygen: string | null
+    bulkOxygen: string | null
+    lightingSchedule: string | null
+    beaconSchedule: string | null
+    controlTower: string | null
+    unicomFrequency: string | null
+    ctafFrequency: string | null
+    segmentedCircle: string | null
+    beaconColor: string | null
+    landingFee: string | null
+    singleEngineCount: number | null
+    multiEngineCount: number | null
+    jetEngineCount: number | null
+    helicopterCount: number | null
+    gliderCount: number | null
+    militaryCount: number | null
+    ultralightCount: number | null
+    annualCommercialOps: number | null
+    annualCommuterOps: number | null
+    annualAirTaxiOps: number | null
+    annualGaLocalOps: number | null
+    annualGaItinerantOps: number | null
+    annualMilitaryOps: number | null
+    annualOpsDate: string | null
+    contractFuel: string | null
+    storageFacilities: string | null
+    otherServices: string | null
+    windIndicator: string | null
+    minOperationalNetwork: string | null
     name: string
     city: string
     state: string | null
@@ -1608,6 +3710,70 @@ export interface AirportFieldRefs {
   readonly sourceRecordUpdatedAt: Prisma.FieldRef<"Airport", 'DateTime'>
   readonly sourceRefreshedAt: Prisma.FieldRef<"Airport", 'DateTime'>
   readonly facilityType: Prisma.FieldRef<"Airport", 'String'>
+  readonly ownershipType: Prisma.FieldRef<"Airport", 'String'>
+  readonly airportUse: Prisma.FieldRef<"Airport", 'String'>
+  readonly elevation: Prisma.FieldRef<"Airport", 'Float'>
+  readonly siteNumber: Prisma.FieldRef<"Airport", 'String'>
+  readonly faaRegionCode: Prisma.FieldRef<"Airport", 'String'>
+  readonly stateName: Prisma.FieldRef<"Airport", 'String'>
+  readonly countyName: Prisma.FieldRef<"Airport", 'String'>
+  readonly countyState: Prisma.FieldRef<"Airport", 'String'>
+  readonly ownerName: Prisma.FieldRef<"Airport", 'String'>
+  readonly ownerPhone: Prisma.FieldRef<"Airport", 'String'>
+  readonly managerName: Prisma.FieldRef<"Airport", 'String'>
+  readonly managerPhone: Prisma.FieldRef<"Airport", 'String'>
+  readonly magVariation: Prisma.FieldRef<"Airport", 'String'>
+  readonly magVariationYear: Prisma.FieldRef<"Airport", 'String'>
+  readonly trafficPatternAltitude: Prisma.FieldRef<"Airport", 'Int'>
+  readonly sectionalChart: Prisma.FieldRef<"Airport", 'String'>
+  readonly distanceFromCity: Prisma.FieldRef<"Airport", 'Int'>
+  readonly directionFromCity: Prisma.FieldRef<"Airport", 'String'>
+  readonly acreage: Prisma.FieldRef<"Airport", 'Int'>
+  readonly artccBoundaryId: Prisma.FieldRef<"Airport", 'String'>
+  readonly artccResponsibleId: Prisma.FieldRef<"Airport", 'String'>
+  readonly notamFacility: Prisma.FieldRef<"Airport", 'String'>
+  readonly notamDService: Prisma.FieldRef<"Airport", 'String'>
+  readonly activationDate: Prisma.FieldRef<"Airport", 'String'>
+  readonly airportStatus: Prisma.FieldRef<"Airport", 'String'>
+  readonly arffCertification: Prisma.FieldRef<"Airport", 'String'>
+  readonly npiasAgreements: Prisma.FieldRef<"Airport", 'String'>
+  readonly airspaceAnalysis: Prisma.FieldRef<"Airport", 'String'>
+  readonly customsEntry: Prisma.FieldRef<"Airport", 'String'>
+  readonly customsLanding: Prisma.FieldRef<"Airport", 'String'>
+  readonly jointUse: Prisma.FieldRef<"Airport", 'String'>
+  readonly militaryRights: Prisma.FieldRef<"Airport", 'String'>
+  readonly fuelTypes: Prisma.FieldRef<"Airport", 'String'>
+  readonly airframeRepair: Prisma.FieldRef<"Airport", 'String'>
+  readonly engineRepair: Prisma.FieldRef<"Airport", 'String'>
+  readonly bottledOxygen: Prisma.FieldRef<"Airport", 'String'>
+  readonly bulkOxygen: Prisma.FieldRef<"Airport", 'String'>
+  readonly lightingSchedule: Prisma.FieldRef<"Airport", 'String'>
+  readonly beaconSchedule: Prisma.FieldRef<"Airport", 'String'>
+  readonly controlTower: Prisma.FieldRef<"Airport", 'String'>
+  readonly unicomFrequency: Prisma.FieldRef<"Airport", 'String'>
+  readonly ctafFrequency: Prisma.FieldRef<"Airport", 'String'>
+  readonly segmentedCircle: Prisma.FieldRef<"Airport", 'String'>
+  readonly beaconColor: Prisma.FieldRef<"Airport", 'String'>
+  readonly landingFee: Prisma.FieldRef<"Airport", 'String'>
+  readonly singleEngineCount: Prisma.FieldRef<"Airport", 'Int'>
+  readonly multiEngineCount: Prisma.FieldRef<"Airport", 'Int'>
+  readonly jetEngineCount: Prisma.FieldRef<"Airport", 'Int'>
+  readonly helicopterCount: Prisma.FieldRef<"Airport", 'Int'>
+  readonly gliderCount: Prisma.FieldRef<"Airport", 'Int'>
+  readonly militaryCount: Prisma.FieldRef<"Airport", 'Int'>
+  readonly ultralightCount: Prisma.FieldRef<"Airport", 'Int'>
+  readonly annualCommercialOps: Prisma.FieldRef<"Airport", 'Int'>
+  readonly annualCommuterOps: Prisma.FieldRef<"Airport", 'Int'>
+  readonly annualAirTaxiOps: Prisma.FieldRef<"Airport", 'Int'>
+  readonly annualGaLocalOps: Prisma.FieldRef<"Airport", 'Int'>
+  readonly annualGaItinerantOps: Prisma.FieldRef<"Airport", 'Int'>
+  readonly annualMilitaryOps: Prisma.FieldRef<"Airport", 'Int'>
+  readonly annualOpsDate: Prisma.FieldRef<"Airport", 'String'>
+  readonly contractFuel: Prisma.FieldRef<"Airport", 'String'>
+  readonly storageFacilities: Prisma.FieldRef<"Airport", 'String'>
+  readonly otherServices: Prisma.FieldRef<"Airport", 'String'>
+  readonly windIndicator: Prisma.FieldRef<"Airport", 'String'>
+  readonly minOperationalNetwork: Prisma.FieldRef<"Airport", 'String'>
   readonly name: Prisma.FieldRef<"Airport", 'String'>
   readonly city: Prisma.FieldRef<"Airport", 'String'>
   readonly state: Prisma.FieldRef<"Airport", 'String'>
