@@ -57,6 +57,8 @@ export type AirportAvgAggregateOutputType = {
   annualGaLocalOps: number | null
   annualGaItinerantOps: number | null
   annualMilitaryOps: number | null
+  rampLatitude: number | null
+  rampLongitude: number | null
   syncPriority: number | null
 }
 
@@ -79,6 +81,8 @@ export type AirportSumAggregateOutputType = {
   annualGaLocalOps: number | null
   annualGaItinerantOps: number | null
   annualMilitaryOps: number | null
+  rampLatitude: number | null
+  rampLongitude: number | null
   syncPriority: number | null
 }
 
@@ -165,6 +169,8 @@ export type AirportMinAggregateOutputType = {
   fboPhone: string | null
   fboWebsite: string | null
   notes: string | null
+  rampLatitude: number | null
+  rampLongitude: number | null
   lastVerifiedAt: Date | null
   lastPoiSyncAt: Date | null
   nextPoiSyncAt: Date | null
@@ -256,6 +262,8 @@ export type AirportMaxAggregateOutputType = {
   fboPhone: string | null
   fboWebsite: string | null
   notes: string | null
+  rampLatitude: number | null
+  rampLongitude: number | null
   lastVerifiedAt: Date | null
   lastPoiSyncAt: Date | null
   nextPoiSyncAt: Date | null
@@ -347,6 +355,8 @@ export type AirportCountAggregateOutputType = {
   fboPhone: number
   fboWebsite: number
   notes: number
+  rampLatitude: number
+  rampLongitude: number
   lastVerifiedAt: number
   lastPoiSyncAt: number
   nextPoiSyncAt: number
@@ -376,6 +386,8 @@ export type AirportAvgAggregateInputType = {
   annualGaLocalOps?: true
   annualGaItinerantOps?: true
   annualMilitaryOps?: true
+  rampLatitude?: true
+  rampLongitude?: true
   syncPriority?: true
 }
 
@@ -398,6 +410,8 @@ export type AirportSumAggregateInputType = {
   annualGaLocalOps?: true
   annualGaItinerantOps?: true
   annualMilitaryOps?: true
+  rampLatitude?: true
+  rampLongitude?: true
   syncPriority?: true
 }
 
@@ -484,6 +498,8 @@ export type AirportMinAggregateInputType = {
   fboPhone?: true
   fboWebsite?: true
   notes?: true
+  rampLatitude?: true
+  rampLongitude?: true
   lastVerifiedAt?: true
   lastPoiSyncAt?: true
   nextPoiSyncAt?: true
@@ -575,6 +591,8 @@ export type AirportMaxAggregateInputType = {
   fboPhone?: true
   fboWebsite?: true
   notes?: true
+  rampLatitude?: true
+  rampLongitude?: true
   lastVerifiedAt?: true
   lastPoiSyncAt?: true
   nextPoiSyncAt?: true
@@ -666,6 +684,8 @@ export type AirportCountAggregateInputType = {
   fboPhone?: true
   fboWebsite?: true
   notes?: true
+  rampLatitude?: true
+  rampLongitude?: true
   lastVerifiedAt?: true
   lastPoiSyncAt?: true
   nextPoiSyncAt?: true
@@ -844,6 +864,8 @@ export type AirportGroupByOutputType = {
   fboPhone: string | null
   fboWebsite: string | null
   notes: string | null
+  rampLatitude: number | null
+  rampLongitude: number | null
   lastVerifiedAt: Date | null
   lastPoiSyncAt: Date | null
   nextPoiSyncAt: Date | null
@@ -958,6 +980,8 @@ export type AirportWhereInput = {
   fboPhone?: Prisma.StringNullableFilter<"Airport"> | string | null
   fboWebsite?: Prisma.StringNullableFilter<"Airport"> | string | null
   notes?: Prisma.StringNullableFilter<"Airport"> | string | null
+  rampLatitude?: Prisma.FloatNullableFilter<"Airport"> | number | null
+  rampLongitude?: Prisma.FloatNullableFilter<"Airport"> | number | null
   lastVerifiedAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
   lastPoiSyncAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
   nextPoiSyncAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
@@ -1053,6 +1077,8 @@ export type AirportOrderByWithRelationInput = {
   fboPhone?: Prisma.SortOrderInput | Prisma.SortOrder
   fboWebsite?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  rampLatitude?: Prisma.SortOrderInput | Prisma.SortOrder
+  rampLongitude?: Prisma.SortOrderInput | Prisma.SortOrder
   lastVerifiedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   lastPoiSyncAt?: Prisma.SortOrderInput | Prisma.SortOrder
   nextPoiSyncAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -1151,6 +1177,8 @@ export type AirportWhereUniqueInput = Prisma.AtLeast<{
   fboPhone?: Prisma.StringNullableFilter<"Airport"> | string | null
   fboWebsite?: Prisma.StringNullableFilter<"Airport"> | string | null
   notes?: Prisma.StringNullableFilter<"Airport"> | string | null
+  rampLatitude?: Prisma.FloatNullableFilter<"Airport"> | number | null
+  rampLongitude?: Prisma.FloatNullableFilter<"Airport"> | number | null
   lastVerifiedAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
   lastPoiSyncAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
   nextPoiSyncAt?: Prisma.DateTimeNullableFilter<"Airport"> | Date | string | null
@@ -1246,6 +1274,8 @@ export type AirportOrderByWithAggregationInput = {
   fboPhone?: Prisma.SortOrderInput | Prisma.SortOrder
   fboWebsite?: Prisma.SortOrderInput | Prisma.SortOrder
   notes?: Prisma.SortOrderInput | Prisma.SortOrder
+  rampLatitude?: Prisma.SortOrderInput | Prisma.SortOrder
+  rampLongitude?: Prisma.SortOrderInput | Prisma.SortOrder
   lastVerifiedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   lastPoiSyncAt?: Prisma.SortOrderInput | Prisma.SortOrder
   nextPoiSyncAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -1345,6 +1375,8 @@ export type AirportScalarWhereWithAggregatesInput = {
   fboPhone?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
   fboWebsite?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
   notes?: Prisma.StringNullableWithAggregatesFilter<"Airport"> | string | null
+  rampLatitude?: Prisma.FloatNullableWithAggregatesFilter<"Airport"> | number | null
+  rampLongitude?: Prisma.FloatNullableWithAggregatesFilter<"Airport"> | number | null
   lastVerifiedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Airport"> | Date | string | null
   lastPoiSyncAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Airport"> | Date | string | null
   nextPoiSyncAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Airport"> | Date | string | null
@@ -1435,6 +1467,8 @@ export type AirportUpdateInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1530,6 +1564,8 @@ export type AirportUncheckedUpdateInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1624,6 +1660,8 @@ export type AirportUpdateManyMutationInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1715,6 +1753,8 @@ export type AirportUncheckedUpdateManyInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1806,6 +1846,8 @@ export type AirportCountOrderByAggregateInput = {
   fboPhone?: Prisma.SortOrder
   fboWebsite?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  rampLatitude?: Prisma.SortOrder
+  rampLongitude?: Prisma.SortOrder
   lastVerifiedAt?: Prisma.SortOrder
   lastPoiSyncAt?: Prisma.SortOrder
   nextPoiSyncAt?: Prisma.SortOrder
@@ -1833,6 +1875,8 @@ export type AirportAvgOrderByAggregateInput = {
   annualGaLocalOps?: Prisma.SortOrder
   annualGaItinerantOps?: Prisma.SortOrder
   annualMilitaryOps?: Prisma.SortOrder
+  rampLatitude?: Prisma.SortOrder
+  rampLongitude?: Prisma.SortOrder
   syncPriority?: Prisma.SortOrder
 }
 
@@ -1919,6 +1963,8 @@ export type AirportMaxOrderByAggregateInput = {
   fboPhone?: Prisma.SortOrder
   fboWebsite?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  rampLatitude?: Prisma.SortOrder
+  rampLongitude?: Prisma.SortOrder
   lastVerifiedAt?: Prisma.SortOrder
   lastPoiSyncAt?: Prisma.SortOrder
   nextPoiSyncAt?: Prisma.SortOrder
@@ -2010,6 +2056,8 @@ export type AirportMinOrderByAggregateInput = {
   fboPhone?: Prisma.SortOrder
   fboWebsite?: Prisma.SortOrder
   notes?: Prisma.SortOrder
+  rampLatitude?: Prisma.SortOrder
+  rampLongitude?: Prisma.SortOrder
   lastVerifiedAt?: Prisma.SortOrder
   lastPoiSyncAt?: Prisma.SortOrder
   nextPoiSyncAt?: Prisma.SortOrder
@@ -2037,6 +2085,8 @@ export type AirportSumOrderByAggregateInput = {
   annualGaLocalOps?: Prisma.SortOrder
   annualGaItinerantOps?: Prisma.SortOrder
   annualMilitaryOps?: Prisma.SortOrder
+  rampLatitude?: Prisma.SortOrder
+  rampLongitude?: Prisma.SortOrder
   syncPriority?: Prisma.SortOrder
 }
 
@@ -2219,6 +2269,8 @@ export type AirportUpdateWithoutPoiLinksInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2313,6 +2365,8 @@ export type AirportUncheckedUpdateWithoutPoiLinksInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2411,6 +2465,8 @@ export type AirportUpdateWithoutAccessFactsInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2505,6 +2561,8 @@ export type AirportUncheckedUpdateWithoutAccessFactsInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2603,6 +2661,8 @@ export type AirportUpdateWithoutPilotReviewsInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2697,6 +2757,8 @@ export type AirportUncheckedUpdateWithoutPilotReviewsInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2795,6 +2857,8 @@ export type AirportUpdateWithoutAccessReportsInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2889,6 +2953,8 @@ export type AirportUncheckedUpdateWithoutAccessReportsInput = {
   fboPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fboWebsite?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rampLatitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  rampLongitude?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   lastVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   nextPoiSyncAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3041,6 +3107,8 @@ export type AirportSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   fboPhone?: boolean
   fboWebsite?: boolean
   notes?: boolean
+  rampLatitude?: boolean
+  rampLongitude?: boolean
   lastVerifiedAt?: boolean
   lastPoiSyncAt?: boolean
   nextPoiSyncAt?: boolean
@@ -3138,6 +3206,8 @@ export type AirportSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   fboPhone?: boolean
   fboWebsite?: boolean
   notes?: boolean
+  rampLatitude?: boolean
+  rampLongitude?: boolean
   lastVerifiedAt?: boolean
   lastPoiSyncAt?: boolean
   nextPoiSyncAt?: boolean
@@ -3229,6 +3299,8 @@ export type AirportSelectScalar = {
   fboPhone?: boolean
   fboWebsite?: boolean
   notes?: boolean
+  rampLatitude?: boolean
+  rampLongitude?: boolean
   lastVerifiedAt?: boolean
   lastPoiSyncAt?: boolean
   nextPoiSyncAt?: boolean
@@ -3237,7 +3309,7 @@ export type AirportSelectScalar = {
   updatedAt?: boolean
 }
 
-export type AirportOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "faaCode" | "icaoCode" | "iataCode" | "source" | "sourceDataset" | "sourceRecordUpdatedAt" | "sourceRefreshedAt" | "facilityType" | "ownershipType" | "airportUse" | "elevation" | "siteNumber" | "faaRegionCode" | "stateName" | "countyName" | "countyState" | "ownerName" | "ownerPhone" | "managerName" | "managerPhone" | "magVariation" | "magVariationYear" | "trafficPatternAltitude" | "sectionalChart" | "distanceFromCity" | "directionFromCity" | "acreage" | "artccBoundaryId" | "artccResponsibleId" | "notamFacility" | "notamDService" | "activationDate" | "airportStatus" | "arffCertification" | "npiasAgreements" | "airspaceAnalysis" | "customsEntry" | "customsLanding" | "jointUse" | "militaryRights" | "fuelTypes" | "airframeRepair" | "engineRepair" | "bottledOxygen" | "bulkOxygen" | "lightingSchedule" | "beaconSchedule" | "controlTower" | "unicomFrequency" | "ctafFrequency" | "segmentedCircle" | "beaconColor" | "landingFee" | "singleEngineCount" | "multiEngineCount" | "jetEngineCount" | "helicopterCount" | "gliderCount" | "militaryCount" | "ultralightCount" | "annualCommercialOps" | "annualCommuterOps" | "annualAirTaxiOps" | "annualGaLocalOps" | "annualGaItinerantOps" | "annualMilitaryOps" | "annualOpsDate" | "contractFuel" | "storageFacilities" | "otherServices" | "windIndicator" | "minOperationalNetwork" | "name" | "city" | "state" | "country" | "fboName" | "fboPhone" | "fboWebsite" | "notes" | "lastVerifiedAt" | "lastPoiSyncAt" | "nextPoiSyncAt" | "syncPriority" | "createdAt" | "updatedAt", ExtArgs["result"]["airport"]>
+export type AirportOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "faaCode" | "icaoCode" | "iataCode" | "source" | "sourceDataset" | "sourceRecordUpdatedAt" | "sourceRefreshedAt" | "facilityType" | "ownershipType" | "airportUse" | "elevation" | "siteNumber" | "faaRegionCode" | "stateName" | "countyName" | "countyState" | "ownerName" | "ownerPhone" | "managerName" | "managerPhone" | "magVariation" | "magVariationYear" | "trafficPatternAltitude" | "sectionalChart" | "distanceFromCity" | "directionFromCity" | "acreage" | "artccBoundaryId" | "artccResponsibleId" | "notamFacility" | "notamDService" | "activationDate" | "airportStatus" | "arffCertification" | "npiasAgreements" | "airspaceAnalysis" | "customsEntry" | "customsLanding" | "jointUse" | "militaryRights" | "fuelTypes" | "airframeRepair" | "engineRepair" | "bottledOxygen" | "bulkOxygen" | "lightingSchedule" | "beaconSchedule" | "controlTower" | "unicomFrequency" | "ctafFrequency" | "segmentedCircle" | "beaconColor" | "landingFee" | "singleEngineCount" | "multiEngineCount" | "jetEngineCount" | "helicopterCount" | "gliderCount" | "militaryCount" | "ultralightCount" | "annualCommercialOps" | "annualCommuterOps" | "annualAirTaxiOps" | "annualGaLocalOps" | "annualGaItinerantOps" | "annualMilitaryOps" | "annualOpsDate" | "contractFuel" | "storageFacilities" | "otherServices" | "windIndicator" | "minOperationalNetwork" | "name" | "city" | "state" | "country" | "fboName" | "fboPhone" | "fboWebsite" | "notes" | "rampLatitude" | "rampLongitude" | "lastVerifiedAt" | "lastPoiSyncAt" | "nextPoiSyncAt" | "syncPriority" | "createdAt" | "updatedAt", ExtArgs["result"]["airport"]>
 export type AirportInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   accessFacts?: boolean | Prisma.Airport$accessFactsArgs<ExtArgs>
   poiLinks?: boolean | Prisma.Airport$poiLinksArgs<ExtArgs>
@@ -3338,6 +3410,8 @@ export type $AirportPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     fboPhone: string | null
     fboWebsite: string | null
     notes: string | null
+    rampLatitude: number | null
+    rampLongitude: number | null
     lastVerifiedAt: Date | null
     lastPoiSyncAt: Date | null
     nextPoiSyncAt: Date | null
@@ -3782,6 +3856,8 @@ export interface AirportFieldRefs {
   readonly fboPhone: Prisma.FieldRef<"Airport", 'String'>
   readonly fboWebsite: Prisma.FieldRef<"Airport", 'String'>
   readonly notes: Prisma.FieldRef<"Airport", 'String'>
+  readonly rampLatitude: Prisma.FieldRef<"Airport", 'Float'>
+  readonly rampLongitude: Prisma.FieldRef<"Airport", 'Float'>
   readonly lastVerifiedAt: Prisma.FieldRef<"Airport", 'DateTime'>
   readonly lastPoiSyncAt: Prisma.FieldRef<"Airport", 'DateTime'>
   readonly nextPoiSyncAt: Prisma.FieldRef<"Airport", 'DateTime'>

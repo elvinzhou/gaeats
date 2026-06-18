@@ -299,7 +299,7 @@ function AccessiblePoiController({
         });
         const res = await fetch(`/api/pois/accessible?${params}`);
         if (!res.ok) return;
-        const data = (await res.json()) as { pois: Array<{ id: number; name: string; latitude: number; longitude: number; externalRating: number | null; preferredMode: string; walkingMinutes: number | null; bikingMinutes: number | null; transitMinutes: number | null; cuisine: string | null; category: string | null }> };
+        const data = (await res.json()) as { pois: Array<{ id: number; name: string; latitude: number; longitude: number; externalRating: number | null; preferredMode: string | null; walkingMinutes: number | null; bikingMinutes: number | null; transitMinutes: number | null; cuisine: string | null; category: string | null; airportId: number }> };
 
         const newPOIs: POI[] = data.pois.map((p) => ({
           id: p.id,
@@ -404,8 +404,30 @@ export default function GoogleMapComponent({
     });
   }, []);
 
+  // Build the set of airport IDs currently visible on the map (respects all filters).
+  // Accessible POI markers are suppressed when their linked airport isn't shown.
+  const visibleAirportIds = new Set(
+    localPois
+      .filter((poi) => {
+        const cat = getFacilityCategory(poi);
+        if (cat === null) return false; // non-airport POI
+        if (cat === "heliport") return showHeliports;
+        if (cat === "seaplane") return showSeaplanes;
+        if (cat === "specialty") return showSpecialty;
+        if (cat === "airport") {
+          const au = (poi.data as Airport).airportUse;
+          if (au === "PR" && !showPrivate) return false;
+        }
+        return true;
+      })
+      .map((poi) => poi.id)
+  );
+
   // IDs of accessible restaurants — exclude their generic red markers so there's no double pin
-  const accessibleIds = new Set(accessiblePois.map((p) => p.id));
+  const filteredAccessiblePois = accessiblePois.filter(
+    (poi) => visibleAirportIds.has((poi.data as any).airportId)
+  );
+  const accessibleIds = new Set(filteredAccessiblePois.map((p) => p.id));
 
   // Apply facility-type filters before rendering markers.
   const visiblePois = [...localPois.filter((poi) => {
@@ -421,7 +443,7 @@ export default function GoogleMapComponent({
       if (au === "PR" && !showPrivate) return false;
     }
     return true;
-  }), ...accessiblePois];
+  }), ...filteredAccessiblePois];
 
   function handleMarkerClick(poi: POI) {
     if (poi.type === "airport") {

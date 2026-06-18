@@ -161,6 +161,8 @@ export const AirportScalarFieldEnum = {
   fboPhone: 'fboPhone',
   fboWebsite: 'fboWebsite',
   notes: 'notes',
+  rampLatitude: 'rampLatitude',
+  rampLongitude: 'rampLongitude',
   lastVerifiedAt: 'lastVerifiedAt',
   lastPoiSyncAt: 'lastPoiSyncAt',
   nextPoiSyncAt: 'nextPoiSyncAt',

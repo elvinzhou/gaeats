@@ -140,6 +140,8 @@ export interface DueAirportRow {
   regionPriority: number;
   latitude: number;
   longitude: number;
+  rampLatitude: number | null;
+  rampLongitude: number | null;
 }
 
 export interface PoiWithTravelTimes extends PoiWithDistance {
@@ -170,6 +172,7 @@ export interface AccessiblePoi {
   bikingMinutes: number | null;
   transitMinutes: number | null;
   preferredMode: string | null;
+  airportId: number;
 }
 
 export async function findAccessiblePoisNearbyQuery(
@@ -207,7 +210,8 @@ export async function findAccessiblePoisNearbyQuery(
         ap."walkingMinutes",
         ap."bikingMinutes",
         ap."transitMinutes",
-        ap."preferredMode"
+        ap."preferredMode",
+        ap."airportId"
       FROM "pois" p
       INNER JOIN "airport_pois" ap ON ap."poiId" = p.id
       WHERE p.active = true
@@ -669,6 +673,8 @@ export async function getAirportForPoiSync(prisma: AppPrismaClient, airportId: n
       "syncPriority",
       ST_Y(location::geometry) AS latitude,
       ST_X(location::geometry) AS longitude,
+      "rampLatitude",
+      "rampLongitude",
       0 AS "regionPriority"
     FROM "airports"
     WHERE id = ${airportId}
@@ -691,7 +697,9 @@ export async function listAirportsForPoiSync(
         "nextPoiSyncAt",
         "syncPriority",
         ST_Y(location::geometry) as latitude,
-        ST_X(location::geometry) as longitude
+        ST_X(location::geometry) as longitude,
+        "rampLatitude",
+        "rampLongitude"
       FROM "airports"
       WHERE UPPER(code) = UPPER(${airportCode})
     `;
@@ -711,6 +719,8 @@ export async function listAirportsForPoiSync(
       "syncPriority",
       ST_Y(location::geometry) as latitude,
       ST_X(location::geometry) as longitude,
+      "rampLatitude",
+      "rampLongitude",
       CASE
         WHEN state = 'CA' AND ST_Y(location::geometry) BETWEEN 36.5 AND 39.0 AND ST_X(location::geometry) BETWEEN -123.5 AND -121.0 THEN 1 -- NorCal/Bay Area
         WHEN state IN ('CA', 'OR', 'WA') THEN 2 -- West Coast

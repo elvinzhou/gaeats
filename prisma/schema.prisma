@@ -209,6 +209,8 @@ model Airport {
   fboPhone       String?                               @db.VarChar(50)
   fboWebsite     String?                               @db.VarChar(500)
   notes          String?                               @db.Text
+  rampLatitude   Float?                                @db.DoublePrecision
+  rampLongitude  Float?                                @db.DoublePrecision
   lastVerifiedAt DateTime?                             @db.Timestamptz
   lastPoiSyncAt  DateTime?                             @db.Timestamptz
   nextPoiSyncAt  DateTime?                             @db.Timestamptz
