@@ -4,6 +4,8 @@
 
 const FAA_NASR_DISCOVERY_URL = "https://external-api.faa.gov/apra/nfdc/nasr/chart";
 
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 export async function getCurrentNasrEdition(fetchImpl = fetch) {
   const url = new URL(FAA_NASR_DISCOVERY_URL);
   url.searchParams.set("edition", "current");
@@ -31,6 +33,50 @@ export async function getCurrentNasrEdition(fetchImpl = fetch) {
     downloadUrl,
     dataset: `faa-nasr-${normalizeEditionDate(editionDate)}-apt`,
   };
+}
+
+// Derives the CSV zip URL from an FAA edition date string "MM/DD/YYYY"
+export function csvEditionUrl(editionDate) {
+  const [month, day, year] = editionDate.split("/");
+  if (!month || !day || !year) {
+    throw new Error(`Unexpected FAA edition date format: ${editionDate}`);
+  }
+  const monthIndex = Number.parseInt(month, 10) - 1;
+  const monthName = MONTH_ABBR[monthIndex];
+  if (!monthName) {
+    throw new Error(`Invalid month in FAA edition date: ${editionDate}`);
+  }
+  const dayPadded = day.padStart(2, "0");
+  return `https://nfdc.faa.gov/webContent/28DaySub/extra/${dayPadded}_${monthName}_${year}_CSV.zip`;
+}
+
+// Calls FAA API, returns { downloadUrl (CSV URL), dataset }
+export async function getCurrentNasrCsvEdition(fetchImpl = fetch) {
+  const url = new URL(FAA_NASR_DISCOVERY_URL);
+  url.searchParams.set("edition", "current");
+
+  const response = await fetchImpl(url, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`FAA NASR discovery failed: ${response.status} ${response.statusText}`);
+  }
+
+  const payload = await response.json();
+  const edition = payload.edition?.[0];
+  const editionDate = edition?.editionDate;
+
+  if (!editionDate) {
+    throw new Error("FAA NASR discovery response did not include an edition date.");
+  }
+
+  const downloadUrl = csvEditionUrl(editionDate);
+  const dataset = `faa-nasr-${normalizeEditionDate(editionDate)}-apt`;
+
+  return { downloadUrl, dataset };
 }
 
 export async function loadAptTextFromZipBytes(archiveBuffer, targetName = "apt.txt") {
@@ -61,7 +107,7 @@ export async function loadAptTextFromZipBytes(archiveBuffer, targetName = "apt.t
       throw new Error("FAA archive uses ZIP data descriptors, which are not supported.");
     }
 
-    if (fileName.toLowerCase().endsWith(targetName)) {
+    if (fileName.toLowerCase().endsWith(targetName.toLowerCase())) {
       const fileBytes = archiveBuffer.slice(dataStart, dataEnd);
 
       if (compressionMethod === 0) {
@@ -82,8 +128,123 @@ export async function loadAptTextFromZipBytes(archiveBuffer, targetName = "apt.t
   throw new Error(`No ${targetName} file was found in the FAA archive.`);
 }
 
+// Parses CSV text into array of plain objects with string values.
+// Handles quoted fields (including embedded commas and escaped quotes per RFC 4180).
+export function parseCsvRows(csvText) {
+  const lines = csvText.split(/\r?\n/);
+  if (lines.length === 0) {
+    return [];
+  }
+
+  const headers = parseCsvLine(lines[0]);
+  const rows = [];
+
+  for (let i = 1; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (!line.trim()) {
+      continue;
+    }
+    const values = parseCsvLine(line);
+    const row = {};
+    for (let j = 0; j < headers.length; j += 1) {
+      row[headers[j]] = values[j] ?? "";
+    }
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+function parseCsvLine(line) {
+  const fields = [];
+  let pos = 0;
+
+  while (pos <= line.length) {
+    if (pos === line.length) {
+      // Trailing comma: already handled by the comma-skip below producing an empty field
+      break;
+    }
+
+    if (line[pos] === '"') {
+      // Quoted field
+      pos += 1; // skip opening quote
+      let field = "";
+      while (pos < line.length) {
+        if (line[pos] === '"') {
+          if (pos + 1 < line.length && line[pos + 1] === '"') {
+            // Escaped quote ""
+            field += '"';
+            pos += 2;
+          } else {
+            // End of quoted field
+            pos += 1;
+            break;
+          }
+        } else {
+          field += line[pos];
+          pos += 1;
+        }
+      }
+      fields.push(field);
+      // Skip delimiter or end
+      if (pos < line.length && line[pos] === ",") {
+        pos += 1;
+      }
+    } else {
+      // Unquoted field: read until comma or end
+      const start = pos;
+      while (pos < line.length && line[pos] !== ",") {
+        pos += 1;
+      }
+      fields.push(line.slice(start, pos));
+      if (pos < line.length) {
+        pos += 1; // skip comma
+      } else {
+        break;
+      }
+    }
+  }
+
+  return fields;
+}
+
+// Builds a lookup Map<SITE_NO, { ownerName, ownerPhone, managerName, managerPhone }>
+// from APT_CON.csv content
+export function buildContactMap(aptConText) {
+  const rows = parseCsvRows(aptConText);
+  const map = new Map();
+
+  for (const row of rows) {
+    const siteNo = row.SITE_NO?.trim();
+    if (!siteNo) {
+      continue;
+    }
+
+    const title = row.TITLE?.trim().toUpperCase();
+    const name = row.NAME?.trim() || null;
+    const phone = row.PHONE_NO?.trim() || null;
+
+    if (!map.has(siteNo)) {
+      map.set(siteNo, { ownerName: null, ownerPhone: null, managerName: null, managerPhone: null });
+    }
+
+    const contact = map.get(siteNo);
+
+    if (title === "OWNER") {
+      contact.ownerName = name;
+      contact.ownerPhone = phone;
+    } else if (title === "MANAGER") {
+      contact.managerName = name;
+      contact.managerPhone = phone;
+    }
+  }
+
+  return map;
+}
+
 const VALID_OWNERSHIP_TYPES = new Set(["PU", "PR", "MA", "MR", "MN", "MK", "CG"]);
 const VALID_AIRPORT_USE = new Set(["PU", "PR"]);
+const SITE_TYPE_NAMES = { A: "AIRPORT", H: "HELIPORT", B: "BALLOON PORT", C: "SEAPLANE BASE", G: "GLIDERPORT", U: "ULTRALIGHT" };
 
 export function mapNasrAptRecord(line, sourceDataset = null) {
   if (extractField(line, 1, 3) !== "APT") {
@@ -93,13 +254,6 @@ export function mapNasrAptRecord(line, sourceDataset = null) {
   const faaCode = normalizeCode(extractField(line, 28, 4));
   const icaoCode = normalizeCode(extractField(line, 1211, 7));
   const code = icaoCode || faaCode;
-  const facilityType = extractField(line, 14, 13) || null;
-  const ownershipTypeRaw = extractField(line, 184, 2);
-  const ownershipType = VALID_OWNERSHIP_TYPES.has(ownershipTypeRaw) ? ownershipTypeRaw : null;
-  const airportUseRaw = extractField(line, 186, 2);
-  const airportUse = VALID_AIRPORT_USE.has(airportUseRaw) ? airportUseRaw : null;
-  const elevationRaw = Number.parseFloat(extractField(line, 579, 7));
-  const elevation = Number.isNaN(elevationRaw) || elevationRaw < -1500 || elevationRaw > 25000 ? null : elevationRaw;
   const name = extractField(line, 134, 50);
   const city = extractField(line, 94, 40);
   const state = extractField(line, 49, 2) || null;
@@ -119,81 +273,173 @@ export function mapNasrAptRecord(line, sourceDataset = null) {
     code,
     faaCode,
     icaoCode,
+    name,
+    city,
+    state,
+    country: "US",
+    latitude,
+    longitude,
+    source: "FAA",
+    sourceDataset,
+    sourceRecordUpdatedAt,
+  };
+}
+
+// Maps one APT_BASE CSV row object + contact record to our canonical airport payload.
+// contacts = { ownerName, ownerPhone, managerName, managerPhone } | null
+export function mapNasrCsvRecord(row, contacts, sourceDataset = null) {
+  if (row.COUNTRY_CODE?.trim() !== "US") {
+    return null;
+  }
+
+  const latDecimal = Number.parseFloat(row.LAT_DECIMAL);
+  const longDecimal = Number.parseFloat(row.LONG_DECIMAL);
+
+  if (!Number.isFinite(latDecimal) || !Number.isFinite(longDecimal)) {
+    return null;
+  }
+
+  // Apply hemisphere sign
+  const latitude = row.LAT_HEMIS?.trim() === "S" ? -Math.abs(latDecimal) : Math.abs(latDecimal);
+  const longitude = row.LONG_HEMIS?.trim() === "W" ? -Math.abs(longDecimal) : Math.abs(longDecimal);
+
+  const faaCode = row.ARPT_ID?.trim() || null;
+  const icaoCode = row.ICAO_ID?.trim() || null;
+  const code = icaoCode || faaCode;
+
+  const name = row.ARPT_NAME?.trim() || null;
+  const city = row.CITY?.trim() || null;
+
+  if (!code || !name || !city) {
+    return null;
+  }
+
+  const state = row.STATE_CODE?.trim() || null;
+
+  const siteTypeCode = row.SITE_TYPE_CODE?.trim();
+  const facilityType = SITE_TYPE_NAMES[siteTypeCode] ?? null;
+
+  const ownershipTypeRaw = row.OWNERSHIP_TYPE_CODE?.trim();
+  const ownershipType = VALID_OWNERSHIP_TYPES.has(ownershipTypeRaw) ? ownershipTypeRaw : null;
+
+  const airportUseRaw = row.FACILITY_USE_CODE?.trim();
+  const airportUse = VALID_AIRPORT_USE.has(airportUseRaw) ? airportUseRaw : null;
+
+  const elevationRaw = Number.parseFloat(row.ELEV);
+  const elevation = Number.isNaN(elevationRaw) || elevationRaw < -1500 || elevationRaw > 25000 ? null : elevationRaw;
+
+  const magVarn = row.MAG_VARN?.trim() || "";
+  const magHemis = row.MAG_HEMIS?.trim() || "";
+  const magVariation = magVarn && magHemis ? `${magVarn}${magHemis}` : (magVarn || null);
+
+  const magVariationYear = row.MAG_VARN_YEAR?.trim() || null;
+
+  const tpaRaw = Number.parseInt(row.TPA?.trim(), 10);
+  const trafficPatternAltitude = Number.isNaN(tpaRaw) ? null : tpaRaw;
+
+  const distCityRaw = Number.parseInt(row.DIST_CITY_TO_AIRPORT?.trim(), 10);
+  const distanceFromCity = Number.isNaN(distCityRaw) ? null : distCityRaw;
+
+  const acreageRaw = Number.parseInt(row.ACREAGE?.trim(), 10);
+  const acreage = Number.isNaN(acreageRaw) ? null : acreageRaw;
+
+  const arffCertRaw = row.FAR_139_TYPE_CODE?.trim() || null;
+
+  const hgrFlag = row.TRNS_STRG_HGR_FLAG?.trim() === "Y";
+  const tieFlag = row.TRNS_STRG_TIE_FLAG?.trim() === "Y";
+  const buoyFlag = row.TRNS_STRG_BUOY_FLAG?.trim() === "Y";
+
+  const storageParts = [];
+  if (hgrFlag) storageParts.push("HGR");
+  if (tieFlag) storageParts.push("TIE");
+  if (buoyFlag) storageParts.push("BUOY");
+  const storageFacilities = storageParts.length > 0 ? storageParts.join(" ") : null;
+
+  const sourceRecordUpdatedAt = parseNasrDate(row.EFF_DATE);
+
+  return {
+    code,
+    faaCode,
+    icaoCode,
     facilityType,
     ownershipType,
     airportUse,
     elevation,
     // Demographic / administrative
-    siteNumber: extractField(line, 4, 11) || null,
-    faaRegionCode: extractField(line, 42, 3) || null,
-    stateName: extractField(line, 51, 20) || null,
-    countyName: extractField(line, 71, 21) || null,
-    countyState: extractField(line, 92, 2) || null,
-    // Ownership / management
-    ownerName: extractField(line, 188, 35) || null,
-    ownerPhone: extractField(line, 340, 16) || null,
-    managerName: extractField(line, 356, 35) || null,
-    managerPhone: extractField(line, 508, 16) || null,
+    siteNumber: row.SITE_NO?.trim() || null,
+    faaRegionCode: row.REGION_CODE?.trim() || null,
+    stateName: row.STATE_NAME?.trim() || null,
+    countyName: row.COUNTY_NAME?.trim() || null,
+    countyState: row.COUNTY_ASSOC_STATE?.trim() || null,
+    // Ownership / management (from APT_CON)
+    ownerName: contacts?.ownerName ?? null,
+    ownerPhone: contacts?.ownerPhone ?? null,
+    managerName: contacts?.managerName ?? null,
+    managerPhone: contacts?.managerPhone ?? null,
     // Geographic
-    magVariation: extractField(line, 587, 3) || null,
-    magVariationYear: extractField(line, 590, 4) || null,
-    trafficPatternAltitude: extractInt(line, 594, 4),
-    sectionalChart: extractField(line, 598, 30) || null,
-    distanceFromCity: extractInt(line, 628, 2),
-    directionFromCity: extractField(line, 630, 3) || null,
-    acreage: extractInt(line, 633, 5),
+    magVariation,
+    magVariationYear,
+    trafficPatternAltitude,
+    sectionalChart: row.CHART_NAME?.trim() || null,
+    distanceFromCity,
+    directionFromCity: row.DIRECTION_CODE?.trim() || null,
+    acreage,
     // FAA services
-    artccBoundaryId: extractField(line, 638, 4) || null,
-    artccResponsibleId: extractField(line, 675, 4) || null,
-    notamFacility: extractField(line, 829, 4) || null,
-    notamDService: extractField(line, 833, 1) || null,
+    artccBoundaryId: null,
+    artccResponsibleId: row.RESP_ARTCC_ID?.trim() || null,
+    notamFacility: row.NOTAM_ID?.trim() || null,
+    notamDService: row.NOTAM_FLAG?.trim() || null,
     // Federal status
-    activationDate: extractField(line, 834, 7) || null,
-    airportStatus: extractField(line, 841, 2) || null,
-    arffCertification: extractField(line, 843, 15) || null,
-    npiasAgreements: extractField(line, 858, 7) || null,
-    airspaceAnalysis: extractField(line, 865, 13) || null,
-    customsEntry: extractField(line, 878, 1) || null,
-    customsLanding: extractField(line, 879, 1) || null,
-    jointUse: extractField(line, 880, 1) || null,
-    militaryRights: extractField(line, 881, 1) || null,
+    activationDate: row.ACTIVATION_DATE?.trim() || null,
+    airportStatus: row.ARPT_STATUS?.trim() || null,
+    arffCertification: arffCertRaw || null,
+    npiasAgreements: row.NASP_CODE?.trim() || null,
+    airspaceAnalysis: row.ASP_ANLYS_DTRM_CODE?.trim() || null,
+    customsEntry: row.CUST_FLAG?.trim() || null,
+    customsLanding: row.LNDG_RIGHTS_FLAG?.trim() || null,
+    jointUse: row.JOINT_USE_FLAG?.trim() || null,
+    militaryRights: row.MIL_LNDG_FLAG?.trim() || null,
     // Airport services
-    fuelTypes: extractField(line, 901, 40) || null,
-    airframeRepair: extractField(line, 941, 5) || null,
-    engineRepair: extractField(line, 946, 5) || null,
-    bottledOxygen: extractField(line, 951, 8) || null,
-    bulkOxygen: extractField(line, 959, 8) || null,
+    fuelTypes: row.FUEL_TYPES?.trim() || null,
+    airframeRepair: row.AIRFRAME_REPAIR_SER_CODE?.trim() || null,
+    engineRepair: row.PWR_PLANT_REPAIR_SER?.trim() || null,
+    bottledOxygen: row.BOTTLED_OXY_TYPE?.trim() || null,
+    bulkOxygen: row.BULK_OXY_TYPE?.trim() || null,
     // Airport facilities
-    lightingSchedule: extractField(line, 967, 7) || null,
-    beaconSchedule: extractField(line, 974, 7) || null,
-    controlTower: extractField(line, 981, 1) || null,
-    unicomFrequency: extractField(line, 982, 7) || null,
-    ctafFrequency: extractField(line, 989, 7) || null,
-    segmentedCircle: extractField(line, 996, 4) || null,
-    beaconColor: extractField(line, 1000, 3) || null,
-    landingFee: extractField(line, 1003, 1) || null,
-    // Based aircraft counts
-    singleEngineCount: extractInt(line, 1005, 3),
-    multiEngineCount: extractInt(line, 1008, 3),
-    jetEngineCount: extractInt(line, 1011, 3),
-    helicopterCount: extractInt(line, 1014, 3),
-    gliderCount: extractInt(line, 1017, 3),
-    militaryCount: extractInt(line, 1020, 3),
-    ultralightCount: extractInt(line, 1023, 3),
-    // Annual operations
-    annualCommercialOps: extractInt(line, 1026, 6),
-    annualCommuterOps: extractInt(line, 1032, 6),
-    annualAirTaxiOps: extractInt(line, 1038, 6),
-    annualGaLocalOps: extractInt(line, 1044, 6),
-    annualGaItinerantOps: extractInt(line, 1050, 6),
-    annualMilitaryOps: extractInt(line, 1056, 6),
-    annualOpsDate: extractField(line, 1062, 10) || null,
+    lightingSchedule: row.LGT_SKED?.trim() || null,
+    beaconSchedule: row.BCN_LGT_SKED?.trim() || null,
+    controlTower: row.TWR_TYPE_CODE?.trim() || null,
+    unicomFrequency: null,
+    ctafFrequency: null,
+    segmentedCircle: row.SEG_CIRCLE_MKR_FLAG?.trim() || null,
+    beaconColor: row.BCN_LENS_COLOR?.trim() || null,
+    landingFee: row.LNDG_FEE_FLAG?.trim() || null,
+    // Based aircraft counts — not in CSV
+    singleEngineCount: null,
+    multiEngineCount: null,
+    jetEngineCount: null,
+    helicopterCount: null,
+    gliderCount: null,
+    militaryCount: null,
+    ultralightCount: null,
+    // Annual operations — not in CSV
+    annualCommercialOps: null,
+    annualCommuterOps: null,
+    annualAirTaxiOps: null,
+    annualGaLocalOps: null,
+    annualGaItinerantOps: null,
+    annualMilitaryOps: null,
+    annualOpsDate: null,
     // Additional
-    contractFuel: extractField(line, 1124, 1) || null,
-    storageFacilities: extractField(line, 1125, 12) || null,
-    otherServices: extractField(line, 1137, 71) || null,
-    windIndicator: extractField(line, 1208, 3) || null,
-    minOperationalNetwork: extractField(line, 1218, 1) || null,
+    contractFuel: row.CONTR_FUEL_AVBL?.trim() || null,
+    storageFacilities,
+    otherServices: row.OTHER_SERVICES?.trim() || null,
+    windIndicator: row.WIND_INDCR_FLAG?.trim() || null,
+    minOperationalNetwork: row.MIN_OP_NETWORK?.trim() || null,
+    // Transient storage booleans
+    transientStorageHangar: hgrFlag,
+    transientStorageTiedown: tieFlag,
+    transientStorageBuoy: buoyFlag,
     // Core fields
     name,
     city,
@@ -227,10 +473,6 @@ export function parseNasrCoordinate(value) {
 
   if (body.includes("-")) {
     // FAA NASR "formatted" DMS uses dash separators, e.g. "37-46-28.0000N"
-    // or "122-06-54.0000W". Splitting on "-" is required — treating it as a
-    // packed DDMMSS string mis-reads the dashes as part of the numbers and
-    // corrupts every coordinate (minutes/seconds collapse toward zero, which
-    // clusters airports near whole-degree lines and shifts them off-location).
     const parts = body.split("-");
     if (parts.length !== 3) {
       return null;
@@ -284,11 +526,6 @@ export function parseNasrDate(value) {
 
 function extractField(line, start, length) {
   return line.slice(start - 1, start - 1 + length).trim();
-}
-
-function extractInt(line, start, length) {
-  const raw = Number.parseInt(extractField(line, start, length), 10);
-  return Number.isNaN(raw) ? null : raw;
 }
 
 function normalizeCode(value) {

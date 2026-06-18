@@ -198,6 +198,9 @@ model Airport {
   annualOpsDate         String?  @db.VarChar(10)
   contractFuel          String?  @db.VarChar(1)
   storageFacilities     String?  @db.VarChar(12)
+  transientStorageHangar Boolean?
+  transientStorageTiedown Boolean?
+  transientStorageBuoy   Boolean?
   otherServices         String?  @db.VarChar(71)
   windIndicator         String?  @db.VarChar(3)
   minOperationalNetwork String?  @db.VarChar(1)
@@ -208,9 +211,12 @@ model Airport {
   fboName        String?                               @db.VarChar(255)
   fboPhone       String?                               @db.VarChar(50)
   fboWebsite     String?                               @db.VarChar(500)
+  websiteUrl     String?                               @db.VarChar(512)
+  transientParkingNotes      String?                   @db.Text
+  transientParkingSource     String?                   @db.VarChar(200)
+  transientParkingConfidence String?                   @db.VarChar(10)
+  transientParkingLastSyncAt DateTime?                 @db.Timestamptz
   notes          String?                               @db.Text
-  rampLatitude   Float?                                @db.DoublePrecision
-  rampLongitude  Float?                                @db.DoublePrecision
   lastVerifiedAt DateTime?                             @db.Timestamptz
   lastPoiSyncAt  DateTime?                             @db.Timestamptz
   nextPoiSyncAt  DateTime?                             @db.Timestamptz
@@ -223,6 +229,7 @@ model Airport {
   poiLinks      AirportPoi[]
   pilotReviews  PilotReview[]
   accessReports PilotAccessReport[]
+  fbos          AirportFbo[]
 
   @@index([location], type: Gist) // Spatial index for fast geospatial queries
   @@index([nextPoiSyncAt, syncPriority])
@@ -431,4 +438,22 @@ model ListingClaim {
   @@index([status])
   @@index([claimantEmail])
   @@map("listing_claims")
+}
+
+model AirportFbo {
+  id         Int      @id @default(autoincrement())
+  airportId  Int
+  name       String   @db.VarChar(120)
+  placeId    String?  @db.VarChar(255)
+  latitude   Float    @db.DoublePrecision
+  longitude  Float    @db.DoublePrecision
+  source     String   @db.VarChar(20) @default("UNKNOWN")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  airport    Airport  @relation(fields: [airportId], references: [id], onDelete: Cascade)
+
+  @@unique([airportId, name])
+  @@index([airportId])
+  @@map("airport_fbos")
 }
