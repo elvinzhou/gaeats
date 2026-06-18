@@ -169,7 +169,7 @@ export interface AccessiblePoi {
   walkingMinutes: number | null;
   bikingMinutes: number | null;
   transitMinutes: number | null;
-  preferredMode: string;
+  preferredMode: string | null;
 }
 
 export async function findAccessiblePoisNearbyQuery(
@@ -212,18 +212,23 @@ export async function findAccessiblePoisNearbyQuery(
       INNER JOIN "airport_pois" ap ON ap."poiId" = p.id
       WHERE p.active = true
         AND p.type = 'RESTAURANT'
-        AND ap."preferredMode" IN ('WALKING', 'BIKING', 'TRANSIT')
+        AND (
+          -- Has confirmed walking/biking/transit route within time limit
+          (ap."preferredMode" IN ('WALKING', 'BIKING', 'TRANSIT')
+            AND CASE ap."preferredMode"
+                  WHEN 'WALKING' THEN COALESCE(ap."walkingMinutes", 999)
+                  WHEN 'BIKING'  THEN COALESCE(ap."bikingMinutes",  999)
+                  WHEN 'TRANSIT' THEN COALESCE(ap."transitMinutes", 999)
+                  ELSE 999
+                END <= ${maxMinutes})
+          -- OR: reachability not yet computed but very close to an airport (< 1 km)
+          OR (ap."preferredMode" IS NULL AND COALESCE(ap."straightLineDistanceMeters", 9999) <= 1000)
+        )
         AND COALESCE(p."externalRating", 0) >= ${minRating}
         AND ST_DistanceSphere(
           p.location::geometry,
           ST_MakePoint(${point.longitude}, ${point.latitude})
         ) <= ${radiusMeters}
-        AND CASE ap."preferredMode"
-              WHEN 'WALKING' THEN COALESCE(ap."walkingMinutes", 999)
-              WHEN 'BIKING'  THEN COALESCE(ap."bikingMinutes",  999)
-              WHEN 'TRANSIT' THEN COALESCE(ap."transitMinutes", 999)
-              ELSE 999
-            END <= ${maxMinutes}
       ORDER BY p.id, ST_DistanceSphere(
         p.location::geometry,
         ST_MakePoint(${point.longitude}, ${point.latitude})
@@ -335,13 +340,8 @@ export async function findPoisNearAirportQuery(
         ST_MakePoint(${airportLocation.longitude}, ${airportLocation.latitude})
       ) <= ${radiusMeters}
     ORDER BY
-      CASE
-        WHEN ap."preferredMode" = 'WALKING' THEN 1
-        WHEN ap."preferredMode" = 'BIKING' THEN 2
-        WHEN ap."preferredMode" = 'TRANSIT' THEN 3
-        WHEN ap."preferredMode" = 'DRIVING' THEN 4
-        ELSE 5
-      END ASC,
+      COALESCE(p."externalRating", 0) * LOG(COALESCE(p."externalReviewCount"::float, 0) + 1) DESC,
+      COALESCE(p."externalRating", 0) DESC,
       distance ASC
     LIMIT ${limit}
   `;

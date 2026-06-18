@@ -43,16 +43,21 @@ Enable the following APIs:
    - Search for "Directions API" → Click "Enable"
 
 3. **Places API (New)**
-   - Used for: Future feature - syncing restaurant data
+   - Used for: Syncing restaurant and attraction data from Google
    - Search for "Places API (New)" → Click "Enable"
+
+4. **Distance Matrix API**
+   - Used for: Calculating walking, biking, transit, and driving times from airports to nearby restaurants
+   - Search for "Distance Matrix API" → Click "Enable"
+   - **⚠️ Required for the "reachability" feature** — without this, all POIs will show "Reachability pending" in the airport panel
 
 ### Optional APIs
 
-4. **Street View Static API**
+5. **Street View Static API**
    - Used for: Street View integration
    - Search for "Street View Static API" → Click "Enable"
 
-5. **Geocoding API**
+6. **Geocoding API**
    - Used for: Converting addresses to coordinates
    - Search for "Geocoding API" → Click "Enable"
 
@@ -90,15 +95,16 @@ Enable the following APIs:
    - Check only required APIs
 5. Click "Save"
 
-### For Cloudflare Workers (Server-side)
+### For GitHub Actions / Server-side Sync
 
 Create a **separate API key** for server-side operations:
 
 1. Create new API key
 2. Name it "GA Eats Server Key"
-3. Restrict to only: **Places API (New)**
+3. Restrict to: **Places API (New)** and **Distance Matrix API**
 4. Under "Application restrictions", select "None" (server-side keys don't need HTTP restrictions)
-5. **Store securely** using `wrangler secret put GOOGLE_PLACES_API_KEY`
+5. **Store securely** as a GitHub Actions secret named `GOOGLE_MAPS_SERVER_API_KEY`
+   (Settings → Secrets and variables → Actions → New repository secret)
 
 ## Step 5: Configure Environment Variables
 
@@ -117,8 +123,8 @@ Create a **separate API key** for server-side operations:
    # Map ID — REQUIRED for correct marker (Advanced Marker) positioning
    VITE_GOOGLE_MAPS_MAP_ID="YOUR_MAP_ID_HERE"
 
-   # Server-side (Cloudflare Workers)
-   GOOGLE_PLACES_API_KEY="YOUR_SERVER_API_KEY_HERE"
+   # Server-side (GitHub Actions POI sync — set as GitHub Actions secret, not in .env)
+   GOOGLE_MAPS_SERVER_API_KEY="YOUR_SERVER_API_KEY_HERE"
    ```
 
    > **Why a Map ID is required:** the map renders airport/restaurant pins as
@@ -134,19 +140,21 @@ Create a **separate API key** for server-side operations:
 
 3. **Never commit `.env`** to version control (it's already in `.gitignore`)
 
-### Production (Cloudflare Workers)
+### Production (Cloudflare Workers + GitHub Actions)
 
-Set secrets using Wrangler CLI:
+Set client-side secrets using Wrangler CLI:
 
 ```bash
-# Client-side key (will be exposed to browser)
+# Client-side key (will be exposed to browser via Cloudflare Worker)
 wrangler secret put VITE_GOOGLE_MAPS_API_KEY
 # Paste your restricted client-side API key
-
-# Server-side key (for Places API sync worker)
-wrangler secret put GOOGLE_PLACES_API_KEY
-# Paste your server-side API key
 ```
+
+Set server-side secrets in GitHub Actions (used by the POI sync workflow):
+
+1. Go to your GitHub repo → **Settings → Secrets and variables → Actions**
+2. Add `GOOGLE_MAPS_SERVER_API_KEY` — paste your server-side API key (Places API + Distance Matrix API)
+3. Add `DIRECT_URL` — your PostgreSQL connection string
 
 ## Pricing & Billing
 
