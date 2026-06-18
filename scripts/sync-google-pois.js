@@ -71,16 +71,25 @@ try {
     `syncing ${dueAirports.length} airport(s) for ${requestedType.toLowerCase()} refresh`
   );
 
+  let failed = 0;
+
   for (const airport of dueAirports) {
-    const places = await fetchNearbyPlaces(
+    let places;
+    try {
+      places = await fetchNearbyPlaces(
       {
         latitude: Number(airport.latitude),
         longitude: Number(airport.longitude),
       },
-      radiusMeters,
-      requestedType,
-      apiKey
-    );
+        radiusMeters,
+        requestedType,
+        apiKey
+      );
+    } catch (err) {
+      console.error(`${airport.code}: Places API error — skipping. ${err.message}`);
+      failed++;
+      continue;
+    }
 
     // ZERO-RESULT BACKOFF
     if (places.length === 0) {
@@ -204,6 +213,11 @@ try {
       });
     }
   }
+
+  if (failed > 0) {
+    console.error(`${failed} airport(s) failed due to Places API errors.`);
+    process.exitCode = 1;
+  }
 } finally {
   await prisma.$disconnect();
 }
@@ -297,7 +311,7 @@ async function fetchDistanceMatrix(options) {
   return null;
 }
 
-async function fetchNearbyPlaces(center, radius, type, apiKey) {
+async function fetchNearbyPlaces(center, radius, type, apiKey, attempt = 1) {
   const response = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
     method: "POST",
     headers: {
@@ -320,6 +334,14 @@ async function fetchNearbyPlaces(center, radius, type, apiKey) {
       },
     }),
   });
+
+  // Retry on transient server errors and rate limits (up to 3 attempts)
+  if ((response.status === 429 || response.status >= 500) && attempt < 3) {
+    const delay = attempt * 2000;
+    console.warn(`Places API ${response.status} — retrying in ${delay / 1000}s (attempt ${attempt}/3)`);
+    await new Promise((r) => setTimeout(r, delay));
+    return fetchNearbyPlaces(center, radius, type, apiKey, attempt + 1);
+  }
 
   if (!response.ok) {
     const body = await response.text();
