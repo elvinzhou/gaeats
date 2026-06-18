@@ -43,6 +43,58 @@ export async function listAirportsForPoiSync(prisma, airportCode) {
   `;
 }
 
+export async function listAirportsForFboSync(prisma, airportCode) {
+  if (airportCode) {
+    return prisma.$queryRaw`
+      SELECT
+        a.id,
+        a.code,
+        a.city,
+        a.state,
+        a."fboName",
+        ST_Y(a.location::geometry) AS latitude,
+        ST_X(a.location::geometry) AS longitude,
+        CASE WHEN COUNT(f.id) > 0 THEN true ELSE false END AS "hasFbos"
+      FROM "airports" a
+      LEFT JOIN "airport_fbos" f ON f."airportId" = a.id
+      WHERE UPPER(a.code) = UPPER(${airportCode})
+      GROUP BY a.id, a.code, a.city, a.state, a."fboName", a.location
+    `;
+  }
+
+  return prisma.$queryRaw`
+    SELECT
+      a.id,
+      a.code,
+      a.city,
+      a.state,
+      a."fboName",
+      ST_Y(a.location::geometry) AS latitude,
+      ST_X(a.location::geometry) AS longitude,
+      CASE WHEN COUNT(f.id) > 0 THEN true ELSE false END AS "hasFbos"
+    FROM "airports" a
+    LEFT JOIN "airport_fbos" f ON f."airportId" = a.id
+    WHERE (a."facilityType" = 'AIRPORT' OR a."facilityType" IS NULL)
+      AND (a."transientStorageHangar" = true OR a."transientStorageTiedown" = true OR a."facilityType" IS NULL)
+      AND a.country = 'US'
+    GROUP BY a.id, a.code, a.city, a.state, a."fboName", a.location
+    ORDER BY "hasFbos" ASC, a.code ASC
+  `;
+}
+
+export async function upsertAirportFbo(prisma, { airportId, name, placeId, latitude, longitude, source }) {
+  await prisma.$executeRaw`
+    INSERT INTO "airport_fbos" ("airportId", name, "placeId", latitude, longitude, source, "createdAt", "updatedAt")
+    VALUES (${airportId}, ${name}, ${placeId ?? null}, ${latitude}, ${longitude}, ${source}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT ("airportId", name) DO UPDATE SET
+      "placeId"   = COALESCE(EXCLUDED."placeId", "airport_fbos"."placeId"),
+      latitude    = EXCLUDED.latitude,
+      longitude   = EXCLUDED.longitude,
+      source      = EXCLUDED.source,
+      "updatedAt" = CURRENT_TIMESTAMP
+  `;
+}
+
 export async function upsertGooglePoiWithLocation(prisma, data) {
   const point = `POINT(${data.longitude} ${data.latitude})`;
 
