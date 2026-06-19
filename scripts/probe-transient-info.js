@@ -27,9 +27,15 @@ const AIRPORTS = airportArg
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const BRAVE_API_KEY = process.env.BRAVE_API_KEY;
+const REDDIT_CLIENT_ID = process.env.REDDIT_CLIENT_ID;
+const REDDIT_CLIENT_SECRET = process.env.REDDIT_CLIENT_SECRET;
 
 if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is required");
 if (!BRAVE_API_KEY) throw new Error("BRAVE_API_KEY is required");
+if (REDDIT_CLIENT_ID && !REDDIT_CLIENT_SECRET) throw new Error("REDDIT_CLIENT_SECRET required when REDDIT_CLIENT_ID is set");
+
+log(`Reddit: ${REDDIT_CLIENT_ID ? "enabled" : "disabled (no REDDIT_CLIENT_ID)"}`);
+log(`Brave:  enabled`);
 
 // ---------------------------------------------------------------------------
 // Main
@@ -99,12 +105,34 @@ for (const code of AIRPORTS) {
       log(`\n[3/4] Skipping website scrape — no URL found`);
     }
 
-    // Step 4 — Gemini Flash extraction
+    // Step 4 — Reddit
+    if (REDDIT_CLIENT_ID) {
+      log(`\n[4/5] Searching Reddit for ${code} transient parking...`);
+      try {
+        const { snippets, queries, postCount } = await searchReddit(code);
+        log(`  -> Queries run: ${queries.join(" | ")}`);
+        log(`  -> Total posts returned: ${postCount}`);
+        if (snippets.length > 0) {
+          log(`  -> Matched ${snippets.length} post(s) containing airport reference`);
+          snippets.forEach((s, i) => log(`     [${i + 1}] ${s.title} (r/${s.subreddit})`));
+          const text = snippets.map((s) => `${s.title}\n${s.body}`).join("\n\n---\n\n");
+          result.sources.push({ name: "Reddit", text: text.slice(0, 4000) });
+        } else {
+          log(`  -> No posts matched airport reference`);
+        }
+      } catch (err) {
+        log(`  -> Reddit error: ${err.message}`);
+      }
+    } else {
+      log(`\n[4/5] Skipping Reddit — no credentials`);
+    }
+
+    // Step 5 — Gemini Flash extraction
     if (result.sources.length === 0) {
-      log(`\n[4/4] No sources collected — skipping Gemini`);
+      log(`\n[5/5] No sources collected — skipping Gemini`);
       result.extraction = null;
     } else {
-      log(`\n[4/4] Calling Gemini Flash (${result.sources.length} source(s))...`);
+      log(`\n[5/5] Calling Gemini Flash (${result.sources.length} source(s))...`);
       const prompt = buildPrompt(code, result.sources);
       log(`  -> Prompt length: ${prompt.length} chars`);
       log(`  -> Prompt preview:\n${prompt.slice(0, 400).replace(/^/gm, "     ")}...`);
@@ -318,6 +346,101 @@ async function callGeminiFlash(prompt, attempt = 1) {
   }
 
   return { extraction, rawResponse, tokensUsed };
+}
+
+// ---------------------------------------------------------------------------
+// Reddit
+// ---------------------------------------------------------------------------
+
+let _redditToken = null;
+let _redditTokenExpiry = 0;
+
+async function getRedditToken() {
+  if (_redditToken && Date.now() < _redditTokenExpiry) return _redditToken;
+
+  const credentials = Buffer.from(`${REDDIT_CLIENT_ID}:${REDDIT_CLIENT_SECRET}`).toString("base64");
+  log(`  -> Fetching Reddit access token...`);
+
+  const response = await fetch("https://www.reddit.com/api/v1/access_token", {
+    method: "POST",
+    headers: {
+      "Authorization": `Basic ${credentials}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": "gaeats-probe/1.0",
+    },
+    body: "grant_type=client_credentials",
+  });
+
+  log(`  -> Token response: ${response.status}`);
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Reddit auth HTTP ${response.status}: ${body.slice(0, 200)}`);
+  }
+
+  const data = await response.json();
+  _redditToken = data.access_token;
+  _redditTokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
+  log(`  -> Token obtained, expires in ${data.expires_in}s`);
+  return _redditToken;
+}
+
+async function searchReddit(code) {
+  const token = await getRedditToken();
+
+  // Two queries: code-only (precise) and code + keywords (broader)
+  const queries = [
+    `${code} transient`,
+    `${code} parking ramp`,
+  ];
+
+  // Cast a wide net across aviation subreddits
+  const subreddits = "flying+aviation+flying_club+CFI+flying_lessons+ATC";
+
+  const allPosts = [];
+  for (const q of queries) {
+    const url = new URL(`https://oauth.reddit.com/r/${subreddits}/search`);
+    url.searchParams.set("q", q);
+    url.searchParams.set("sort", "relevance");
+    url.searchParams.set("limit", "10");
+    url.searchParams.set("restrict_sr", "true");
+    url.searchParams.set("t", "all");
+
+    log(`  -> GET /r/${subreddits}/search?q=${encodeURIComponent(q)}`);
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "User-Agent": "gaeats-probe/1.0",
+      },
+    });
+
+    log(`  -> Response: ${response.status}`);
+    if (!response.ok) continue;
+
+    const data = await response.json();
+    const posts = data.data?.children ?? [];
+    log(`  -> ${posts.length} posts returned`);
+
+    for (const p of posts) {
+      const title = p.data.title ?? "";
+      const body = p.data.selftext ?? "";
+      const sub = p.data.subreddit ?? "";
+      // Only keep posts that actually mention the airport code
+      if (new RegExp(`\\b${code}\\b`, "i").test(title + body)) {
+        allPosts.push({ title, body: body.slice(0, 600), subreddit: sub });
+      }
+    }
+  }
+
+  // Deduplicate by title
+  const seen = new Set();
+  const snippets = allPosts.filter((p) => {
+    if (seen.has(p.title)) return false;
+    seen.add(p.title);
+    return true;
+  });
+
+  return { snippets, queries, postCount: allPosts.length };
 }
 
 // ---------------------------------------------------------------------------
