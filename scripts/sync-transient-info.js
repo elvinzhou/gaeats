@@ -9,7 +9,7 @@ if (args.has("--help")) {
   );
   console.log("");
   console.log("  --airport=CODE  Sync a single airport");
-  console.log("  --limit=N       Max airports per run (default: 15)");
+  console.log("  --limit=N       Max airports per run (default: 200)");
   console.log("  --dry-run       Print what would be written, do not modify DB");
   process.exit(0);
 }
@@ -19,7 +19,7 @@ const airportFilter = [...args]
   ?.replace("--airport=", "")
   .toUpperCase();
 const limit = parseInt(
-  [...args].find((a) => a.startsWith("--limit="))?.replace("--limit=", "") ?? "15",
+  [...args].find((a) => a.startsWith("--limit="))?.replace("--limit=", "") ?? "200",
   10
 );
 const dryRun = args.has("--dry-run");
@@ -54,6 +54,15 @@ try {
 
       if (!extraction.notes) {
         console.log(`  no transient info found (confidence: ${extraction.confidence})`);
+        if (!dryRun) {
+          // Still stamp the sync time so this airport cycles to the back of the queue
+          await prisma.$executeRaw`
+            UPDATE "airports" SET
+              "transientParkingLastSyncAt" = CURRENT_TIMESTAMP,
+              "updatedAt" = CURRENT_TIMESTAMP
+            WHERE id = ${airport.id}
+          `;
+        }
         skipped++;
         continue;
       }
