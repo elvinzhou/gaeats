@@ -30,6 +30,8 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is required");
 if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is required");
 
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
+
 const prisma = createScriptPrisma();
 
 try {
@@ -161,10 +163,8 @@ async function listAirportsForTransientSync(airportCode) {
 }
 
 // ---------------------------------------------------------------------------
-// Gemini 2.0 Flash with Google Search grounding
+// Gemini 2.5 Flash Lite with Google Search grounding
 // ---------------------------------------------------------------------------
-
-const GEMINI_MODEL = "gemini-2.5-flash-lite";
 
 async function queryGeminiGrounded(code, forceSearch = false, attempt = 1) {
   const prompt = forceSearch
