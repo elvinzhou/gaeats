@@ -81,24 +81,8 @@ try {
       imported += 1;
     } catch (error) {
       failed += 1;
-      const flags = {
-        notamDService: airport.notamDService,
-        customsEntry: airport.customsEntry,
-        customsLanding: airport.customsLanding,
-        jointUse: airport.jointUse,
-        militaryRights: airport.militaryRights,
-        controlTower: airport.controlTower,
-        landingFee: airport.landingFee,
-        contractFuel: airport.contractFuel,
-        minOperationalNetwork: airport.minOperationalNetwork,
-      };
-      const longFlags = Object.entries(flags)
-        .filter(([, v]) => v != null && v.length > 1)
-        .map(([k, v]) => `${k}="${v}"`)
-        .join(", ");
       console.error(
-        `failed to import FAA airport ${airport.code}: ${error?.message ?? error}` +
-          (longFlags ? ` [oversized flags: ${longFlags}]` : "")
+        `failed to import FAA airport ${airport.code}: ${error?.message ?? error}`
       );
     }
   }
