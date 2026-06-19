@@ -31,4 +31,3 @@ jobs:
         run: node scripts/probe-transient-info.js --airports=${{ inputs.airports }}
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
