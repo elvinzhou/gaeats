@@ -155,7 +155,7 @@ async function listAirportsForTransientSync(airportCode) {
 // Gemini 2.0 Flash with Google Search grounding
 // ---------------------------------------------------------------------------
 
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
 
 async function queryGeminiGrounded(code, forceSearch = false, attempt = 1) {
   const prompt = forceSearch
