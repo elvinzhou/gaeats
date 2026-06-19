@@ -39,32 +39,38 @@ for (const code of AIRPORTS) {
   try {
     log(`\n[1/1] Calling Gemini 2.5 Flash with Google Search grounding...`);
 
-    const { text, groundingMetadata, tokensUsed } = await callGeminiGrounded(code);
+    const response = await callGeminiGrounded(code);
 
-    // Log grounding details
-    const queries = groundingMetadata?.webSearchQueries ?? [];
-    const chunks = groundingMetadata?.groundingChunks ?? [];
-    log(`  -> Search queries issued by Gemini: ${queries.length}`);
-    queries.forEach((q, i) => log(`     ${i + 1}. "${q}"`));
-    log(`  -> Sources retrieved: ${chunks.length}`);
-    chunks.forEach((c, i) => {
-      const uri = c.web?.uri ?? "(unknown)";
-      const title = c.web?.title ?? "";
-      log(`     ${i + 1}. ${title} — ${uri}`);
-      result.sources.push({ title, uri });
-    });
-    log(`  -> Tokens used: ~${tokensUsed}`);
-    log(`  -> Raw response:\n${text.replace(/^/gm, "     ")}`);
-
-    // Parse structured JSON from response
-    const extraction = parseJson(text);
-    if (extraction) {
-      result.notes = extraction.notes;
-      result.confidence = extraction.confidence;
-      result.locationDescription = extraction.locationDescription;
-      log(`  -> Parsed: confidence=${extraction.confidence}`);
+    if (!response) {
+      log(`  -> Gemini returned no result after retries`);
     } else {
-      log(`  -> Could not parse JSON from response`);
+      const { text, groundingMetadata, tokensUsed, searchCount } = response;
+
+      // Log grounding details
+      const queries = groundingMetadata?.webSearchQueries ?? [];
+      const chunks = groundingMetadata?.groundingChunks ?? [];
+      log(`  -> Searches issued: ${searchCount}`);
+      queries.forEach((q, i) => log(`     ${i + 1}. "${q}"`));
+      log(`  -> Sources retrieved: ${chunks.length}`);
+      chunks.forEach((c, i) => {
+        const uri = c.web?.uri ?? "(unknown)";
+        const title = c.web?.title ?? "";
+        log(`     ${i + 1}. ${title} — ${uri}`);
+        result.sources.push({ title, uri });
+      });
+      log(`  -> Tokens used: ~${tokensUsed}`);
+      log(`  -> Raw response:\n${text.replace(/^/gm, "     ")}`);
+
+      // Parse structured JSON from response (handles markdown fences)
+      const extraction = parseJson(text);
+      if (extraction) {
+        result.notes = extraction.notes;
+        result.confidence = extraction.confidence;
+        result.locationDescription = extraction.locationDescription;
+        log(`  -> Parsed: confidence=${extraction.confidence}`);
+      } else {
+        log(`  -> Could not parse JSON from response`);
+      }
     }
   } catch (err) {
     log(`\nERROR: ${err.message}`);
@@ -100,15 +106,18 @@ console.log(JSON.stringify(results, null, 2));
 // Gemini 2.5 Flash with Google Search grounding
 // ---------------------------------------------------------------------------
 
-async function callGeminiGrounded(code, attempt = 1) {
-  const prompt = `Search for transient (visiting/overnight) aircraft parking information for ${code} airport.
+async function callGeminiGrounded(code, forceSearch = false, attempt = 1) {
+  const prompt = forceSearch
+    ? `Search the web right now — do not use training data — for current transient aircraft parking at ${code} airport. Where exactly can visiting pilots park? Include ramp name, location, fees, restrictions.
 
-Find: where exactly on the airport visiting pilots park their aircraft — specific ramp name, location relative to landmarks, self-serve fuel, FBO, etc. Also note any overnight fees, restrictions, or tie-down costs if mentioned.
+Respond with raw JSON only (no markdown):
+{"notes": "...", "confidence": "HIGH|MEDIUM|LOW", "locationDescription": "..."}`
+    : `Search for transient (visiting/overnight) aircraft parking at ${code} airport. Where exactly on the airport can visiting pilots park — specific ramp, location relative to landmarks, FBO, self-serve fuel? Include overnight fees or restrictions if mentioned.
 
-Respond with a JSON object (no markdown fences) with these exact fields:
-- "notes": string — 1-3 sentences summarising transient parking location and any costs. null if nothing found.
-- "confidence": "HIGH" | "MEDIUM" | "LOW"
-- "locationDescription": string | null — plain-language WHERE on the airport (e.g. "north ramp near self-serve fuel pump", "main FBO on the west side of the field"). null if unknown.`;
+Respond with raw JSON only (no markdown):
+{"notes": "...", "confidence": "HIGH|MEDIUM|LOW", "locationDescription": "..."}
+
+Return {"notes":null,"confidence":"LOW","locationDescription":null} if nothing found.`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
@@ -125,11 +134,20 @@ Respond with a JSON object (no markdown fences) with these exact fields:
 
   log(`  -> Gemini response status: ${response.status}`);
 
-  if ((response.status === 429 || response.status >= 500) && attempt < 3) {
-    const delay = attempt * 5000;
-    log(`  -> Rate limited — retrying in ${delay / 1000}s`);
+  // 503 = model overloaded — retry up to 5 times with longer backoff
+  if (response.status === 503 && attempt <= 5) {
+    const delay = Math.min(attempt * 15000, 60000);
+    log(`  -> 503 overloaded — retry ${attempt}/5 in ${delay / 1000}s`);
     await new Promise((r) => setTimeout(r, delay));
-    return callGeminiGrounded(code, attempt + 1);
+    return callGeminiGrounded(code, forceSearch, attempt + 1);
+  }
+
+  // 429 = rate limited
+  if (response.status === 429 && attempt <= 3) {
+    const delay = attempt * 10000;
+    log(`  -> 429 rate limited — retry ${attempt}/3 in ${delay / 1000}s`);
+    await new Promise((r) => setTimeout(r, delay));
+    return callGeminiGrounded(code, forceSearch, attempt + 1);
   }
 
   if (!response.ok) {
@@ -138,15 +156,28 @@ Respond with a JSON object (no markdown fences) with these exact fields:
   }
 
   const data = await response.json();
-
   const candidate = data.candidates?.[0];
-  const text = candidate?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+
+  // Filter out thinking tokens before joining text
+  const text = (candidate?.content?.parts ?? [])
+    .filter((p) => !p.thought)
+    .map((p) => p.text ?? "")
+    .join("");
+
   const groundingMetadata = candidate?.groundingMetadata ?? null;
   const tokensUsed =
     (data.usageMetadata?.promptTokenCount ?? 0) +
     (data.usageMetadata?.candidatesTokenCount ?? 0);
+  const searchCount = groundingMetadata?.webSearchQueries?.length ?? 0;
 
-  return { text, groundingMetadata, tokensUsed };
+  // If Gemini answered from training data without searching, retry once with
+  // an explicit instruction to search the web
+  if (searchCount === 0 && !forceSearch) {
+    log(`  -> 0 searches made — retrying with explicit search instruction`);
+    return callGeminiGrounded(code, true, 1);
+  }
+
+  return { text, groundingMetadata, tokensUsed, searchCount };
 }
 
 // ---------------------------------------------------------------------------
@@ -154,10 +185,11 @@ Respond with a JSON object (no markdown fences) with these exact fields:
 // ---------------------------------------------------------------------------
 
 function parseJson(text) {
+  const stripped = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
   try {
-    return JSON.parse(text.trim());
+    return JSON.parse(stripped);
   } catch {
-    const match = text.match(/\{[\s\S]*\}/);
+    const match = stripped.match(/\{[\s\S]*\}/);
     if (match) {
       try { return JSON.parse(match[0]); } catch { /* fall through */ }
     }
