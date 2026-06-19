@@ -111,7 +111,7 @@ Respond with a JSON object (no markdown fences) with these exact fields:
 - "locationDescription": string | null — plain-language WHERE on the airport (e.g. "north ramp near self-serve fuel pump", "main FBO on the west side of the field"). null if unknown.`;
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
