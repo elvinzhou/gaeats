@@ -179,21 +179,9 @@ export async function upsertGooglePoiWithLocation(prisma, data) {
 export async function upsertFaaAirportWithLocation(prisma, airport, nextPoiSyncAt) {
   const point = `POINT(${airport.longitude} ${airport.latitude})`;
 
-  // The airports table has unique constraints on code, faaCode, and icaoCode.
-  // `code` is derived (icaoCode || faaCode) and can change between FAA editions,
-  // so a plain ON CONFLICT (code) upsert breaks on re-import when an existing row
-  // matches on faaCode/icaoCode under a different code. Resolve by any stable
-  // identifier, then update in place to preserve the id and all foreign-key relations.
-  const existing = await prisma.airport.findFirst({
-    where: {
-      OR: [
-        { code: airport.code },
-        ...(airport.faaCode ? [{ faaCode: airport.faaCode }] : []),
-        ...(airport.icaoCode ? [{ icaoCode: airport.icaoCode }] : []),
-      ],
-    },
-    select: { id: true, nextPoiSyncAt: true },
-  });
+  // faaCode is the FAA's permanent identifier and survives code renames between
+  // NASR editions. Fall back to code when faaCode is absent.
+  const where = airport.faaCode ? { faaCode: airport.faaCode } : { code: airport.code };
 
   const scalarData = {
     code: airport.code,
@@ -277,35 +265,16 @@ export async function upsertFaaAirportWithLocation(prisma, airport, nextPoiSyncA
     country: airport.country,
   };
 
-  await prisma.$transaction(async (tx) => {
-    if (existing) {
-      await tx.airport.update({
-        where: { id: existing.id },
-        data: {
-          ...scalarData,
-          // Preserve existing nextPoiSyncAt if already set (mirrors COALESCE behaviour)
-          nextPoiSyncAt: existing.nextPoiSyncAt ?? nextPoiSyncAt,
-        },
-      });
-      // location is Unsupported("geography") — must update via raw SQL
-      await tx.$executeRaw`
-        UPDATE "airports" SET location = ST_GeomFromText(${point}, 4326) WHERE id = ${existing.id}
-      `;
-    } else {
-      // location is NOT NULL and Unsupported, so seed the row with raw SQL, then
-      // fill all scalar fields via Prisma's typed update.
-      const rows = await tx.$queryRaw`
-        INSERT INTO "airports" (code, name, city, country, source, location, "updatedAt")
-        VALUES (
-          ${airport.code}, ${airport.name}, ${airport.city}, ${airport.country},
-          'FAA'::"AirportSource", ST_GeomFromText(${point}, 4326), NOW()
-        )
-        RETURNING id
-      `;
-      await tx.airport.update({
-        where: { id: rows[0].id },
-        data: { ...scalarData, nextPoiSyncAt },
-      });
-    }
+  const row = await prisma.airport.upsert({
+    where,
+    create: { ...scalarData, nextPoiSyncAt },
+    // Don't overwrite nextPoiSyncAt on update — it's managed by the POI sync
+    update: scalarData,
+    select: { id: true },
   });
+
+  // location is Unsupported("geography") — set via raw SQL after the upsert
+  await prisma.$executeRaw`
+    UPDATE "airports" SET location = ST_GeomFromText(${point}, 4326) WHERE id = ${row.id}
+  `;
 }

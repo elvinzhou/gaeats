@@ -221,7 +221,7 @@ model Airport {
   lastPoiSyncAt  DateTime?                             @db.Timestamptz
   nextPoiSyncAt  DateTime?                             @db.Timestamptz
   syncPriority   Int                                   @default(100)
-  location       Unsupported("geography(Point, 4326)") // PostGIS geography type for efficient distance calculations
+  location       Unsupported("geography(Point, 4326)")? // PostGIS geography type for efficient distance calculations
   createdAt      DateTime                              @default(now()) @db.Timestamptz
   updatedAt      DateTime                              @updatedAt @db.Timestamptz
 
