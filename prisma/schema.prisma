@@ -169,14 +169,14 @@ model Airport {
   customsLanding        String?  @db.VarChar(10)
   jointUse              String?  @db.VarChar(10)
   militaryRights        String?  @db.VarChar(10)
-  fuelTypes             String?  @db.VarChar(40)
+  fuelTypes             String?  @db.VarChar(100)
   airframeRepair        String?  @db.VarChar(5)
   engineRepair          String?  @db.VarChar(5)
   bottledOxygen         String?  @db.VarChar(8)
   bulkOxygen            String?  @db.VarChar(8)
   lightingSchedule      String?  @db.VarChar(7)
   beaconSchedule        String?  @db.VarChar(7)
-  controlTower          String?  @db.VarChar(10)
+  controlTower          String?  @db.VarChar(20)
   unicomFrequency       String?  @db.VarChar(7)
   ctafFrequency         String?  @db.VarChar(7)
   segmentedCircle       String?  @db.VarChar(4)
@@ -197,11 +197,11 @@ model Airport {
   annualMilitaryOps     Int?
   annualOpsDate         String?  @db.VarChar(10)
   contractFuel          String?  @db.VarChar(10)
-  storageFacilities     String?  @db.VarChar(12)
+  storageFacilities     String?  @db.VarChar(50)
   transientStorageHangar Boolean?
   transientStorageTiedown Boolean?
   transientStorageBuoy   Boolean?
-  otherServices         String?  @db.VarChar(71)
+  otherServices         String?  @db.VarChar(255)
   windIndicator         String?  @db.VarChar(3)
   minOperationalNetwork String?  @db.VarChar(10)
   name           String                                @db.VarChar(255)
