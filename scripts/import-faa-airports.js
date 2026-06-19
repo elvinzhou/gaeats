@@ -67,7 +67,6 @@ try {
   });
 
   let imported = 0;
-  let failed = 0;
 
   for (const airport of records) {
     if (dryRun) {
@@ -75,25 +74,12 @@ try {
       continue;
     }
 
-    // Import resiliently: a single problematic record must not abort the run
-    try {
-      await upsertFaaAirportWithLocation(prisma, airport, initialNextSyncAt);
-      imported += 1;
-    } catch (error) {
-      failed += 1;
-      console.error(
-        `failed to import FAA airport ${airport.code}: ${error?.message ?? error}`
-      );
-    }
+    await upsertFaaAirportWithLocation(prisma, airport, initialNextSyncAt);
+    imported += 1;
   }
 
   if (!dryRun) {
-    console.log(
-      `FAA import complete: ${imported} imported, ${failed} failed of ${records.length} records.`
-    );
-    if (failed > 0) {
-      process.exitCode = 1;
-    }
+    console.log(`FAA import complete: ${imported} of ${records.length} records imported.`);
   }
 } finally {
   await prisma.$disconnect();
