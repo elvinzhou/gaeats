@@ -151,7 +151,7 @@ async function listAirportsForTransientSync(airportCode) {
         ELSE 3
       END AS "regionPriority"
     FROM "airports"
-    WHERE ("facilityType" = 'AIRPORT' OR "facilityType" IS NULL)
+    WHERE "facilityType" = 'AIRPORT'
       AND ("transientStorageHangar" = true OR "transientStorageTiedown" = true)
       AND country = 'US'
     ORDER BY
