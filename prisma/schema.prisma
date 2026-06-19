@@ -236,6 +236,18 @@ model Airport {
   @@map("airports")
 }
 
+model TransientSyncJob {
+  id            Int      @id @default(autoincrement())
+  geminiJobName String   @db.VarChar(500)
+  status        String   @db.VarChar(20)
+  airportsJson  String   @db.Text
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @updatedAt @db.Timestamptz
+
+  @@index([status])
+  @@map("transient_sync_jobs")
+}
+
 /**
  * Point of interest target model for MVP.
  * This is the canonical listing model for both restaurants and attractions.
