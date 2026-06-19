@@ -1,19 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { upsertFaaAirportWithLocation } from "./postgis.js";
 
-/**
- * The airports table has unique constraints on code, faaCode, icaoCode and
- * iataCode, but `code` is derived (icaoCode || faaCode) and can change between
- * FAA editions. The previous `ON CONFLICT (code)` upsert crashed a re-import
- * when an existing row matched on faaCode/icaoCode under a different code
- * (duplicate key on airports_faaCode_key), which is why the scheduled FAA
- * import GitHub Action failed and never refreshed coordinates.
- *
- * upsertFaaAirportWithLocation now resolves the row by any stable identifier
- * and updates it in place, only inserting when genuinely new.
- */
-
-const airport = {
+const base = {
   code: "PANC",
   faaCode: "ANC",
   icaoCode: "PANC",
@@ -27,36 +15,49 @@ const airport = {
   longitude: -149.9982,
 };
 
+function makePrisma() {
+  return {
+    airport: { upsert: vi.fn().mockResolvedValue({ id: 7 }) },
+    $executeRaw: vi.fn().mockResolvedValue(1),
+  };
+}
+
 // Tagged-template SQL arrives as a TemplateStringsArray in call[0].
 const sqlOf = (call) => call[0].join(" ");
 
 describe("upsertFaaAirportWithLocation", () => {
-  it("updates the existing row in place when an identifier already matches", async () => {
-    const prisma = {
-      $queryRaw: vi.fn().mockResolvedValue([{ id: 7 }]),
-      $executeRaw: vi.fn().mockResolvedValue(1),
-    };
+  it("uses faaCode as the upsert key when available", async () => {
+    const prisma = makePrisma();
+    await upsertFaaAirportWithLocation(prisma, base, new Date());
 
-    await upsertFaaAirportWithLocation(prisma, airport, new Date());
-
-    // Looks the row up by its stable identifiers (code/faaCode/icaoCode)...
-    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
-    expect(sqlOf(prisma.$queryRaw.mock.calls[0])).toMatch(/SELECT id FROM "airports"/);
-    // ...then UPDATEs in place instead of INSERTing, which would otherwise trip
-    // the faaCode/icaoCode unique constraint and abort the import.
-    expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
-    expect(sqlOf(prisma.$executeRaw.mock.calls[0])).toMatch(/UPDATE "airports"/);
+    const { where } = prisma.airport.upsert.mock.calls[0][0];
+    expect(where).toEqual({ faaCode: "ANC" });
   });
 
-  it("inserts a new row when no identifier matches", async () => {
-    const prisma = {
-      $queryRaw: vi.fn().mockResolvedValue([]),
-      $executeRaw: vi.fn().mockResolvedValue(1),
-    };
+  it("falls back to code as the upsert key when faaCode is absent", async () => {
+    const prisma = makePrisma();
+    await upsertFaaAirportWithLocation(prisma, { ...base, faaCode: null }, new Date());
 
-    await upsertFaaAirportWithLocation(prisma, airport, new Date());
+    const { where } = prisma.airport.upsert.mock.calls[0][0];
+    expect(where).toEqual({ code: "PANC" });
+  });
+
+  it("sets nextPoiSyncAt on create but not on update", async () => {
+    const prisma = makePrisma();
+    const nextPoiSyncAt = new Date("2026-07-01");
+    await upsertFaaAirportWithLocation(prisma, base, nextPoiSyncAt);
+
+    const { create, update } = prisma.airport.upsert.mock.calls[0][0];
+    expect(create.nextPoiSyncAt).toBe(nextPoiSyncAt);
+    expect(update.nextPoiSyncAt).toBeUndefined();
+  });
+
+  it("updates the PostGIS location via $executeRaw after the upsert", async () => {
+    const prisma = makePrisma();
+    await upsertFaaAirportWithLocation(prisma, base, new Date());
 
     expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
-    expect(sqlOf(prisma.$executeRaw.mock.calls[0])).toMatch(/INSERT INTO "airports"/);
+    const sql = sqlOf(prisma.$executeRaw.mock.calls[0]);
+    expect(sql).toMatch(/UPDATE "airports" SET location = ST_GeomFromText/);
   });
 });
