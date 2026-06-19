@@ -236,10 +236,10 @@ async function braveSearchAirportWebsite(code, attempt = 1) {
   const codeShort = code.replace(/^K/, "");
   function score(r) {
     let s = 0;
-    if (/transient/i.test(r.url)) s += 10;       // URL literally about transient parking
-    if (new RegExp(codeShort, "i").test(r.url)) s += 5;
-    if (/airport\.(org|com|gov|net)/i.test(r.url)) s += 3;
-    if (/transient/i.test(r.title)) s += 2;
+    if (/\.gov\//i.test(r.url)) s += 8;                              // Official government operator
+    if (/airport\.(org|com|gov|net)/i.test(r.url)) s += 5;          // Airport domain pattern
+    if (new RegExp(codeShort, "i").test(r.url)) s += 4;             // Airport code in URL
+    if (/transient/i.test(r.url) || /transient/i.test(r.title)) s += 3; // Transient-specific page
     return s;
   }
 
@@ -337,8 +337,16 @@ async function fetchHtml(url, attempt = 1) {
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; gaeats-probe/1.0)",
-        "Accept": "text/html,application/xhtml+xml",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
       },
       signal: AbortSignal.timeout(15000),
     });
