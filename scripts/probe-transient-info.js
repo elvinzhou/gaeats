@@ -64,39 +64,41 @@ for (const code of AIRPORTS) {
       log(`  -> No website link found in AirNav`);
     }
 
-    // Step 2 — Brave Search for website (if AirNav didn't have it)
+    // Step 2 — Brave Search for website candidates (if AirNav didn't have one)
+    let websiteCandidates = [];
     if (!result.websiteUrl) {
       log(`\n[2/4] Brave Search — finding ${code} airport website...`);
-      const { url: braveUrl, query, rawResults } = await braveSearchAirportWebsite(code);
+      const { candidates, query, rawResults } = await braveSearchAirportWebsite(code);
 
       log(`  -> Query: "${query}"`);
       log(`  -> Raw results (top 5):`);
       rawResults.forEach((r, i) => log(`     ${i + 1}. ${r.title} — ${r.url}`));
 
-      if (braveUrl) {
-        log(`  -> Chosen: ${braveUrl}`);
-        result.websiteUrl = braveUrl;
-      } else {
-        log(`  -> No suitable result found`);
-      }
+      websiteCandidates = candidates;
+      log(`  -> ${candidates.length} candidate(s) after filtering`);
     } else {
       log(`\n[2/4] Skipping Brave Search — website already found via AirNav`);
+      websiteCandidates = [{ url: result.websiteUrl }];
     }
 
-    // Step 3 — Scrape airport website
-    if (result.websiteUrl) {
-      log(`\n[3/4] Scraping airport website: ${result.websiteUrl}`);
-      const siteText = await scrapeWebpage(result.websiteUrl);
+    // Step 3 — Scrape website candidates in ranked order; stop at first success
+    log(`\n[3/4] Scraping website candidates...`);
+    for (const candidate of websiteCandidates) {
+      log(`  -> Trying: ${candidate.url}`);
+      const siteText = await scrapeWebpage(candidate.url);
 
       if (siteText) {
         log(`  -> Got ${siteText.length} chars`);
         log(`  -> Snippet: ${siteText.slice(0, 200).replace(/\n/g, " ")}...`);
-        result.sources.push({ name: "Airport website", text: siteText });
+        result.websiteUrl = candidate.url;
+        result.sources.push({ name: "Website", text: siteText });
+        break;
       } else {
-        log(`  -> Could not fetch or page was empty`);
+        log(`  -> Failed (403/empty) — trying next`);
       }
-    } else {
-      log(`\n[3/4] Skipping website scrape — no URL found`);
+    }
+    if (!result.websiteUrl && websiteCandidates.length > 0) {
+      log(`  -> All candidates failed`);
     }
 
     // Step 4 — Gemini Flash extraction
@@ -226,15 +228,26 @@ async function braveSearchAirportWebsite(code, attempt = 1) {
   const items = data.web?.results ?? [];
   const rawResults = items.slice(0, 5).map((r) => ({ title: r.title, url: r.url }));
 
-  // Skip known aggregators/directories — we want the airport's own site
-  const isJunk = (url) => /airnav|wikipedia|skyvector|flightaware|yelp|tripadvisor|airportia|airports-worldwide/i.test(url);
+  // Exclude known aggregators — we want pages with actual airport-specific content
+  const isJunk = (u) => /airnav|wikipedia|skyvector|flightaware|yelp|tripadvisor|airportia|airports-worldwide/i.test(u);
+  const candidates = items.filter((r) => !isJunk(r.url));
+
+  // Score each candidate — higher is better
   const codeShort = code.replace(/^K/, "");
-  const codePattern = new RegExp(codeShort, "i");
+  function score(r) {
+    let s = 0;
+    if (/transient/i.test(r.url)) s += 10;       // URL literally about transient parking
+    if (new RegExp(codeShort, "i").test(r.url)) s += 5;
+    if (/airport\.(org|com|gov|net)/i.test(r.url)) s += 3;
+    if (/transient/i.test(r.title)) s += 2;
+    return s;
+  }
 
-  const preferred = items.find((r) => !isJunk(r.url) && (codePattern.test(r.url) || /airport\.(org|com|gov|net)/.test(r.url)));
-  const fallback = items.find((r) => !isJunk(r.url));
+  const ranked = [...candidates].sort((a, b) => score(b) - score(a));
+  log(`  -> Ranked candidates:`);
+  ranked.forEach((r, i) => log(`     ${i + 1}. [score ${score(r)}] ${r.url}`));
 
-  return { url: preferred?.url ?? fallback?.url ?? null, query, rawResults };
+  return { candidates: ranked, query, rawResults };
 }
 
 // ---------------------------------------------------------------------------
