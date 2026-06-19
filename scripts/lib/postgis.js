@@ -265,6 +265,8 @@ export async function upsertFaaAirportWithLocation(prisma, airport, nextPoiSyncA
     country: airport.country,
   };
 
+  assertAirportFieldLengths(scalarData);
+
   const row = await prisma.airport.upsert({
     where,
     create: { ...scalarData, nextPoiSyncAt },
@@ -277,4 +279,38 @@ export async function upsertFaaAirportWithLocation(prisma, airport, nextPoiSyncA
   await prisma.$executeRaw`
     UPDATE "airports" SET location = ST_GeomFromText(${point}, 4326) WHERE id = ${row.id}
   `;
+}
+
+// Mirrors the VarChar limits in schema.prisma. Throws before hitting Postgres so
+// the error names the field instead of saying "Column: (not available)".
+const AIRPORT_VARCHAR_LIMITS = {
+  code: 10, faaCode: 10, icaoCode: 10, iataCode: 10,
+  facilityType: 20, ownershipType: 5, airportUse: 5,
+  siteNumber: 11, faaRegionCode: 3, stateName: 20,
+  countyName: 21, countyState: 2,
+  ownerName: 35, ownerPhone: 16, managerName: 35, managerPhone: 16,
+  magVariation: 3, magVariationYear: 4, sectionalChart: 30,
+  directionFromCity: 3, artccBoundaryId: 4, artccResponsibleId: 4,
+  notamFacility: 4, notamDService: 10, activationDate: 7, airportStatus: 2,
+  arffCertification: 15, npiasAgreements: 7, airspaceAnalysis: 13,
+  customsEntry: 10, customsLanding: 10, jointUse: 10, militaryRights: 10,
+  fuelTypes: 100, airframeRepair: 5, engineRepair: 5,
+  bottledOxygen: 8, bulkOxygen: 8,
+  lightingSchedule: 7, beaconSchedule: 7, controlTower: 10,
+  unicomFrequency: 7, ctafFrequency: 7, segmentedCircle: 4,
+  beaconColor: 3, landingFee: 10, annualOpsDate: 10,
+  contractFuel: 10, storageFacilities: 50, otherServices: 255,
+  windIndicator: 3, minOperationalNetwork: 10,
+  sourceDataset: 255, name: 255, city: 100, state: 10, country: 10,
+};
+
+function assertAirportFieldLengths(data) {
+  for (const [field, max] of Object.entries(AIRPORT_VARCHAR_LIMITS)) {
+    const val = data[field];
+    if (typeof val === "string" && val.length > max) {
+      throw new Error(
+        `Field "${field}" exceeds VarChar(${max}): ${val.length} chars — "${val.slice(0, 60)}${val.length > 60 ? "…" : ""}"`
+      );
+    }
+  }
 }
