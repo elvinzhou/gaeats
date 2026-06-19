@@ -1,0 +1,34 @@
+name: Probe Transient Info (POC)
+
+on:
+  workflow_dispatch:
+    inputs:
+      airports:
+        description: "Comma-separated airport codes to probe (default: KPAO,KSQL,KRHV)"
+        required: false
+        default: "KPAO,KSQL,KRHV"
+
+jobs:
+  probe:
+    name: Probe transient parking info
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run probe
+        run: node scripts/probe-transient-info.js --airports=${{ inputs.airports }}
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
