@@ -31,10 +31,7 @@ const dryRun = args.has("--dry-run");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const GOOGLE_CSE_KEY = process.env.GOOGLE_CSE_KEY;
-const GOOGLE_CSE_ID = process.env.GOOGLE_CSE_ID;
-const REDDIT_CLIENT_ID = process.env.REDDIT_CLIENT_ID;
-const REDDIT_CLIENT_SECRET = process.env.REDDIT_CLIENT_SECRET;
+const BRAVE_API_KEY = process.env.BRAVE_API_KEY;
 
 if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is required");
 if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is required");
@@ -95,32 +92,6 @@ try {
           }
         } catch (err) {
           console.warn(`  website scrape failed: ${err.message}`);
-        }
-      }
-
-      // PilotsOfAmerica
-      try {
-        const poaText = await scrapePilotsOfAmerica(airport.code, airport.name);
-        if (poaText) {
-          sources.push({ name: "PilotsOfAmerica", text: poaText });
-          sourceNames.push("PILOTSOFAMERICA");
-          console.log(`  PilotsOfAmerica: ${poaText.length} chars`);
-        }
-      } catch (err) {
-        console.warn(`  PilotsOfAmerica scrape failed: ${err.message}`);
-      }
-
-      // Reddit
-      if (REDDIT_CLIENT_ID && REDDIT_CLIENT_SECRET) {
-        try {
-          const redditText = await scrapeReddit(airport.code, airport.name);
-          if (redditText) {
-            sources.push({ name: "Reddit", text: redditText });
-            sourceNames.push("REDDIT");
-            console.log(`  Reddit: ${redditText.length} chars`);
-          }
-        } catch (err) {
-          console.warn(`  Reddit scrape failed: ${err.message}`);
         }
       }
 
@@ -185,7 +156,7 @@ try {
   }
 
   console.log(
-    `\nDone — processed: ${processed}  failed: ${failed}  CSE searches used: ${cseSearchesUsed}`
+    `\nDone — processed: ${processed}  failed: ${failed}  Brave searches used: ${cseSearchesUsed}`
   );
   if (failed > 0) process.exitCode = 1;
 } finally {
@@ -249,13 +220,13 @@ async function discoverWebsiteUrl(airport, searchesUsed, maxSearches) {
     // fall through
   }
 
-  // Google Custom Search fallback — 100/day free, consume one quota slot
-  if (GOOGLE_CSE_KEY && GOOGLE_CSE_ID && searchesUsed < maxSearches) {
+  // Brave Search fallback — 2,000/month free, consume one quota slot
+  if (BRAVE_API_KEY && searchesUsed < maxSearches) {
     try {
-      const url = await googleCseSearchAirportWebsite(airport);
+      const url = await braveSearchAirportWebsite(airport);
       return { url, usedSearch: true };
     } catch (err) {
-      console.warn(`  Google CSE failed: ${err.message}`);
+      console.warn(`  Brave Search failed: ${err.message}`);
       return { url: null, usedSearch: true };
     }
   }
@@ -273,32 +244,36 @@ async function extractWebsiteFromAirNav(code) {
   return match?.[1] ?? null;
 }
 
-async function googleCseSearchAirportWebsite(airport, attempt = 1) {
+async function braveSearchAirportWebsite(airport, attempt = 1) {
   const query = `${airport.name} ${airport.code} airport official website`;
-  const url = new URL("https://www.googleapis.com/customsearch/v1");
-  url.searchParams.set("key", GOOGLE_CSE_KEY);
-  url.searchParams.set("cx", GOOGLE_CSE_ID);
+  const url = new URL("https://api.search.brave.com/res/v1/web/search");
   url.searchParams.set("q", query);
-  url.searchParams.set("num", "3");
+  url.searchParams.set("count", "5");
+  url.searchParams.set("result_filter", "web");
 
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), {
+    headers: {
+      "Accept": "application/json",
+      "Accept-Encoding": "gzip",
+      "X-Subscription-Token": BRAVE_API_KEY,
+    },
+  });
 
   if ((response.status === 429 || response.status >= 500) && attempt < 3) {
     await new Promise((r) => setTimeout(r, attempt * 3000));
-    return googleCseSearchAirportWebsite(airport, attempt + 1);
+    return braveSearchAirportWebsite(airport, attempt + 1);
   }
 
-  if (!response.ok) throw new Error(`Google CSE HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`Brave Search HTTP ${response.status}`);
 
   const data = await response.json();
-  const results = data.items ?? [];
+  const results = data.web?.results ?? [];
 
-  // Prefer results whose URL contains the airport code or obvious airport domain patterns
+  const isJunk = (u) => /airnav|wikipedia|skyvector|flightaware|yelp|tripadvisor/i.test(u);
   const codePattern = new RegExp(airport.code.replace(/^K/, ""), "i");
-  const preferred = results.find(
-    (r) => codePattern.test(r.link) || /airport\.(org|com|gov|net)/.test(r.link)
-  );
-  return (preferred ?? results[0])?.link ?? null;
+  const preferred = results.find((r) => !isJunk(r.url) && (codePattern.test(r.url) || /airport\.(org|com|gov|net)/.test(r.url)));
+  const fallback = results.find((r) => !isJunk(r.url));
+  return preferred?.url ?? fallback?.url ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -324,81 +299,6 @@ async function scrapeWebpage(url, maxChars = 6000) {
   if (!html) return null;
   const text = stripHtml(html);
   return text.slice(0, maxChars) || null;
-}
-
-async function scrapePilotsOfAmerica(code, name) {
-  // POA forum search — look for threads mentioning the airport code
-  const searchUrl = `https://www.pilotsofamerica.com/community/search/?q=${encodeURIComponent(code + " transient")}&t=post&c[node][0]=4`;
-  const html = await fetchHtml(searchUrl);
-  if (!html) return null;
-
-  const text = stripHtml(html);
-  const idx = text.search(/transient|ramp|parking|tie.?down/i);
-  if (idx === -1) return null;
-
-  return text.slice(Math.max(0, idx - 100), idx + 3000);
-}
-
-let redditToken = null;
-let redditTokenExpiry = 0;
-
-async function getRedditToken() {
-  if (redditToken && Date.now() < redditTokenExpiry) return redditToken;
-
-  const credentials = Buffer.from(`${REDDIT_CLIENT_ID}:${REDDIT_CLIENT_SECRET}`).toString("base64");
-  const response = await fetch("https://www.reddit.com/api/v1/access_token", {
-    method: "POST",
-    headers: {
-      "Authorization": `Basic ${credentials}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": "gaeats-sync/1.0",
-    },
-    body: "grant_type=client_credentials",
-  });
-
-  if (!response.ok) throw new Error(`Reddit auth HTTP ${response.status}`);
-
-  const data = await response.json();
-  redditToken = data.access_token;
-  redditTokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
-  return redditToken;
-}
-
-async function scrapeReddit(code, name) {
-  const token = await getRedditToken();
-
-  const query = `${code} transient parking`;
-  const url = new URL("https://oauth.reddit.com/r/flying+aviation/search");
-  url.searchParams.set("q", query);
-  url.searchParams.set("sort", "relevance");
-  url.searchParams.set("limit", "5");
-  url.searchParams.set("restrict_sr", "true");
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "User-Agent": "gaeats-sync/1.0",
-    },
-  });
-
-  if (!response.ok) return null;
-
-  const data = await response.json();
-  const posts = data.data?.children ?? [];
-
-  const snippets = posts
-    .filter((p) => {
-      const title = p.data.title ?? "";
-      const body = p.data.selftext ?? "";
-      return new RegExp(code, "i").test(title + body);
-    })
-    .map((p) => {
-      const title = p.data.title;
-      const body = (p.data.selftext ?? "").slice(0, 500);
-      return `${title}\n${body}`;
-    });
-
-  return snippets.length > 0 ? snippets.join("\n\n---\n\n").slice(0, 4000) : null;
 }
 
 // ---------------------------------------------------------------------------
