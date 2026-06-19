@@ -159,16 +159,16 @@ model Airport {
   artccBoundaryId       String?  @db.VarChar(4)
   artccResponsibleId    String?  @db.VarChar(4)
   notamFacility         String?  @db.VarChar(4)
-  notamDService         String?  @db.VarChar(1)
+  notamDService         String?  @db.VarChar(10)
   activationDate        String?  @db.VarChar(7)
   airportStatus         String?  @db.VarChar(2)
   arffCertification     String?  @db.VarChar(15)
   npiasAgreements       String?  @db.VarChar(7)
   airspaceAnalysis      String?  @db.VarChar(13)
-  customsEntry          String?  @db.VarChar(1)
-  customsLanding        String?  @db.VarChar(1)
-  jointUse              String?  @db.VarChar(1)
-  militaryRights        String?  @db.VarChar(1)
+  customsEntry          String?  @db.VarChar(10)
+  customsLanding        String?  @db.VarChar(10)
+  jointUse              String?  @db.VarChar(10)
+  militaryRights        String?  @db.VarChar(10)
   fuelTypes             String?  @db.VarChar(40)
   airframeRepair        String?  @db.VarChar(5)
   engineRepair          String?  @db.VarChar(5)
@@ -176,12 +176,12 @@ model Airport {
   bulkOxygen            String?  @db.VarChar(8)
   lightingSchedule      String?  @db.VarChar(7)
   beaconSchedule        String?  @db.VarChar(7)
-  controlTower          String?  @db.VarChar(1)
+  controlTower          String?  @db.VarChar(10)
   unicomFrequency       String?  @db.VarChar(7)
   ctafFrequency         String?  @db.VarChar(7)
   segmentedCircle       String?  @db.VarChar(4)
   beaconColor           String?  @db.VarChar(3)
-  landingFee            String?  @db.VarChar(1)
+  landingFee            String?  @db.VarChar(10)
   singleEngineCount     Int?
   multiEngineCount      Int?
   jetEngineCount        Int?
@@ -196,14 +196,14 @@ model Airport {
   annualGaItinerantOps  Int?
   annualMilitaryOps     Int?
   annualOpsDate         String?  @db.VarChar(10)
-  contractFuel          String?  @db.VarChar(1)
+  contractFuel          String?  @db.VarChar(10)
   storageFacilities     String?  @db.VarChar(12)
   transientStorageHangar Boolean?
   transientStorageTiedown Boolean?
   transientStorageBuoy   Boolean?
   otherServices         String?  @db.VarChar(71)
   windIndicator         String?  @db.VarChar(3)
-  minOperationalNetwork String?  @db.VarChar(1)
+  minOperationalNetwork String?  @db.VarChar(10)
   name           String                                @db.VarChar(255)
   city           String                                @db.VarChar(100)
   state          String?                               @db.VarChar(10)
@@ -221,7 +221,7 @@ model Airport {
   lastPoiSyncAt  DateTime?                             @db.Timestamptz
   nextPoiSyncAt  DateTime?                             @db.Timestamptz
   syncPriority   Int                                   @default(100)
-  location       Unsupported("geography(Point, 4326)") // PostGIS geography type for efficient distance calculations
+  location       Unsupported("geography(Point, 4326)")? // PostGIS geography type for efficient distance calculations
   createdAt      DateTime                              @default(now()) @db.Timestamptz
   updatedAt      DateTime                              @updatedAt @db.Timestamptz
 
