@@ -296,7 +296,7 @@ const AIRPORT_VARCHAR_LIMITS = {
   customsEntry: 10, customsLanding: 10, jointUse: 10, militaryRights: 10,
   fuelTypes: 100, airframeRepair: 5, engineRepair: 5,
   bottledOxygen: 8, bulkOxygen: 8,
-  lightingSchedule: 7, beaconSchedule: 7, controlTower: 10,
+  lightingSchedule: 7, beaconSchedule: 7, controlTower: 20,
   unicomFrequency: 7, ctafFrequency: 7, segmentedCircle: 4,
   beaconColor: 3, landingFee: 10, annualOpsDate: 10,
   contractFuel: 10, storageFacilities: 50, otherServices: 255,

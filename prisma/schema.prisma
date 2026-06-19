@@ -176,7 +176,7 @@ model Airport {
   bulkOxygen            String?  @db.VarChar(8)
   lightingSchedule      String?  @db.VarChar(7)
   beaconSchedule        String?  @db.VarChar(7)
-  controlTower          String?  @db.VarChar(10)
+  controlTower          String?  @db.VarChar(20)
   unicomFrequency       String?  @db.VarChar(7)
   ctafFrequency         String?  @db.VarChar(7)
   segmentedCircle       String?  @db.VarChar(4)
