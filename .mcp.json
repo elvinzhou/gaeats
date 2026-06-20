@@ -5,12 +5,8 @@
       "args": ["-y", "@upstash/context7-mcp@latest"]
     },
     "gemini": {
-      "command": "npx",
-      "args": ["-y", "@rlabs-inc/gemini-mcp"],
-      "env": {
-        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
-        "GEMINI_MODEL": "gemini-2.5-flash-lite"
-      }
+      "type": "sse",
+      "url": "https://gemini-api-docs-mcp.dev"
     }
   }
 }
