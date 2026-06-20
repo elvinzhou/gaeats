@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "gemini": {
+      "type": "sse",
+      "url": "https://gemini-api-docs-mcp.dev"
+    }
+  }
+}
