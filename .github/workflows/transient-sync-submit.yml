@@ -1,29 +1,35 @@
-name: Transient Parking Sync
+name: Transient Parking Sync — Submit Batch
 
 on:
   schedule:
-    # Daily at 04:00 UTC — after POI sync (03:00) completes
-    - cron: "0 4 * * *"
+    # Weekly on Sunday at 01:00 UTC
+    - cron: "0 1 * * 0"
   workflow_dispatch:
     inputs:
       airport:
-        description: "Sync a specific airport by ICAO code (e.g. KPAO)"
+        description: "Submit a single airport by ICAO code (e.g. KPAO)"
         required: false
         default: ""
       limit:
-        description: "Max airports to process per run"
+        description: "Max airports to include in the batch"
         required: false
         default: "200"
       dry_run:
-        description: "Dry run (log without writing to DB)"
+        description: "Dry run (log without submitting to Gemini or writing to DB)"
+        required: false
+        type: boolean
+        default: false
+      force:
+        description: "Submit even if a pending job already exists"
         required: false
         type: boolean
         default: false
 
 jobs:
-  sync-transient-info:
-    name: Sync Transient Parking Info
+  submit:
+    name: Submit Gemini Batch
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - uses: actions/checkout@v4
@@ -38,13 +44,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Sync transient parking info
+      - name: Submit batch
         run: |
           ARGS="--limit=${{ inputs.limit || '200' }}"
           if [ -n "${{ inputs.airport }}" ]; then ARGS="$ARGS --airport=${{ inputs.airport }}"; fi
           if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
-          node scripts/sync-transient-info.js $ARGS
+          if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
+          node scripts/sync-transient-info-submit.js $ARGS
         env:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

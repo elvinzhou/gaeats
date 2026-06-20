@@ -1,0 +1,47 @@
+name: Transient Parking Sync — Collect Results
+
+on:
+  schedule:
+    # Daily at 08:00 UTC — no-op when no batch is ready, processes when Gemini is done
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: "Collect a specific job by DB id (leave blank for all pending)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry run (log without writing to DB)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  collect:
+    name: Collect Gemini Batch Results
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Collect results
+        run: |
+          ARGS=""
+          if [ -n "${{ inputs.job_id }}" ]; then ARGS="$ARGS --job-id=${{ inputs.job_id }}"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          node scripts/sync-transient-info-collect.js $ARGS
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
