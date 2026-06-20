@@ -90,7 +90,8 @@ try {
       const label = `${airport.code} (${airport.city} ${airport.state ?? ""})`;
 
       if (inlined.error) {
-        console.warn(`  ${label}: request error — ${inlined.error.message}`);
+        // Leave nextSyncAt untouched so this airport re-enters the queue next run
+        console.warn(`  ${label}: request error — ${inlined.error.message} (will retry next batch)`);
         failed++;
         continue;
       }
@@ -109,6 +110,7 @@ try {
           await prisma.$executeRaw`
             UPDATE "airports" SET
               "transientParkingLastSyncAt" = CURRENT_TIMESTAMP,
+              "transientParkingNextSyncAt" = CURRENT_TIMESTAMP + INTERVAL '14 days',
               "updatedAt"                  = CURRENT_TIMESTAMP
             WHERE id = ${airport.id}
           `;
@@ -147,6 +149,7 @@ try {
           "transientParkingSource"     = ${"GEMINI_BATCH"},
           "transientParkingConfidence" = ${extraction.confidence},
           "transientParkingLastSyncAt" = CURRENT_TIMESTAMP,
+          "transientParkingNextSyncAt" = CURRENT_TIMESTAMP + INTERVAL '30 days',
           "rampLatitude"               = COALESCE(${extraction.rampLatitude ?? null}, "rampLatitude"),
           "rampLongitude"              = COALESCE(${extraction.rampLongitude ?? null}, "rampLongitude"),
           "updatedAt"                  = CURRENT_TIMESTAMP

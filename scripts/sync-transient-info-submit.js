@@ -5,11 +5,11 @@ const args = new Set(process.argv.slice(2));
 
 if (args.has("--help")) {
   console.log(
-    "Usage: node scripts/sync-transient-info-submit.js [--airport=KPAO] [--limit=200] [--dry-run] [--force]"
+    "Usage: node scripts/sync-transient-info-submit.js [--airport=KPAO] [--limit=1500] [--dry-run] [--force]"
   );
   console.log("");
   console.log("  --airport=CODE  Submit a single airport");
-  console.log("  --limit=N       Max airports per batch (default: 200)");
+  console.log("  --limit=N       Max airports per batch (default: 1500)");
   console.log("  --dry-run       Print what would be submitted, do not call Gemini or modify DB");
   console.log("  --force         Submit even if a pending job already exists");
   process.exit(0);
@@ -20,7 +20,7 @@ const airportFilter = [...args]
   ?.replace("--airport=", "")
   .toUpperCase();
 const limit = parseInt(
-  [...args].find((a) => a.startsWith("--limit="))?.replace("--limit=", "") ?? "200",
+  [...args].find((a) => a.startsWith("--limit="))?.replace("--limit=", "") ?? "1500",
   10
 );
 const dryRun = args.has("--dry-run");
@@ -48,12 +48,13 @@ try {
   }
 
   const airports = await listAirportsForTransientSync(airportFilter);
-  console.log(`Preparing batch for ${airports.length} airport(s)`);
 
   if (airports.length === 0) {
-    console.log("No airports to sync.");
+    // All airports are within their next-sync window — nothing to do
     process.exit(0);
   }
+
+  console.log(`Preparing batch for ${airports.length} airport(s)`);
 
   const requests = airports.map((airport) => ({
     request: {
@@ -120,15 +121,15 @@ async function listAirportsForTransientSync(airportCode) {
   return prisma.$queryRaw`
     SELECT
       id, code, name, city, state,
-      "transientParkingLastSyncAt",
       ST_Y(location::geometry) AS latitude,
       ST_X(location::geometry) AS longitude
     FROM "airports"
     WHERE "facilityType" = 'AIRPORT'
       AND ("transientStorageHangar" = true OR "transientStorageTiedown" = true)
       AND country = 'US'
+      AND ("transientParkingNextSyncAt" IS NULL OR "transientParkingNextSyncAt" <= CURRENT_TIMESTAMP)
     ORDER BY
-      "transientParkingLastSyncAt" ASC NULLS FIRST,
+      "transientParkingNextSyncAt" ASC NULLS FIRST,
       CASE
         WHEN state = 'CA' AND ST_Y(location::geometry) BETWEEN 36.5 AND 39.0
              AND ST_X(location::geometry) BETWEEN -123.5 AND -121.0 THEN 1
