@@ -81,6 +81,8 @@ try {
             console.log(`  GPT-4o ramp coords: (${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)})`);
             extraction.rampLatitude = coords.latitude;
             extraction.rampLongitude = coords.longitude;
+          } else {
+            console.log(`  GPT-4o: location too vague to estimate coords`);
           }
         } catch (err) {
           console.warn(`  GPT-4o synthesis failed: ${err.message}`);
@@ -112,7 +114,7 @@ try {
     }
 
     // 2s gap between airports — stays comfortably within free tier RPM limits
-    if (!airportFilter) await new Promise((r) => setTimeout(r, 2000));
+    if (!airportFilter) await new Promise((r) => setTimeout(r, 6000));
   }
 
   console.log(`\nDone — processed: ${processed}  skipped: ${skipped}  failed: ${failed}`);
