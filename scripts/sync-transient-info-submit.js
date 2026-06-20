@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { GoogleGenAI } from "@google/genai";
 import { createScriptPrisma } from "./lib/db.js";
 
 const args = new Set(process.argv.slice(2));
@@ -30,8 +31,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is required");
 
 const GEMINI_MODEL = "gemini-2.5-flash-lite";
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 const prisma = createScriptPrisma();
 
 try {
@@ -59,8 +60,11 @@ try {
   const requests = airports.map((airport) => ({
     request: {
       contents: [{ role: "user", parts: [{ text: buildPrompt(airport.code) }] }],
-      tools: [{ googleSearch: {} }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 512 },
+      config: {
+        tools: [{ googleSearch: {} }],
+        temperature: 0.1,
+        maxOutputTokens: 512,
+      },
     },
     metadata: { key: airport.code },
   }));
@@ -146,31 +150,13 @@ async function listAirportsForTransientSync(airportCode) {
 // ---------------------------------------------------------------------------
 
 async function submitBatch(displayName, requests) {
-  const url = `${GEMINI_BASE}/models/${GEMINI_MODEL}:batchGenerateContent?key=${GEMINI_API_KEY}`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      batch: {
-        displayName,
-        inputConfig: {
-          requests: { requests },
-        },
-      },
-    }),
+  const batchJob = await ai.batches.create({
+    model: GEMINI_MODEL,
+    src: { inlinedRequests: { requests } },
+    config: { displayName },
   });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Gemini batch submit HTTP ${response.status}: ${body.slice(0, 400)}`);
-  }
-
-  const data = await response.json();
-  // The API returns the created batch resource; name is the resource path (e.g. "batches/123")
-  const batch = data.batch ?? data;
-  if (!batch.name) throw new Error(`Gemini batch response has no name: ${JSON.stringify(data).slice(0, 200)}`);
-  return batch.name;
+  if (!batchJob.name) throw new Error(`Gemini batch response has no name: ${JSON.stringify(batchJob).slice(0, 200)}`);
+  return batchJob.name;
 }
 
 // ---------------------------------------------------------------------------
