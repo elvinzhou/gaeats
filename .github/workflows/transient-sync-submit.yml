@@ -2,7 +2,7 @@ name: Transient Parking Sync — Submit Batch
 
 on:
   schedule:
-    # Daily at 01:00 UTC — 200 airports/day stays well under the 1,500 RPD free grounding limit
+    # Daily at 01:00 UTC — 1,500 airports/day uses the full free grounding tier
     - cron: "0 1 * * *"
   workflow_dispatch:
     inputs:
