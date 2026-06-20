@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { GoogleGenAI } from "@google/genai";
 import { createScriptPrisma } from "./lib/db.js";
 
 const args = new Set(process.argv.slice(2));
@@ -23,8 +24,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is required");
 if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is required");
 
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
-
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 const prisma = createScriptPrisma();
 
 try {
@@ -41,14 +41,9 @@ try {
   for (const job of jobs) {
     console.log(`\n--- Job ${job.id}: ${job.geminiJobName} (submitted ${job.createdAt.toISOString()}) ---`);
 
-    const batchData = await getBatchStatus(job.geminiJobName);
-    // Handle both wrapped ({batch: {...}}) and unwrapped response shapes
-    const batch = batchData.batch ?? batchData;
-    const state = batch.state;
+    const batchJob = await ai.batches.get({ name: job.geminiJobName });
+    const state = batchJob.state;
     console.log(`  State: ${state}`);
-    if (state === undefined) {
-      console.log(`  Raw response: ${JSON.stringify(batchData, null, 2)}`);
-    }
 
     if (state === "JOB_STATE_PENDING" || state === "JOB_STATE_RUNNING") {
       console.log("  Still in progress — check back later");
@@ -57,6 +52,10 @@ try {
 
     if (state === "JOB_STATE_FAILED" || state === "JOB_STATE_CANCELLED" || state === "JOB_STATE_EXPIRED") {
       console.error(`  Job ended with terminal state: ${state}`);
+      if (batchJob.error) {
+        const msg = typeof batchJob.error === "string" ? batchJob.error : batchJob.error.message ?? JSON.stringify(batchJob.error);
+        console.error(`  Error: ${msg}`);
+      }
       if (!dryRun) {
         await prisma.transientSyncJob.update({ where: { id: job.id }, data: { status: "FAILED" } });
       }
@@ -70,7 +69,7 @@ try {
     }
 
     const airports = JSON.parse(job.airportsJson);
-    const inlinedResponses = batch.dest?.inlinedResponses ?? [];
+    const inlinedResponses = batchJob.dest?.inlinedResponses ?? [];
     console.log(`  ${inlinedResponses.length} responses for ${airports.length} airports`);
 
     // Build code→airport map for metadata.key matching; fall back to positional index
@@ -93,18 +92,13 @@ try {
       const label = `${airport.code} (${airport.city} ${airport.state ?? ""})`;
 
       if (inlined.error) {
-        // Leave nextSyncAt untouched so this airport re-enters the queue next run
-        console.warn(`  ${label}: request error — ${inlined.error.message} (will retry next batch)`);
+        // Leave lastSyncAt untouched so this airport re-enters the queue next run
+        console.warn(`  ${label}: request error — ${inlined.error} (will retry next batch)`);
         failed++;
         continue;
       }
 
-      const candidate = inlined.response?.candidates?.[0];
-      const text = (candidate?.content?.parts ?? [])
-        .filter((p) => !p.thought)
-        .map((p) => p.text ?? "")
-        .join("");
-
+      const text = inlined.response?.text ?? "";
       const extraction = parseJson(text);
 
       if (!extraction?.notes) {
@@ -173,20 +167,6 @@ try {
   if (anyFailed) process.exitCode = 1;
 } finally {
   await prisma.$disconnect();
-}
-
-// ---------------------------------------------------------------------------
-// Gemini Batch API
-// ---------------------------------------------------------------------------
-
-async function getBatchStatus(batchName) {
-  const url = `${GEMINI_BASE}/${batchName}?key=${GEMINI_API_KEY}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Gemini batch status HTTP ${response.status}: ${body.slice(0, 300)}`);
-  }
-  return response.json();
 }
 
 // ---------------------------------------------------------------------------
