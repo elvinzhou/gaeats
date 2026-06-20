@@ -46,6 +46,9 @@ try {
     const batch = batchData.batch ?? batchData;
     const state = batch.state;
     console.log(`  State: ${state}`);
+    if (state === undefined) {
+      console.log(`  Raw response: ${JSON.stringify(batchData, null, 2)}`);
+    }
 
     if (state === "JOB_STATE_PENDING" || state === "JOB_STATE_RUNNING") {
       console.log("  Still in progress — check back later");
