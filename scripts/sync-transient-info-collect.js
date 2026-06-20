@@ -110,7 +110,6 @@ try {
           await prisma.$executeRaw`
             UPDATE "airports" SET
               "transientParkingLastSyncAt" = CURRENT_TIMESTAMP,
-              "transientParkingNextSyncAt" = CURRENT_TIMESTAMP + INTERVAL '14 days',
               "updatedAt"                  = CURRENT_TIMESTAMP
             WHERE id = ${airport.id}
           `;
@@ -149,7 +148,6 @@ try {
           "transientParkingSource"     = ${"GEMINI_BATCH"},
           "transientParkingConfidence" = ${extraction.confidence},
           "transientParkingLastSyncAt" = CURRENT_TIMESTAMP,
-          "transientParkingNextSyncAt" = CURRENT_TIMESTAMP + INTERVAL '30 days',
           "rampLatitude"               = COALESCE(${extraction.rampLatitude ?? null}, "rampLatitude"),
           "rampLongitude"              = COALESCE(${extraction.rampLongitude ?? null}, "rampLongitude"),
           "updatedAt"                  = CURRENT_TIMESTAMP

@@ -127,9 +127,9 @@ async function listAirportsForTransientSync(airportCode) {
     WHERE "facilityType" = 'AIRPORT'
       AND ("transientStorageHangar" = true OR "transientStorageTiedown" = true)
       AND country = 'US'
-      AND ("transientParkingNextSyncAt" IS NULL OR "transientParkingNextSyncAt" <= CURRENT_TIMESTAMP)
+      AND ("transientParkingLastSyncAt" IS NULL OR "transientParkingLastSyncAt" <= CURRENT_TIMESTAMP - INTERVAL '30 days')
     ORDER BY
-      "transientParkingNextSyncAt" ASC NULLS FIRST,
+      "transientParkingLastSyncAt" ASC NULLS FIRST,
       CASE
         WHEN state = 'CA' AND ST_Y(location::geometry) BETWEEN 36.5 AND 39.0
              AND ST_X(location::geometry) BETWEEN -123.5 AND -121.0 THEN 1

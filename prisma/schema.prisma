@@ -216,7 +216,6 @@ model Airport {
   transientParkingSource     String?                   @db.VarChar(200)
   transientParkingConfidence String?                   @db.VarChar(10)
   transientParkingLastSyncAt DateTime?                 @db.Timestamptz
-  transientParkingNextSyncAt DateTime?                 @db.Timestamptz
   notes          String?                               @db.Text
   lastVerifiedAt DateTime?                             @db.Timestamptz
   lastPoiSyncAt  DateTime?                             @db.Timestamptz
