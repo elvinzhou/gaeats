@@ -58,13 +58,11 @@ try {
   console.log(`Preparing batch for ${airports.length} airport(s)`);
 
   const requests = airports.map((airport) => ({
-    request: {
-      contents: [{ role: "user", parts: [{ text: buildPrompt(airport.code) }] }],
-      config: {
-        tools: [{ googleSearch: {} }],
-        temperature: 0.1,
-        maxOutputTokens: 512,
-      },
+    contents: [{ role: "user", parts: [{ text: buildPrompt(airport.code) }] }],
+    config: {
+      tools: [{ googleSearch: {} }],
+      temperature: 0.1,
+      maxOutputTokens: 512,
     },
     metadata: { key: airport.code },
   }));
