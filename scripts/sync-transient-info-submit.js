@@ -152,7 +152,7 @@ async function listAirportsForTransientSync(airportCode) {
 async function submitBatch(displayName, requests) {
   const batchJob = await ai.batches.create({
     model: GEMINI_MODEL,
-    src: { inlinedRequests: { requests } },
+    src: { inlinedRequests: requests },
     config: { displayName },
   });
   if (!batchJob.name) throw new Error(`Gemini batch response has no name: ${JSON.stringify(batchJob).slice(0, 200)}`);
