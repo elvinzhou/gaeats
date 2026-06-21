@@ -1,9 +1,6 @@
 name: Transient Parking Sync — Collect Results
 
 on:
-  schedule:
-    # Daily at 08:00 UTC — no-op when no batch is ready, processes when Gemini is done
-    - cron: "0 8 * * *"
   workflow_dispatch:
     inputs:
       job_id:
