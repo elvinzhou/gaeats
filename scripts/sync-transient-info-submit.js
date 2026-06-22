@@ -69,7 +69,7 @@ try {
 
   if (dryRun) {
     console.log(`[dry-run] would submit batch of ${requests.length} requests`);
-    console.log(`  Sample prompt: ${requests[0].request.contents[0].parts[0].text.slice(0, 120)}...`);
+    console.log(`  Sample prompt: ${requests[0].contents[0].parts[0].text.slice(0, 120)}...`);
     process.exit(0);
   }
 

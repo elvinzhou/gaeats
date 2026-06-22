@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { GoogleGenAI } from "@google/genai";
 import { createScriptPrisma } from "./lib/db.js";
+import { extractResponseText, parseJson } from "./lib/gemini-utils.js";
 
 const args = new Set(process.argv.slice(2));
 
@@ -98,7 +99,9 @@ try {
         continue;
       }
 
-      const text = inlined.response?.text ?? "";
+      // `inlined.response` is a plain object from batches.get(), so the SDK's
+      // `.text` getter is absent — walk candidates/parts ourselves.
+      const text = extractResponseText(inlined.response);
       const extraction = parseJson(text);
 
       if (!extraction?.notes) {
@@ -210,19 +213,3 @@ async function synthesizeCoordinates(airport, locationDescription) {
   return null;
 }
 
-// ---------------------------------------------------------------------------
-// Utilities
-// ---------------------------------------------------------------------------
-
-function parseJson(text) {
-  const stripped = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
-  try {
-    return JSON.parse(stripped);
-  } catch {
-    const match = stripped.match(/\{[\s\S]*\}/);
-    if (match) {
-      try { return JSON.parse(match[0]); } catch { /* fall through */ }
-    }
-    return null;
-  }
-}

@@ -12,6 +12,7 @@
  */
 
 import "dotenv/config";
+import { extractResponseText, parseJson } from "./lib/gemini-utils.js";
 
 const DEFAULT_AIRPORTS = ["KPAO", "KSQL", "KRHV"];
 
@@ -158,11 +159,9 @@ Return {"notes":null,"confidence":"LOW","locationDescription":null} if nothing f
   const data = await response.json();
   const candidate = data.candidates?.[0];
 
-  // Filter out thinking tokens before joining text
-  const text = (candidate?.content?.parts ?? [])
-    .filter((p) => !p.thought)
-    .map((p) => p.text ?? "")
-    .join("");
+  // Concatenate text parts (skips thinking tokens) — same logic the batch
+  // collect step relies on, kept in one place.
+  const text = extractResponseText(data);
 
   const groundingMetadata = candidate?.groundingMetadata ?? null;
   const tokensUsed =
@@ -183,19 +182,6 @@ Return {"notes":null,"confidence":"LOW","locationDescription":null} if nothing f
 // ---------------------------------------------------------------------------
 // Utilities
 // ---------------------------------------------------------------------------
-
-function parseJson(text) {
-  const stripped = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
-  try {
-    return JSON.parse(stripped);
-  } catch {
-    const match = stripped.match(/\{[\s\S]*\}/);
-    if (match) {
-      try { return JSON.parse(match[0]); } catch { /* fall through */ }
-    }
-    return null;
-  }
-}
 
 function log(msg) {
   process.stdout.write(msg + "\n");
