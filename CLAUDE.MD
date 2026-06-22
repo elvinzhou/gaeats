@@ -18,6 +18,29 @@ Update CLAUDE.MD as needed.
 - **Testing**: Vitest with unit tests
 - **Styling**: Tailwind CSS v4
 
+##Transient Parking Sync (Gemini Batch)
+- Pipeline: `sync-transient-info-submit.js` queues a Gemini batch (one grounded
+  request per airport) and saves a PENDING `transientSyncJob`;
+  `sync-transient-info-collect.js` reads the finished batch, writes notes to
+  `airports`, and marks the job DONE. Submit skips while a PENDING job exists,
+  so collect MUST run for the pipeline to keep moving.
+- Webhook-driven collect: Gemini fires a Standard Webhooks-signed POST to
+  `app/routes/api.webhooks.gemini-batch.ts` on `batch.succeeded`/`batch.failed`,
+  which dispatches the collect workflow (its only trigger — there is no cron, so
+  a missed webhook is re-run manually via `workflow_dispatch`). Register the
+  webhook once: `node scripts/register-gemini-webhook.js --uri=<deployed-url>/api/webhooks/gemini-batch`,
+  then store the returned signing secret as the Worker's `WEBHOOK_SIGNING_SECRET`
+  (`wrangler secret put WEBHOOK_SIGNING_SECRET`). The handler verifies the
+  `webhook-id`/`webhook-timestamp`/`webhook-signature` headers over the raw body
+  (`app/utils/standardWebhooks.server.ts`, guarded by `standardWebhooks.test.ts`).
+  The "thin" payload is `{ type, data: { id } }`.
+- `.text` getter trap: `GenerateContentResponse.text` is a *getter* that only
+  exists on live SDK instances. Batch results from `batches.get()` are plain
+  JSON (`dest.inlinedResponses[i].response`), so `.text` is `undefined` there —
+  reading it made collect report "no transient info found" for every airport.
+  Use `extractResponseText()` from `scripts/lib/gemini-utils.js`, which walks
+  `candidates[0].content.parts[].text` (guarded by `gemini-utils.test.js`).
+
 ##Google Maps Integration
 - Uses @vis.gl/react-google-maps (v1.7.1) for React integration
 - Supports satellite view, hybrid view, and street view
