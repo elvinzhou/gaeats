@@ -28,7 +28,8 @@ Update CLAUDE.MD as needed.
   `app/routes/api.webhooks.gemini-batch.ts` on `batch.succeeded`/`batch.failed`,
   which dispatches the collect workflow (its only trigger — there is no cron, so
   a missed webhook is re-run manually via `workflow_dispatch`). Register the
-  webhook once: `node scripts/register-gemini-webhook.js --uri=<deployed-url>/api/webhooks/gemini-batch`,
+  webhook once with the standalone (zero-dependency) script:
+  `GEMINI_API_KEY=<key> node scripts/register-gemini-webhook.js --uri=<deployed-url>/api/webhooks/gemini-batch`,
   then store the returned signing secret as the Worker's `WEBHOOK_SIGNING_SECRET`
   (`wrangler secret put WEBHOOK_SIGNING_SECRET`). The handler verifies the
   `webhook-id`/`webhook-timestamp`/`webhook-signature` headers over the raw body

@@ -1,80 +1,132 @@
-import "dotenv/config";
-import { GoogleGenAI } from "@google/genai";
-
-// One-time setup: register (or list / delete) the Gemini webhook that fires the
-// transient-parking collect workflow when a batch job finishes.
+// Standalone Gemini webhook manager — ZERO dependencies (Node 18+ built-in fetch).
+//
+// Registers (or lists / deletes) the webhook that notifies your collect endpoint
+// when a Gemini batch job finishes. No .env file, no @google/genai, no
+// node_modules required — pass the API key at runtime. The file uses no
+// import/require, so it runs as either ESM or CommonJS (.js / .mjs / .cjs) and
+// can be copied and run anywhere with Node 18+.
 //
 // Usage:
-//   node scripts/register-gemini-webhook.js --uri=https://<domain>/api/webhooks/gemini-batch [--name=NAME]
-//   node scripts/register-gemini-webhook.js --list
-//   node scripts/register-gemini-webhook.js --delete=WEBHOOK_ID
+//   GEMINI_API_KEY=xxx node register-gemini-webhook.js --uri=https://<domain>/api/webhooks/gemini-batch [--name=NAME]
+//   GEMINI_API_KEY=xxx node register-gemini-webhook.js --list
+//   GEMINI_API_KEY=xxx node register-gemini-webhook.js --delete=WEBHOOK_ID
 //
-// On register, the API returns the signing secret EXACTLY ONCE. Store it as the
-// WEBHOOK_SIGNING_SECRET secret on the Cloudflare Worker:
-//   wrangler secret put WEBHOOK_SIGNING_SECRET
+//   (You may pass --api-key=xxx instead of the env var, but the env var is
+//    preferred so the key does not land in shell history / the process list.)
+//
+// On register the API returns the signing secret ONCE — store it as your
+// worker's WEBHOOK_SIGNING_SECRET (e.g. `npx wrangler secret put WEBHOOK_SIGNING_SECRET`).
 
-const args = new Set(process.argv.slice(2));
+const args = process.argv.slice(2);
+const has = (flag) => args.includes(flag);
+const getArg = (prefix) => {
+  const hit = args.find((a) => a.startsWith(prefix));
+  return hit ? hit.slice(prefix.length) : undefined;
+};
 
-if (args.has("--help")) {
-  console.log("Usage:");
-  console.log("  node scripts/register-gemini-webhook.js --uri=URL [--name=NAME]   Register a webhook");
-  console.log("  node scripts/register-gemini-webhook.js --list                    List webhooks");
-  console.log("  node scripts/register-gemini-webhook.js --delete=ID               Delete a webhook");
+function printHelpAndExit() {
+  console.log(`Gemini webhook manager (standalone, zero dependencies)
+
+Usage:
+  node register-gemini-webhook.js --uri=URL [--name=NAME]   Register a webhook
+  node register-gemini-webhook.js --list                    List webhooks
+  node register-gemini-webhook.js --delete=ID               Delete a webhook
+
+Auth (one of):
+  GEMINI_API_KEY env var (preferred)   or   --api-key=KEY
+
+Options:
+  --api-version=v1   REST API version (default: v1)
+  --help, -h         Show this help`);
   process.exit(0);
 }
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is required");
+async function main() {
+  if (has("--help") || has("-h")) printHelpAndExit();
 
-const getArg = (prefix) => [...args].find((a) => a.startsWith(prefix))?.slice(prefix.length);
-
-const uri = getArg("--uri=");
-const name = getArg("--name=") ?? "gaeats-transient-collect";
-const deleteId = getArg("--delete=");
-const list = args.has("--list");
-
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
-if (list) {
-  const res = await ai.webhooks.list();
-  const webhooks = res.webhooks ?? [];
-  if (webhooks.length === 0) {
-    console.log("No webhooks registered.");
-  } else {
-    for (const w of webhooks) {
-      console.log(`- ${w.id}  ${w.uri}  events=${(w.subscribed_events ?? []).join(",")}  state=${w.state ?? "n/a"}`);
-    }
+  const apiKey = getArg("--api-key=") ?? process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error("Error: set GEMINI_API_KEY (or pass --api-key=KEY). See --help.");
+    process.exit(1);
   }
-  process.exit(0);
-}
 
-if (deleteId) {
-  await ai.webhooks.delete(deleteId);
-  console.log(`Deleted webhook ${deleteId}`);
-  process.exit(0);
-}
+  if (typeof fetch !== "function") {
+    console.error("Error: global fetch is unavailable. Use Node 18+ (or run with --experimental-fetch).");
+    process.exit(1);
+  }
 
-if (!uri) {
-  throw new Error("--uri=https://<domain>/api/webhooks/gemini-batch is required to register");
-}
+  const apiVersion = getArg("--api-version=") ?? "v1";
+  const base = `https://generativelanguage.googleapis.com/${apiVersion}/webhooks`;
 
-const webhook = await ai.webhooks.create({
-  name,
-  uri,
-  subscribed_events: ["batch.succeeded", "batch.failed"],
-});
+  const uri = getArg("--uri=");
+  const name = getArg("--name=") ?? "gaeats-transient-collect";
+  const deleteId = getArg("--delete=");
 
-console.log(`Registered webhook: ${webhook.id ?? webhook.name}`);
-console.log(`  uri:    ${uri}`);
-console.log(`  events: batch.succeeded, batch.failed`);
-console.log("");
+  async function api(method, path = "", body) {
+    const res = await fetch(`${base}${path}`, {
+      method,
+      headers: {
+        "x-goog-api-key": apiKey,
+        ...(body ? { "Content-Type": "application/json" } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} on ${method} ${base}${path}\n${text.slice(0, 600)}`);
+    }
+    return text ? JSON.parse(text) : {};
+  }
 
-if (webhook.new_signing_secret) {
-  console.log("Signing secret (shown ONCE — store it now):");
-  console.log(`  ${webhook.new_signing_secret}`);
+  if (has("--list")) {
+    const data = await api("GET");
+    const webhooks = data.webhooks ?? [];
+    if (webhooks.length === 0) {
+      console.log("No webhooks registered.");
+      return;
+    }
+    for (const w of webhooks) {
+      const events = (w.subscribed_events ?? []).join(",") || "n/a";
+      console.log(`- ${w.id ?? w.name}  ${w.uri}  events=${events}`);
+    }
+    return;
+  }
+
+  if (deleteId) {
+    await api("DELETE", `/${encodeURIComponent(deleteId)}`);
+    console.log(`Deleted webhook ${deleteId}`);
+    return;
+  }
+
+  if (!uri) {
+    console.error("Error: --uri=https://<domain>/api/webhooks/gemini-batch is required to register. See --help.");
+    process.exit(1);
+  }
+
+  const webhook = await api("POST", "", {
+    name,
+    uri,
+    subscribed_events: ["batch.succeeded", "batch.failed"],
+  });
+
+  console.log(`Registered webhook: ${webhook.id ?? webhook.name}`);
+  console.log(`  uri:    ${uri}`);
+  console.log(`  events: batch.succeeded, batch.failed`);
   console.log("");
-  console.log("Save it on the Cloudflare Worker:");
-  console.log("  echo '<secret>' | wrangler secret put WEBHOOK_SIGNING_SECRET");
-} else {
-  console.warn("No signing secret returned. Use --list and rotate the secret if needed.");
+
+  if (webhook.new_signing_secret) {
+    console.log("Signing secret (shown ONCE — store it now):");
+    console.log(`  ${webhook.new_signing_secret}`);
+    console.log("");
+    console.log("Store it on the Cloudflare Worker:");
+    console.log("  npx wrangler secret put WEBHOOK_SIGNING_SECRET");
+    console.log("  # (paste the secret above when prompted)");
+  } else {
+    console.warn("Warning: no signing secret returned. Run --list to inspect, or rotate the secret.");
+  }
 }
+
+main().catch((err) => {
+  console.error(err instanceof Error ? err.message : String(err));
+  process.exit(1);
+});
