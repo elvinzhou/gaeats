@@ -36,7 +36,7 @@ Auth (one of):
   GEMINI_API_KEY env var (preferred)   or   --api-key=KEY
 
 Options:
-  --api-version=v1   REST API version (default: v1)
+  --api-version=v1beta   REST API version (default: v1beta)
   --help, -h         Show this help`);
   process.exit(0);
 }
@@ -55,7 +55,7 @@ async function main() {
     process.exit(1);
   }
 
-  const apiVersion = getArg("--api-version=") ?? "v1";
+  const apiVersion = getArg("--api-version=") ?? "v1beta";
   const base = `https://generativelanguage.googleapis.com/${apiVersion}/webhooks`;
 
   const uri = getArg("--uri=");
