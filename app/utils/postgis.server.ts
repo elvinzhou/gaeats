@@ -128,6 +128,10 @@ export interface AirportDetailRow {
   fboPhone: string | null;
   fboWebsite: string | null;
   notes: string | null;
+  transientParkingNotes: string | null;
+  transientParkingConfidence: string | null;
+  transientParkingSource: string | null;
+  transientParkingLastSyncAt: Date | string | null;
   latitude: number;
   longitude: number;
   rampLatitude: number | null;
@@ -534,6 +538,10 @@ export async function getAirportDetailByCode(
       "fboPhone",
       "fboWebsite",
       notes,
+      "transientParkingNotes",
+      "transientParkingConfidence",
+      "transientParkingSource",
+      "transientParkingLastSyncAt",
       ST_Y(location::geometry) as latitude,
       ST_X(location::geometry) as longitude,
       "rampLatitude",

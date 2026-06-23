@@ -2,6 +2,8 @@ import "dotenv/config";
 import { GoogleGenAI } from "@google/genai";
 import { createScriptPrisma } from "./lib/db.js";
 import { extractResponseText, parseJson } from "./lib/gemini-utils.js";
+import { listAirportFbos } from "./lib/postgis.js";
+import { resolveRampCoordinates } from "./lib/ramp-coordinates.js";
 
 const args = new Set(process.argv.slice(2));
 
@@ -21,9 +23,13 @@ const dryRun = args.has("--dry-run");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const GOOGLE_MAPS_SERVER_API_KEY = process.env.GOOGLE_MAPS_SERVER_API_KEY;
 
 if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is required");
-if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is required");
+// Coordinate resolution degrades gracefully without these (it can still snap to
+// known FBO coordinates), so they're optional — just warn.
+if (!OPENAI_API_KEY) console.warn("OPENAI_API_KEY not set — GPT-4o ramp estimation disabled.");
+if (!GOOGLE_MAPS_SERVER_API_KEY) console.warn("GOOGLE_MAPS_SERVER_API_KEY not set — Google Places ramp geocoding disabled.");
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 const prisma = createScriptPrisma();
@@ -123,16 +129,22 @@ try {
 
       if (extraction.confidence === "HIGH" && extraction.locationDescription) {
         try {
-          const coords = await synthesizeCoordinates(airport, extraction.locationDescription);
+          const fbos = await listAirportFbos(prisma, airport.id);
+          const coords = await resolveRampCoordinates({
+            airport,
+            extraction,
+            fbos,
+            env: { OPENAI_API_KEY, GOOGLE_MAPS_SERVER_API_KEY },
+          });
           if (coords) {
-            console.log(`    ramp coords: (${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)})`);
+            console.log(`    ramp coords: (${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}) via ${coords.source} — ${coords.reasoning}`);
             extraction.rampLatitude = coords.latitude;
             extraction.rampLongitude = coords.longitude;
           } else {
-            console.log(`    location too vague to estimate coords`);
+            console.log(`    no ramp/FBO coordinate could be resolved`);
           }
         } catch (err) {
-          console.warn(`    GPT-4o synthesis failed: ${err.message}`);
+          console.warn(`    ramp coordinate resolution failed: ${err.message}`);
         }
       }
 
@@ -170,46 +182,5 @@ try {
   if (anyFailed) process.exitCode = 1;
 } finally {
   await prisma.$disconnect();
-}
-
-// ---------------------------------------------------------------------------
-// GPT-4o coordinate synthesis
-// ---------------------------------------------------------------------------
-
-async function synthesizeCoordinates(airport, locationDescription) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are a navigation assistant estimating GPS coordinates for a transient aircraft parking area at a GA airport. Given the airport reference point and a plain-language location description, return raw JSON: {"latitude": number, "longitude": number, "reasoning": "..."}. Return null values if you cannot make a reasonable estimate.`,
-        },
-        {
-          role: "user",
-          content: `Airport: ${airport.code} — ${airport.name}\nARP: ${airport.latitude.toFixed(6)}, ${airport.longitude.toFixed(6)}\nTransient area: "${locationDescription}"\n\nEstimate the GPS coordinate.`,
-        },
-      ],
-      temperature: 0.1,
-      max_tokens: 200,
-    }),
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`OpenAI HTTP ${response.status}: ${body.slice(0, 200)}`);
-  }
-
-  const data = await response.json();
-  const parsed = parseJson(data.choices?.[0]?.message?.content ?? "");
-  if (parsed?.latitude != null && parsed?.longitude != null) {
-    return { latitude: parsed.latitude, longitude: parsed.longitude };
-  }
-  return null;
 }
 

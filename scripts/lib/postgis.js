@@ -82,6 +82,19 @@ export async function listAirportsForFboSync(prisma, airportCode) {
   `;
 }
 
+/**
+ * Verified FBO records (name + real coordinates) for one airport, sourced from
+ * the OSM/Google FBO sync. Used to ground transient-ramp coordinate resolution.
+ */
+export async function listAirportFbos(prisma, airportId) {
+  return prisma.$queryRaw`
+    SELECT name, latitude, longitude, source
+    FROM "airport_fbos"
+    WHERE "airportId" = ${airportId}
+    ORDER BY name ASC
+  `;
+}
+
 export async function upsertAirportFbo(prisma, { airportId, name, placeId, latitude, longitude, source }) {
   await prisma.$executeRaw`
     INSERT INTO "airport_fbos" ("airportId", name, "placeId", latitude, longitude, source, "createdAt", "updatedAt")

@@ -1,5 +1,7 @@
 import "dotenv/config";
 import { createScriptPrisma } from "./lib/db.js";
+import { listAirportFbos } from "./lib/postgis.js";
+import { resolveRampCoordinates } from "./lib/ramp-coordinates.js";
 
 const args = new Set(process.argv.slice(2));
 
@@ -26,9 +28,13 @@ const dryRun = args.has("--dry-run");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const GOOGLE_MAPS_SERVER_API_KEY = process.env.GOOGLE_MAPS_SERVER_API_KEY;
 
 if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is required");
-if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is required");
+// Ramp coordinate resolution falls back to known FBO coordinates without these,
+// so they're optional — just warn.
+if (!OPENAI_API_KEY) console.warn("OPENAI_API_KEY not set — GPT-4o ramp estimation disabled.");
+if (!GOOGLE_MAPS_SERVER_API_KEY) console.warn("GOOGLE_MAPS_SERVER_API_KEY not set — Google Places ramp geocoding disabled.");
 
 const GEMINI_MODEL = "gemini-2.5-flash-lite";
 
@@ -73,19 +79,27 @@ try {
       console.log(`  notes: ${extraction.notes.slice(0, 120)}`);
       console.log(`  location: ${extraction.locationDescription ?? "(none)"}`);
 
-      // GPT-4o coordinate synthesis when confidence is high and location is described
-      if (extraction.confidence === "HIGH" && extraction.locationDescription && OPENAI_API_KEY) {
+      // Ramp/FBO coordinate resolution when confidence is high and a location
+      // is described. Prefers real FBO coordinates over a GPT-4o guess; see
+      // scripts/lib/ramp-coordinates.js for the tier order.
+      if (extraction.confidence === "HIGH" && extraction.locationDescription) {
         try {
-          const coords = await synthesizeCoordinates(airport, extraction.locationDescription);
+          const fbos = await listAirportFbos(prisma, airport.id);
+          const coords = await resolveRampCoordinates({
+            airport,
+            extraction,
+            fbos,
+            env: { OPENAI_API_KEY, GOOGLE_MAPS_SERVER_API_KEY },
+          });
           if (coords) {
-            console.log(`  GPT-4o ramp coords: (${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)})`);
+            console.log(`  ramp coords: (${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}) via ${coords.source} — ${coords.reasoning}`);
             extraction.rampLatitude = coords.latitude;
             extraction.rampLongitude = coords.longitude;
           } else {
-            console.log(`  GPT-4o: location too vague to estimate coords`);
+            console.log(`  no ramp/FBO coordinate could be resolved`);
           }
         } catch (err) {
-          console.warn(`  GPT-4o synthesis failed: ${err.message}`);
+          console.warn(`  ramp coordinate resolution failed: ${err.message}`);
         }
       }
 
@@ -170,16 +184,19 @@ async function listAirportsForTransientSync(airportCode) {
 
 async function queryGeminiGrounded(code, forceSearch = false, attempt = 1) {
   const prompt = forceSearch
-    ? `Search the web right now — do not use training data — for current transient aircraft parking information at ${code} airport. Where exactly can visiting pilots park? Include ramp name, location, fees, restrictions.
+    ? `Search the web right now — do not use training data — for current transient aircraft parking information at ${code} airport. Where exactly can visiting pilots park? Include ramp name, location, fees, restrictions, and the name of the FBO/operator that hosts transient parking.
 
 Respond with raw JSON only (no markdown):
-{"notes": "...", "confidence": "HIGH|MEDIUM|LOW", "locationDescription": "..."}`
+{"notes": "...", "confidence": "HIGH|MEDIUM|LOW", "locationDescription": "...", "fboName": "..."}`
     : `Search for transient (visiting/overnight) aircraft parking at ${code} airport. Where exactly on the airport can visiting pilots park — specific ramp, location relative to landmarks, FBO, self-serve fuel? Include overnight fees or restrictions if mentioned.
 
 Respond with raw JSON only (no markdown):
-{"notes": "...", "confidence": "HIGH|MEDIUM|LOW", "locationDescription": "..."}
+{"notes": "...", "confidence": "HIGH|MEDIUM|LOW", "locationDescription": "...", "fboName": "..."}
 
-Return {"notes":null,"confidence":"LOW","locationDescription":null} if nothing found.`;
+- locationDescription: where on the field the transient ramp/parking is.
+- fboName: exact name of the FBO/operator hosting transient parking, if any (e.g. "Signature Flight Support"); null if none.
+
+Return {"notes":null,"confidence":"LOW","locationDescription":null,"fboName":null} if nothing found.`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
@@ -239,47 +256,6 @@ Return {"notes":null,"confidence":"LOW","locationDescription":null} if nothing f
   }
 
   return parseJson(text);
-}
-
-// ---------------------------------------------------------------------------
-// GPT-4o coordinate synthesis
-// ---------------------------------------------------------------------------
-
-async function synthesizeCoordinates(airport, locationDescription) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are a navigation assistant estimating GPS coordinates for a transient aircraft parking area at a GA airport. Given the airport reference point and a plain-language location description, return raw JSON: {"latitude": number, "longitude": number, "reasoning": "..."}. Return null values if you cannot make a reasonable estimate.`,
-        },
-        {
-          role: "user",
-          content: `Airport: ${airport.code} — ${airport.name}\nARP: ${Number(airport.latitude).toFixed(6)}, ${Number(airport.longitude).toFixed(6)}\nTransient area: "${locationDescription}"\n\nEstimate the GPS coordinate.`,
-        },
-      ],
-      temperature: 0.1,
-      max_tokens: 200,
-    }),
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`OpenAI HTTP ${response.status}: ${body.slice(0, 200)}`);
-  }
-
-  const data = await response.json();
-  const parsed = parseJson(data.choices?.[0]?.message?.content ?? "");
-  if (parsed?.latitude != null && parsed?.longitude != null) {
-    return { latitude: parsed.latitude, longitude: parsed.longitude };
-  }
-  return null;
 }
 
 // ---------------------------------------------------------------------------

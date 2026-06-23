@@ -190,6 +190,10 @@ export async function loader({ params, request, context }: LoaderArgs) {
         fboPhone: airport.fboPhone,
         fboWebsite: airport.fboWebsite,
         notes: airport.notes,
+        transientParkingNotes: airport.transientParkingNotes,
+        transientParkingConfidence: airport.transientParkingConfidence,
+        transientParkingSource: airport.transientParkingSource,
+        transientParkingLastSyncAt: airport.transientParkingLastSyncAt,
       },
       pois,
       search: {

@@ -1,15 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { loader } from "../api.airports.$code";
-import { getAirportSummaryByCode } from "~/utils/postgis.server";
+import { getAirportDetailByCode } from "~/utils/postgis.server";
 import { findPoisNearAirport } from "~/utils/geospatial.server";
 
 // Mock the utils
 vi.mock("~/utils/db.server", () => ({
   prisma: {},
+  createPrisma: vi.fn(() => ({})),
 }));
 
 vi.mock("~/utils/postgis.server", () => ({
   getAirportSummaryByCode: vi.fn(),
+  getAirportDetailByCode: vi.fn(),
 }));
 
 vi.mock("~/utils/geospatial.server", () => ({
@@ -29,7 +31,7 @@ describe("API: Airport Details", () => {
 
   it("should return 500 when there is a database error", async () => {
     // Setup mock to throw error
-    vi.mocked(getAirportSummaryByCode).mockRejectedValueOnce(new Error("Database connection failed"));
+    vi.mocked(getAirportDetailByCode).mockRejectedValueOnce(new Error("Database connection failed"));
 
     // Create a mock request
     const request = new Request("http://localhost:3000/api/airports/KSFO");
@@ -48,5 +50,39 @@ describe("API: Airport Details", () => {
       error: "Database error",
       message: "Failed to fetch airport data. Please try again later.",
     });
+  });
+
+  it("should return transient parking info in the airport response", async () => {
+    // Setup mock to resolve an airport including transient parking fields
+    vi.mocked(getAirportDetailByCode).mockResolvedValueOnce({
+      code: "KSFO",
+      name: "San Francisco International Airport",
+      city: "San Francisco",
+      state: "CA",
+      country: "US",
+      latitude: 37.6213,
+      longitude: -122.379,
+      transientParkingNotes: "Transient parking on the south ramp.",
+      transientParkingConfidence: "HIGH",
+    } as any);
+    vi.mocked(findPoisNearAirport).mockResolvedValueOnce([]);
+
+    // Create a mock request
+    const request = new Request("http://localhost:3000/api/airports/KSFO");
+
+    // Call loader
+    const response = await loader({
+      params: { code: "KSFO" },
+      request,
+      context: { cloudflare: { env: {} as any } },
+    });
+
+    // Verify response
+    expect(response.status).toBe(200);
+    const data = (await response.json()) as {
+      airport: { transientParkingNotes: string; transientParkingConfidence: string };
+    };
+    expect(data.airport.transientParkingNotes).toBe("Transient parking on the south ramp.");
+    expect(data.airport.transientParkingConfidence).toBe("HIGH");
   });
 });
