@@ -8,6 +8,11 @@ import {
   isEssentiallyArp,
   isPlausibleRamp,
   chooseFboFallback,
+  parseCardinalBearing,
+  bearingDegrees,
+  angularDifference,
+  chooseApron,
+  fetchOsmAprons,
   resolveRampCoordinates,
 } from "./ramp-coordinates.js";
 
@@ -18,8 +23,14 @@ const airport = { code: "KXYZ", name: "Test Field", ...ARP };
 const SIGNATURE = { name: "Signature Flight Support", latitude: 37.502, longitude: -122.003 };
 const ATLANTIC = { name: "Atlantic Aviation", latitude: 37.49, longitude: -121.99 };
 
+// Apron centroids around the ARP (north / south / east, plus a named one).
+const apronN = { name: null, latitude: 37.506, longitude: -122.0 };
+const apronS = { name: null, latitude: 37.492, longitude: -122.0 };
+const apronE = { name: null, latitude: 37.5, longitude: -121.985 };
+const apronTransient = { name: "Transient Apron", latitude: 37.5, longitude: -122.012 };
+
 /** A fetch stub that branches on URL; throws if a tier we didn't stub is reached. */
-function makeFetch({ openai, google } = {}) {
+function makeFetch({ openai, google, osm } = {}) {
   return vi.fn(async (url) => {
     if (typeof url === "string" && url.includes("openai.com")) {
       if (!openai) throw new Error("OpenAI not stubbed");
@@ -33,6 +44,16 @@ function makeFetch({ openai, google } = {}) {
           places: [{ displayName: { text: google.name ?? "Result" }, location: { latitude: google.latitude, longitude: google.longitude } }],
         }),
       };
+    }
+    if (typeof url === "string" && url.includes("overpass-api.de")) {
+      // Overpass returns way/relation centroids under `center` when `out center`
+      // is requested. Default to no aprons when the test didn't stub any.
+      const elements = (osm ?? []).map((a) => ({
+        type: "way",
+        center: { lat: a.latitude, lon: a.longitude },
+        tags: a.name ? { aeroway: "apron", name: a.name } : { aeroway: "apron" },
+      }));
+      return { ok: true, json: async () => ({ elements }) };
     }
     throw new Error(`unexpected fetch: ${url}`);
   });
@@ -135,17 +156,106 @@ describe("chooseFboFallback", () => {
   });
 });
 
+describe("parseCardinalBearing", () => {
+  it("maps direction words to compass bearings", () => {
+    expect(parseCardinalBearing("south ramp")).toBe(180);
+    expect(parseCardinalBearing("the northern tie-downs")).toBe(0);
+    expect(parseCardinalBearing("northeast apron")).toBe(45);
+    expect(parseCardinalBearing("southwest corner")).toBe(225);
+  });
+
+  it("prefers a compound direction over the single it contains", () => {
+    expect(parseCardinalBearing("northeast")).toBe(45); // not 0 (north)
+  });
+
+  it("returns null when no direction is named", () => {
+    expect(parseCardinalBearing("on the main ramp")).toBeNull();
+  });
+});
+
+describe("bearingDegrees / angularDifference", () => {
+  it("reads ~0° heading north and ~90° heading east from the ARP", () => {
+    expect(bearingDegrees(ARP, { latitude: 37.51, longitude: -122.0 })).toBeCloseTo(0, 0);
+    expect(bearingDegrees(ARP, { latitude: 37.5, longitude: -121.99 })).toBeCloseTo(90, 0);
+  });
+
+  it("wraps around 360°", () => {
+    expect(angularDifference(350, 10)).toBe(20);
+    expect(angularDifference(0, 180)).toBe(180);
+  });
+});
+
+describe("chooseApron", () => {
+  const aprons = [apronN, apronS, apronE];
+
+  it("picks the apron on the named cardinal side", () => {
+    expect(chooseApron({ aprons, text: "south transient ramp", arp: ARP })).toBe(apronS);
+    expect(chooseApron({ aprons, text: "north ramp", arp: ARP })).toBe(apronN);
+  });
+
+  it("picks the apron in front of the matched FBO when no side is named", () => {
+    expect(chooseApron({ aprons, text: "ramp by the operator", arp: ARP, matchedFbo: SIGNATURE })).toBe(apronN);
+  });
+
+  it("prefers an apron tagged for transient/GA use", () => {
+    expect(chooseApron({ aprons: [apronN, apronTransient], text: "park on the ramp", arp: ARP })).toBe(apronTransient);
+  });
+
+  it("falls back to the apron nearest the ARP", () => {
+    expect(chooseApron({ aprons, text: "on the ramp", arp: ARP })).toBe(apronN);
+  });
+
+  it("returns null when there are no aprons", () => {
+    expect(chooseApron({ aprons: [], text: "south ramp", arp: ARP })).toBeNull();
+  });
+});
+
+describe("fetchOsmAprons", () => {
+  it("parses Overpass centroids into apron records", async () => {
+    const fetchImpl = makeFetch({ osm: [apronS, apronTransient] });
+    const aprons = await fetchOsmAprons({ arp: ARP, fetchImpl });
+    expect(aprons).toHaveLength(2);
+    expect(aprons[0]).toMatchObject({ latitude: apronS.latitude, longitude: apronS.longitude });
+    expect(aprons.find((a) => a.name === "Transient Apron")).toBeTruthy();
+  });
+});
+
 describe("resolveRampCoordinates", () => {
-  it("Tier 1: snaps to a named FBO's real coordinates without any network call", async () => {
+  it("FBO-first: snaps to a named FBO (no distinct ramp) without any network call", async () => {
     const res = await resolveRampCoordinates({
       airport,
-      extraction: { locationDescription: "Transient ramp by Signature.", fboName: "Signature Flight Support" },
+      extraction: { locationDescription: "Visiting aircraft park in front of Signature.", fboName: "Signature Flight Support" },
       fbos: [SIGNATURE, ATLANTIC],
       env: { OPENAI_API_KEY: "k", GOOGLE_MAPS_SERVER_API_KEY: "k" },
       fetchImpl: failFetch,
     });
     expect(res).toMatchObject({ latitude: SIGNATURE.latitude, longitude: SIGNATURE.longitude, source: "FBO_MATCH" });
     expect(failFetch).not.toHaveBeenCalled();
+  });
+
+  it("ramp-first: prefers the transient ramp (OSM apron) over the FBO when both exist", async () => {
+    // Description names an FBO AND a south transient ramp — the ramp must win.
+    const fetchImpl = makeFetch({ osm: [apronN, apronS, apronE] });
+    const res = await resolveRampCoordinates({
+      airport,
+      extraction: { locationDescription: "Transient parking on the south ramp.", fboName: "Signature Flight Support" },
+      fbos: [SIGNATURE, ATLANTIC],
+      env: {},
+      fetchImpl,
+    });
+    expect(res).toMatchObject({ source: "OSM_APRON", latitude: apronS.latitude, longitude: apronS.longitude });
+  });
+
+  it("ramp-first: falls back to the FBO when the ramp can't be located", async () => {
+    // OSM has no aprons (default empty) and there are no API keys → FBO proxy.
+    const res = await resolveRampCoordinates({
+      airport,
+      extraction: { locationDescription: "Transient parking on the ramp by Signature.", fboName: "Signature Flight Support" },
+      fbos: [SIGNATURE, ATLANTIC],
+      env: {},
+      fetchImpl: makeFetch({}),
+    });
+    expect(res).toMatchObject({ source: "FBO_MATCH", latitude: SIGNATURE.latitude });
   });
 
   it("Tier 2: generic 'FBO' reference falls back to the nearest known FBO", async () => {

@@ -152,6 +152,141 @@ export function chooseFboFallback(fbos, arp) {
 }
 
 // ---------------------------------------------------------------------------
+// Ramp / apron location (OSM `aeroway=apron`)
+// ---------------------------------------------------------------------------
+//
+// When Gemini says transient parking is "on the ramp", the ramp is a real
+// apron polygon that OpenStreetMap usually maps as `aeroway=apron`. We pull
+// those aprons and pick the one the description points at — by named side
+// (cardinal), by proximity to the named FBO, or by an explicit transient/GA
+// name tag. This is preferred over snapping to an FBO: airports frequently have
+// both, and the transient ramp is the correct answer.
+
+const TRANSIENT_APRON_RE = /transient|visitor|itinerant|general\s+aviation|\bga\b|tie[-\s]?downs?/i;
+
+/** Initial compass bearing from `from` to `to`, in degrees (0=N, 90=E). */
+export function bearingDegrees(from, to) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const toDeg = (r) => (r * 180) / Math.PI;
+  const dLon = toRad(to.longitude - from.longitude);
+  const y = Math.sin(dLon) * Math.cos(toRad(to.latitude));
+  const x =
+    Math.cos(toRad(from.latitude)) * Math.sin(toRad(to.latitude)) -
+    Math.sin(toRad(from.latitude)) * Math.cos(toRad(to.latitude)) * Math.cos(dLon);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+/** Smallest absolute difference between two bearings, in degrees (0-180). */
+export function angularDifference(a, b) {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+/**
+ * The compass bearing implied by a cardinal direction word in the text, or null.
+ * Compound directions ("northeast") are checked before the singles they contain.
+ */
+export function parseCardinalBearing(text) {
+  const t = (text ?? "").toLowerCase();
+  const table = [
+    [/north[-\s]?east|northeast/, 45],
+    [/north[-\s]?west|northwest/, 315],
+    [/south[-\s]?east|southeast/, 135],
+    [/south[-\s]?west|southwest/, 225],
+    [/\bnorth(ern)?\b/, 0],
+    [/\bsouth(ern)?\b/, 180],
+    [/\beast(ern)?\b/, 90],
+    [/\bwest(ern)?\b/, 270],
+  ];
+  for (const [re, deg] of table) if (re.test(t)) return deg;
+  return null;
+}
+
+function nearestByHaversine(list, point) {
+  return list.reduce((best, a) =>
+    haversineMeters(a, point) < haversineMeters(best, point) ? a : best
+  );
+}
+
+/**
+ * Pick the apron the description refers to.
+ *
+ * Priority: (1) named cardinal side relative to the ARP; (2) the apron in front
+ * of the named FBO; (3) an apron tagged transient/visitor/GA; (4) the apron by
+ * the field's FBO; (5) the apron nearest the ARP.
+ *
+ * @param {{aprons: Array, text: string, arp: object, matchedFbo?: object|null, fbos?: Array}} args
+ * @returns {object|null} the chosen apron, or null
+ */
+export function chooseApron({ aprons, text, arp, matchedFbo = null, fbos = [] }) {
+  const valid = (aprons ?? []).filter(
+    (a) => Number.isFinite(a.latitude) && Number.isFinite(a.longitude)
+  );
+  if (valid.length === 0) return null;
+
+  // 1. "south ramp" / "northeast tie-downs" → apron most in that direction.
+  const target = parseCardinalBearing(text);
+  if (target != null && arp) {
+    return valid.reduce(
+      (best, a) => {
+        const diff = angularDifference(bearingDegrees(arp, a), target);
+        return diff < best.diff ? { apron: a, diff } : best;
+      },
+      { apron: null, diff: Infinity }
+    ).apron;
+  }
+
+  // 2. A named FBO matched → the apron directly in front of it.
+  if (matchedFbo && Number.isFinite(matchedFbo.latitude)) {
+    return nearestByHaversine(valid, matchedFbo);
+  }
+
+  // 3. An apron explicitly tagged for transient/visitor/GA use.
+  const named = valid.find((a) => TRANSIENT_APRON_RE.test(a.name ?? ""));
+  if (named) return named;
+
+  // 4. The field has FBOs → the apron next to the FBO nearest the ARP.
+  const anchorFbo = chooseFboFallback(fbos, arp);
+  if (anchorFbo) return nearestByHaversine(valid, anchorFbo);
+
+  // 5. Fallback: the apron nearest the airport reference point.
+  return arp ? nearestByHaversine(valid, arp) : valid[0];
+}
+
+/**
+ * Fetch `aeroway=apron` polygons near the airport from OSM Overpass.
+ * Returns `[{ name, latitude, longitude, tags }]` (centroids). Throws on a
+ * non-OK response so the caller can fall through to other tiers.
+ */
+export async function fetchOsmAprons({ arp, fetchImpl = fetch, radius = 3000, attempt = 1 }) {
+  const query = `[out:json][timeout:25];(way["aeroway"="apron"](around:${radius},${arp.latitude},${arp.longitude});relation["aeroway"="apron"](around:${radius},${arp.latitude},${arp.longitude}););out center tags;`;
+
+  const response = await fetchImpl("https://overpass-api.de/api/interpreter", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `data=${encodeURIComponent(query)}`,
+  });
+
+  // Overpass is shared infrastructure — back off briefly on rate/timeout.
+  if ((response.status === 429 || response.status === 504) && attempt < 3) {
+    await new Promise((r) => setTimeout(r, attempt * 3000));
+    return fetchOsmAprons({ arp, fetchImpl, radius, attempt: attempt + 1 });
+  }
+
+  if (!response.ok) throw new Error(`Overpass HTTP ${response.status}`);
+
+  const data = await response.json();
+  return (data.elements ?? [])
+    .map((el) => {
+      const latitude = el.center?.lat ?? el.lat;
+      const longitude = el.center?.lon ?? el.lon;
+      if (latitude == null || longitude == null) return null;
+      return { name: el.tags?.name ?? null, latitude, longitude, tags: el.tags ?? {} };
+    })
+    .filter(Boolean);
+}
+
+// ---------------------------------------------------------------------------
 // Network tiers (injectable fetch for testing)
 // ---------------------------------------------------------------------------
 
@@ -198,15 +333,26 @@ export async function geocodeViaGooglePlaces({ query, arp, apiKey, fetchImpl }) 
  * coordinates and explicitly forbidden from returning the ARP. Returns
  * {latitude, longitude, reasoning} or null when the model declines.
  */
-export async function synthesizeViaGpt4o({ airport, locationDescription, fbos, apiKey, fetchImpl }) {
-  const anchorLines = (fbos ?? [])
+export async function synthesizeViaGpt4o({ airport, locationDescription, fbos, aprons = [], apiKey, fetchImpl }) {
+  const coordLine = (x, label) =>
+    `  - ${x.name || label}: ${Number(x.latitude).toFixed(6)}, ${Number(x.longitude).toFixed(6)}`;
+
+  const fboLines = (fbos ?? [])
     .filter((f) => Number.isFinite(f.latitude) && Number.isFinite(f.longitude))
-    .map((f) => `  - ${f.name}: ${Number(f.latitude).toFixed(6)}, ${Number(f.longitude).toFixed(6)}`)
+    .map((f) => coordLine(f, "FBO"))
     .join("\n");
 
-  const anchorBlock = anchorLines
-    ? `Known on-field FBOs/operators with verified coordinates (use these as anchors):\n${anchorLines}`
-    : "No verified FBO coordinates are available for this airport.";
+  const apronLines = (aprons ?? [])
+    .filter((a) => Number.isFinite(a.latitude) && Number.isFinite(a.longitude))
+    .map((a) => coordLine(a, "apron"))
+    .join("\n");
+
+  const blocks = [];
+  if (fboLines) blocks.push(`Known on-field FBOs/operators with verified coordinates:\n${fboLines}`);
+  if (apronLines) blocks.push(`Known apron/ramp centroids on the field (from OpenStreetMap):\n${apronLines}`);
+  const anchorBlock = blocks.length
+    ? `${blocks.join("\n")}\nUse these as anchors.`
+    : "No verified FBO or apron coordinates are available for this airport.";
 
   const system = `You estimate the GPS coordinate of transient (visiting) aircraft parking at a general-aviation airport.
 Rules:
@@ -262,8 +408,67 @@ Estimate the GPS coordinate of the transient parking.`;
 // Orchestrator
 // ---------------------------------------------------------------------------
 
+/** Google Places geocode tier — returns a result or null (never throws). */
+async function googlePlacesTier({ airport, arp, extraction, env, fetchImpl }) {
+  if (!env.GOOGLE_MAPS_SERVER_API_KEY || !extraction?.locationDescription) return null;
+  try {
+    const query = `${extraction.locationDescription} ${airport.code} ${airport.name}`.trim();
+    const g = await geocodeViaGooglePlaces({ query, arp, apiKey: env.GOOGLE_MAPS_SERVER_API_KEY, fetchImpl });
+    if (g && isPlausibleRamp(g, arp) && !isEssentiallyArp(g, arp)) {
+      return {
+        latitude: g.latitude,
+        longitude: g.longitude,
+        source: "GOOGLE_PLACES",
+        reasoning: `Google Places match${g.name ? ` "${g.name}"` : ""}`,
+      };
+    }
+  } catch {
+    // ignore — caller falls through to the next tier
+  }
+  return null;
+}
+
+/** Anchored GPT-4o tier — returns a result or null (never throws). ARP-echoes rejected. */
+async function gpt4oTier({ airport, arp, extraction, fbos, aprons, env, fetchImpl }) {
+  if (!env.OPENAI_API_KEY || !extraction?.locationDescription) return null;
+  try {
+    const c = await synthesizeViaGpt4o({
+      airport,
+      locationDescription: extraction.locationDescription,
+      fbos,
+      aprons,
+      apiKey: env.OPENAI_API_KEY,
+      fetchImpl,
+    });
+    if (c && isPlausibleRamp(c, arp) && !isEssentiallyArp(c, arp)) {
+      return {
+        latitude: c.latitude,
+        longitude: c.longitude,
+        source: "GPT4O",
+        reasoning: c.reasoning ?? "GPT-4o anchored estimate",
+      };
+    }
+  } catch {
+    // ignore — caller falls through to the next tier
+  }
+  return null;
+}
+
+/** Known-FBO fallback — an on-field FBO always beats the ARP. */
+function fboFallbackTier({ fbos, arp, source = "FBO_NEAREST", reasonPrefix = "Nearest known FBO" }) {
+  const fb = chooseFboFallback(fbos, arp);
+  if (!fb) return null;
+  return { latitude: fb.latitude, longitude: fb.longitude, source, reasoning: `${reasonPrefix} "${fb.name}"` };
+}
+
 /**
  * Resolve the best available ramp/FBO coordinate for an airport.
+ *
+ * When the description points at a transient ramp/apron, the ramp is located
+ * first (real OSM apron geometry, then Places/GPT-4o), and only falls back to
+ * the FBO if the ramp can't be pinned — so airports that have BOTH an FBO and a
+ * distinct transient ramp resolve to the ramp. When the description is purely
+ * about the FBO, it snaps to the FBO.
  *
  * @param {object} args
  * @param {{code: string, name: string, latitude: number, longitude: number}} args.airport
@@ -287,86 +492,61 @@ export async function resolveRampCoordinates({
     .filter(Boolean)
     .join(" ");
 
-  // Tier 1 — the description names an FBO we have verified coordinates for.
   const fboMatch = matchFboInText({ text, fbos });
-  if (fboMatch) {
-    return {
-      latitude: fboMatch.fbo.latitude,
-      longitude: fboMatch.fbo.longitude,
-      source: "FBO_MATCH",
-      reasoning: `Matched named FBO "${fboMatch.fbo.name}"`,
-    };
-  }
+  const fboMatchResult = fboMatch
+    ? {
+        latitude: fboMatch.fbo.latitude,
+        longitude: fboMatch.fbo.longitude,
+        source: "FBO_MATCH",
+        reasoning: `Matched named FBO "${fboMatch.fbo.name}"`,
+      }
+    : null;
 
-  // Tier 2 — generic "FBO" reference and the field has a known FBO.
-  if (mentionsFbo(text)) {
-    const fb = chooseFboFallback(fbos, arp);
-    if (fb) {
+  // RAMP-FIRST — the description points at a transient ramp/apron. Locate the
+  // ramp itself before considering the FBO (an airport may have both, and the
+  // transient ramp is the correct answer).
+  if (mentionsTransientRamp(text)) {
+    let aprons = [];
+    try {
+      aprons = await fetchOsmAprons({ arp, fetchImpl });
+    } catch {
+      aprons = [];
+    }
+
+    const apron = chooseApron({ aprons, text, arp, matchedFbo: fboMatch?.fbo ?? null, fbos });
+    if (apron && isPlausibleRamp(apron, arp)) {
       return {
-        latitude: fb.latitude,
-        longitude: fb.longitude,
-        source: "FBO_FALLBACK",
-        reasoning: `Generic FBO reference → known FBO "${fb.name}"`,
+        latitude: apron.latitude,
+        longitude: apron.longitude,
+        source: "OSM_APRON",
+        reasoning: apron.name ? `OSM apron "${apron.name}"` : "OSM apron matching description",
       };
     }
+
+    return (
+      (await googlePlacesTier({ airport, arp, extraction, env, fetchImpl })) ??
+      (await gpt4oTier({ airport, arp, extraction, fbos, aprons, env, fetchImpl })) ??
+      // The FBO is a reasonable proxy for "the ramp by the FBO" once the apron
+      // itself can't be pinned.
+      fboMatchResult ??
+      fboFallbackTier({ fbos, arp })
+    );
   }
 
-  // Tier 3 — geocode the described place via Google Places (optional).
-  if (env.GOOGLE_MAPS_SERVER_API_KEY && extraction?.locationDescription) {
-    try {
-      const query = `${extraction.locationDescription} ${airport.code} ${airport.name}`.trim();
-      const g = await geocodeViaGooglePlaces({
-        query,
-        arp,
-        apiKey: env.GOOGLE_MAPS_SERVER_API_KEY,
-        fetchImpl,
-      });
-      if (g && isPlausibleRamp(g, arp) && !isEssentiallyArp(g, arp)) {
-        return {
-          latitude: g.latitude,
-          longitude: g.longitude,
-          source: "GOOGLE_PLACES",
-          reasoning: `Google Places match${g.name ? ` "${g.name}"` : ""}`,
-        };
-      }
-    } catch {
-      // fall through to GPT-4o
-    }
+  // FBO-FIRST — parking is described at the FBO, with no distinct ramp.
+  if (fboMatchResult) return fboMatchResult;
+  if (mentionsFbo(text)) {
+    const generic = fboFallbackTier({
+      fbos,
+      arp,
+      source: "FBO_FALLBACK",
+      reasonPrefix: "Generic FBO reference → known FBO",
+    });
+    if (generic) return generic;
   }
-
-  // Tier 4 — anchored GPT-4o estimate, rejecting ARP-equal / implausible output.
-  if (env.OPENAI_API_KEY && extraction?.locationDescription) {
-    try {
-      const c = await synthesizeViaGpt4o({
-        airport,
-        locationDescription: extraction.locationDescription,
-        fbos,
-        apiKey: env.OPENAI_API_KEY,
-        fetchImpl,
-      });
-      if (c && isPlausibleRamp(c, arp) && !isEssentiallyArp(c, arp)) {
-        return {
-          latitude: c.latitude,
-          longitude: c.longitude,
-          source: "GPT4O",
-          reasoning: c.reasoning ?? "GPT-4o anchored estimate",
-        };
-      }
-    } catch {
-      // fall through to nearest-FBO fallback
-    }
-  }
-
-  // Tier 5 — nothing pinned the ramp, but an on-field FBO beats the ARP.
-  const fb = chooseFboFallback(fbos, arp);
-  if (fb) {
-    return {
-      latitude: fb.latitude,
-      longitude: fb.longitude,
-      source: "FBO_NEAREST",
-      reasoning: `No ramp match → nearest known FBO "${fb.name}"`,
-    };
-  }
-
-  return null;
+  return (
+    (await googlePlacesTier({ airport, arp, extraction, env, fetchImpl })) ??
+    (await gpt4oTier({ airport, arp, extraction, fbos, aprons: [], env, fetchImpl })) ??
+    fboFallbackTier({ fbos, arp })
+  );
 }

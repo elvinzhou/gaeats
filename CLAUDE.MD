@@ -44,14 +44,20 @@ Update CLAUDE.MD as needed.
   `resolveRampCoordinates()` (`scripts/lib/ramp-coordinates.js`), NOT by asking
   GPT-4o to guess from the airport reference point (ARP). Given only the ARP +
   prose, GPT-4o just echoed the ARP back (the geometric runway center, never
-  where pilots park). The resolver prefers real data in tiers: (1) snap to a
-  named FBO's verified coordinate from `airport_fbos`; (2) generic "FBO"
-  reference → nearest known FBO; (3) Google Places geocode of the description
-  (needs `GOOGLE_MAPS_SERVER_API_KEY`); (4) GPT-4o *anchored* with the real FBO
-  coordinates; (5) nearest known FBO as a last resort. Any Places/GPT-4o result
-  within ~60 m of the ARP is rejected as an ARP-echo, and anything implausibly
-  far from the field is discarded. The Gemini prompt also now returns an
-  `fboName` field to strengthen tier 1. Guarded by `ramp-coordinates.test.js`.
+  where pilots park). The resolver branches on the description:
+  - Points at a transient **ramp/apron** (airports often have both a ramp AND an
+    FBO — the ramp must win): locate the real apron from OSM `aeroway=apron`
+    (`fetchOsmAprons` + `chooseApron`, choosing by named cardinal side, proximity
+    to the matched FBO, or a transient/GA name tag), then Google Places, then
+    GPT-4o anchored, then the FBO as a proxy.
+  - Is about the **FBO** only: snap to the named FBO's verified coordinate from
+    `airport_fbos`; else generic-FBO → nearest known FBO; else Google Places /
+    GPT-4o / nearest FBO.
+  Any Places/GPT-4o result within ~60 m of the ARP is rejected as an ARP-echo,
+  and anything implausibly far from the field is discarded. OSM Overpass needs no
+  key; Google Places needs `GOOGLE_MAPS_SERVER_API_KEY`. The Gemini prompt also
+  returns an `fboName` field to strengthen FBO matching. Guarded by
+  `ramp-coordinates.test.js`.
 
 ##Google Maps Integration
 - Uses @vis.gl/react-google-maps (v1.7.1) for React integration
