@@ -165,7 +165,10 @@ function buildPrompt(code) {
   return `Search the web for current transient aircraft parking at ${code} airport. Where exactly can visiting pilots park — specific ramp name, location relative to landmarks or FBO, self-serve fuel availability? Include overnight fees or restrictions if mentioned.
 
 Respond with raw JSON only (no markdown):
-{"notes": "...", "confidence": "HIGH|MEDIUM|LOW", "locationDescription": "..."}
+{"notes": "...", "confidence": "HIGH|MEDIUM|LOW", "locationDescription": "...", "fboName": "..."}
 
-Return {"notes":null,"confidence":"LOW","locationDescription":null} if nothing found.`;
+- locationDescription: where on the field the transient ramp/parking is (e.g. "north tie-down apron next to the self-serve fuel").
+- fboName: the exact name of the FBO or operator that hosts transient parking, if any (e.g. "Signature Flight Support"); null if none.
+
+Return {"notes":null,"confidence":"LOW","locationDescription":null,"fboName":null} if nothing found.`;
 }

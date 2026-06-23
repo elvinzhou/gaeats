@@ -32,6 +32,10 @@ interface AirportData {
   fboPhone: string | null;
   fboWebsite: string | null;
   notes: string | null;
+  transientParkingNotes: string | null;
+  transientParkingConfidence: string | null;
+  transientParkingSource: string | null;
+  transientParkingLastSyncAt: string | null;
   rampLatitude: number | null;
   rampLongitude: number | null;
 }
@@ -102,6 +106,21 @@ function TravelBadge({ poi }: { poi: NearbyPoi }) {
   return (
     <span className="inline-flex items-center rounded-full border border-yellow-100 bg-yellow-50 px-2.5 py-0.5 text-xs italic text-yellow-700">
       Reachability pending
+    </span>
+  );
+}
+
+function ParkingConfidenceBadge({ confidence }: { confidence: string }) {
+  const level = confidence.toUpperCase();
+  const styles =
+    level === "HIGH"
+      ? "bg-green-100 text-green-800"
+      : level === "MEDIUM"
+        ? "bg-amber-100 text-amber-800"
+        : "bg-gray-100 text-gray-600";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${styles}`}>
+      {level}
     </span>
   );
 }
@@ -305,6 +324,19 @@ export default function AirportPanel({ airportCode, imperial, onClose }: Airport
                   )}
                   {airport.notes && <p className="italic text-gray-500">{airport.notes}</p>}
                 </div>
+              </section>
+            )}
+
+            {/* Transient Parking */}
+            {airport?.transientParkingNotes && (
+              <section className="border-b border-gray-100 bg-amber-50 px-5 py-4">
+                <div className="mb-2.5 flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-amber-900">🅿️ Transient Parking</h3>
+                  {airport.transientParkingConfidence && (
+                    <ParkingConfidenceBadge confidence={airport.transientParkingConfidence} />
+                  )}
+                </div>
+                <p className="text-xs leading-relaxed text-gray-700">{airport.transientParkingNotes}</p>
               </section>
             )}
 

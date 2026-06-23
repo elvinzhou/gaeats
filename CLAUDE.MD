@@ -40,6 +40,18 @@ Update CLAUDE.MD as needed.
   reading it made collect report "no transient info found" for every airport.
   Use `extractResponseText()` from `scripts/lib/gemini-utils.js`, which walks
   `candidates[0].content.parts[].text` (guarded by `gemini-utils.test.js`).
+- Ramp/FBO coordinate resolution: `rampLatitude`/`rampLongitude` are resolved by
+  `resolveRampCoordinates()` (`scripts/lib/ramp-coordinates.js`), NOT by asking
+  GPT-4o to guess from the airport reference point (ARP). Given only the ARP +
+  prose, GPT-4o just echoed the ARP back (the geometric runway center, never
+  where pilots park). The resolver prefers real data in tiers: (1) snap to a
+  named FBO's verified coordinate from `airport_fbos`; (2) generic "FBO"
+  reference → nearest known FBO; (3) Google Places geocode of the description
+  (needs `GOOGLE_MAPS_SERVER_API_KEY`); (4) GPT-4o *anchored* with the real FBO
+  coordinates; (5) nearest known FBO as a last resort. Any Places/GPT-4o result
+  within ~60 m of the ARP is rejected as an ARP-echo, and anything implausibly
+  far from the field is discarded. The Gemini prompt also now returns an
+  `fboName` field to strengthen tier 1. Guarded by `ramp-coordinates.test.js`.
 
 ##Google Maps Integration
 - Uses @vis.gl/react-google-maps (v1.7.1) for React integration
