@@ -79,7 +79,9 @@ describe("API: Airport Details", () => {
 
     // Verify response
     expect(response.status).toBe(200);
-    const data = await response.json();
+    const data = (await response.json()) as {
+      airport: { transientParkingNotes: string; transientParkingConfidence: string };
+    };
     expect(data.airport.transientParkingNotes).toBe("Transient parking on the south ramp.");
     expect(data.airport.transientParkingConfidence).toBe("HIGH");
   });
