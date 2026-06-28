@@ -14,13 +14,16 @@
 // in priority order:
 //   1. FBO_MATCH    — the description names an FBO we already have verified
 //                     coordinates for (airport_fbos, sourced from OSM/Google).
-//   2. FBO_FALLBACK — the description references "the FBO" generically and the
+//   2. FBO_GEOCODE  — Gemini named an FBO and/or gave a street address we have
+//                     no verified record for; geocode that name/address (a
+//                     street address pins tightly). Needs GOOGLE_MAPS_SERVER_API_KEY.
+//   3. FBO_FALLBACK — the description references "the FBO" generically and the
 //                     field has a known FBO; snap to it.
-//   3. GOOGLE_PLACES— geocode the described place against Google Places, biased
+//   4. GOOGLE_PLACES— geocode the described place against Google Places, biased
 //                     to the field (optional; needs GOOGLE_MAPS_SERVER_API_KEY).
-//   4. GPT4O        — last-resort estimate, but now ANCHORED with the real FBO
+//   5. GPT4O        — last-resort estimate, but now ANCHORED with the real FBO
 //                     coordinates and hard-instructed not to return the ARP.
-//   5. FBO_NEAREST  — nothing pinned the ramp, but the field has an FBO; an
+//   6. FBO_NEAREST  — nothing pinned the ramp, but the field has an FBO; an
 //                     on-field FBO is still far better than the ARP.
 //
 // Every model/Places result is sanity-checked: anything within ~60 m of the ARP
@@ -126,8 +129,15 @@ export function isEssentiallyArp(coord, arp, thresholdMeters = 60) {
   return haversineMeters(coord, arp) <= thresholdMeters;
 }
 
-/** Whether a coordinate is finite, in-range, and within `maxKm` of the field. */
-export function isPlausibleRamp(coord, arp, maxKm = 8) {
+/**
+ * Whether a coordinate is finite, in-range, and within `maxKm` of the field.
+ *
+ * GA transient parking is essentially always within ~1.5 km of the ARP, so a
+ * tight cap (vs. the original 8 km) is the cheapest way to reject the worst
+ * outliers from the geocode/GPT tiers — a "ramp" 4 km from the field is a bad
+ * match, not a real apron.
+ */
+export function isPlausibleRamp(coord, arp, maxKm = 3) {
   if (!coord) return false;
   const { latitude, longitude } = coord;
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false;
@@ -219,8 +229,14 @@ function nearestByHaversine(list, point) {
  * @returns {object|null} the chosen apron, or null
  */
 export function chooseApron({ aprons, text, arp, matchedFbo = null, fbos = [] }) {
+  // Only consider aprons that are actually on/near the field. This stops a
+  // distant apron (an adjacent airport, or the airline ramp on a big field)
+  // from winning purely on compass bearing.
   const valid = (aprons ?? []).filter(
-    (a) => Number.isFinite(a.latitude) && Number.isFinite(a.longitude)
+    (a) =>
+      Number.isFinite(a.latitude) &&
+      Number.isFinite(a.longitude) &&
+      isPlausibleRamp(a, arp)
   );
   if (valid.length === 0) return null;
 
@@ -329,6 +345,54 @@ export async function geocodeViaGooglePlaces({ query, arp, apiKey, fetchImpl }) 
 }
 
 /**
+ * Geocode the FBO that Gemini named, interpreting whichever locator it gave us.
+ *
+ * Gemini's transient-parking answer frequently includes the FBO's name and,
+ * when the search results carried it, a full street address. A street address
+ * geocodes to a tight point, so we try those candidates most-specific first:
+ *   1. name + street address  (e.g. "Atlantic Aviation, 1659 Airport Blvd, San Jose")
+ *   2. the bare street address
+ *   3. the brand name biased to the field (e.g. "Signature Flight Support KSJC")
+ *
+ * Each candidate is sanity-checked against the field (plausible distance, not
+ * the ARP). Returns {latitude, longitude, name, reasoning} or null.
+ */
+export async function geocodeFboLocation({ airport, extraction, arp, apiKey, fetchImpl }) {
+  if (!apiKey) return null;
+
+  const name = extraction?.fboName?.trim();
+  const address = extraction?.fboAddress?.trim();
+  const bias = [airport.city, airport.state, airport.code].filter(Boolean).join(" ").trim();
+
+  const candidates = [];
+  if (address && name) candidates.push({ q: `${name}, ${address}`, how: `"${name}" at ${address}` });
+  if (address) candidates.push({ q: address, how: `address ${address}` });
+  if (name) candidates.push({ q: `${name} ${bias}`.trim(), how: `"${name}"` });
+
+  // De-duplicate while preserving the most-specific-first order.
+  const seen = new Set();
+  for (const { q, how } of candidates) {
+    const key = q.toLowerCase();
+    if (!q || seen.has(key)) continue;
+    seen.add(key);
+    try {
+      const g = await geocodeViaGooglePlaces({ query: q, arp, apiKey, fetchImpl });
+      if (g && isPlausibleRamp(g, arp) && !isEssentiallyArp(g, arp)) {
+        return {
+          latitude: g.latitude,
+          longitude: g.longitude,
+          name: g.name ?? null,
+          reasoning: `Geocoded FBO ${how}${g.name ? ` → "${g.name}"` : ""}`,
+        };
+      }
+    } catch {
+      // Try the next, less-specific candidate.
+    }
+  }
+  return null;
+}
+
+/**
  * Estimate the ramp coordinate with GPT-4o — anchored on the airport's real FBO
  * coordinates and explicitly forbidden from returning the ARP. Returns
  * {latitude, longitude, reasoning} or null when the model declines.
@@ -428,6 +492,27 @@ async function googlePlacesTier({ airport, arp, extraction, env, fetchImpl }) {
   return null;
 }
 
+/** FBO name/address geocode tier — returns a result or null (never throws). */
+async function fboGeocodeTier({ airport, arp, extraction, env, fetchImpl }) {
+  if (!env.GOOGLE_MAPS_SERVER_API_KEY) return null;
+  if (!extraction?.fboName && !extraction?.fboAddress) return null;
+  try {
+    const g = await geocodeFboLocation({
+      airport,
+      extraction,
+      arp,
+      apiKey: env.GOOGLE_MAPS_SERVER_API_KEY,
+      fetchImpl,
+    });
+    if (g) {
+      return { latitude: g.latitude, longitude: g.longitude, source: "FBO_GEOCODE", reasoning: g.reasoning };
+    }
+  } catch {
+    // ignore — caller falls through to the next tier
+  }
+  return null;
+}
+
 /** Anchored GPT-4o tier — returns a result or null (never throws). ARP-echoes rejected. */
 async function gpt4oTier({ airport, arp, extraction, fbos, aprons, env, fetchImpl }) {
   if (!env.OPENAI_API_KEY || !extraction?.locationDescription) return null;
@@ -471,8 +556,8 @@ function fboFallbackTier({ fbos, arp, source = "FBO_NEAREST", reasonPrefix = "Ne
  * about the FBO, it snaps to the FBO.
  *
  * @param {object} args
- * @param {{code: string, name: string, latitude: number, longitude: number}} args.airport
- * @param {{notes?: string, locationDescription?: string, fboName?: string}} args.extraction  Gemini output
+ * @param {{code: string, name: string, city?: string, state?: string, latitude: number, longitude: number}} args.airport
+ * @param {{notes?: string, locationDescription?: string, fboName?: string, fboAddress?: string}} args.extraction  Gemini output
  * @param {Array<{name: string, latitude: number, longitude: number}>} [args.fbos]  Known FBOs (airport_fbos)
  * @param {{OPENAI_API_KEY?: string, GOOGLE_MAPS_SERVER_API_KEY?: string}} [args.env]
  * @param {typeof fetch} [args.fetchImpl]
@@ -487,8 +572,9 @@ export async function resolveRampCoordinates({
 }) {
   const arp = { latitude: Number(airport.latitude), longitude: Number(airport.longitude) };
   // fboName (when Gemini supplies it) and locationDescription carry the strongest
-  // location signal; notes is included so a brand mentioned only in prose still matches.
-  const text = [extraction?.fboName, extraction?.locationDescription, extraction?.notes]
+  // location signal; fboAddress and notes are included so a brand or place
+  // mentioned only there still matches.
+  const text = [extraction?.fboName, extraction?.fboAddress, extraction?.locationDescription, extraction?.notes]
     .filter(Boolean)
     .join(" ");
 
@@ -523,18 +609,25 @@ export async function resolveRampCoordinates({
       };
     }
 
+    // Once the apron itself can't be pinned, prefer real FBO data — a verified
+    // match, then Gemini's own name/address geocoded — over a generic
+    // description geocode or a GPT-4o estimate. The FBO is a reasonable proxy
+    // for "the ramp by the FBO".
     return (
+      fboMatchResult ??
+      (await fboGeocodeTier({ airport, arp, extraction, env, fetchImpl })) ??
       (await googlePlacesTier({ airport, arp, extraction, env, fetchImpl })) ??
       (await gpt4oTier({ airport, arp, extraction, fbos, aprons, env, fetchImpl })) ??
-      // The FBO is a reasonable proxy for "the ramp by the FBO" once the apron
-      // itself can't be pinned.
-      fboMatchResult ??
       fboFallbackTier({ fbos, arp })
     );
   }
 
   // FBO-FIRST — parking is described at the FBO, with no distinct ramp.
   if (fboMatchResult) return fboMatchResult;
+  // Gemini named an FBO/address but we have no verified record for it → geocode
+  // what it gave us before resorting to a generic search or a GPT-4o guess.
+  const fboGeocoded = await fboGeocodeTier({ airport, arp, extraction, env, fetchImpl });
+  if (fboGeocoded) return fboGeocoded;
   if (mentionsFbo(text)) {
     const generic = fboFallbackTier({
       fbos,

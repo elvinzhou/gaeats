@@ -13,6 +13,7 @@ import {
   angularDifference,
   chooseApron,
   fetchOsmAprons,
+  geocodeFboLocation,
   resolveRampCoordinates,
 } from "./ramp-coordinates.js";
 
@@ -139,6 +140,11 @@ describe("coordinate guards", () => {
     expect(isPlausibleRamp({ latitude: 200, longitude: -122 }, ARP)).toBe(false);
     expect(isPlausibleRamp({ latitude: 40.0, longitude: -122.0 }, ARP)).toBe(false); // ~280 km away
   });
+
+  it("isPlausibleRamp uses a tight 3 km default cap", () => {
+    expect(isPlausibleRamp({ latitude: 37.518, longitude: -122.0 }, ARP)).toBe(true); // ~2 km
+    expect(isPlausibleRamp({ latitude: 37.545, longitude: -122.0 }, ARP)).toBe(false); // ~5 km
+  });
 });
 
 describe("chooseFboFallback", () => {
@@ -208,6 +214,12 @@ describe("chooseApron", () => {
   it("returns null when there are no aprons", () => {
     expect(chooseApron({ aprons: [], text: "south ramp", arp: ARP })).toBeNull();
   });
+
+  it("ignores aprons beyond the plausible field radius even on the named side", () => {
+    // A far apron ~6.7 km south must not beat the real on-field south apron.
+    const apronFarS = { name: null, latitude: 37.44, longitude: -122.0 };
+    expect(chooseApron({ aprons: [apronFarS, apronS], text: "south ramp", arp: ARP })).toBe(apronS);
+  });
 });
 
 describe("fetchOsmAprons", () => {
@@ -217,6 +229,55 @@ describe("fetchOsmAprons", () => {
     expect(aprons).toHaveLength(2);
     expect(aprons[0]).toMatchObject({ latitude: apronS.latitude, longitude: apronS.longitude });
     expect(aprons.find((a) => a.name === "Transient Apron")).toBeTruthy();
+  });
+});
+
+describe("geocodeFboLocation", () => {
+  it("geocodes the street address first when Gemini supplied one", async () => {
+    const calls = [];
+    const fetchImpl = vi.fn(async (url, opts) => {
+      calls.push(JSON.parse(opts.body).textQuery);
+      return {
+        ok: true,
+        json: async () => ({ places: [{ displayName: { text: "Atlantic Aviation" }, location: { latitude: 37.503, longitude: -122.004 } }] }),
+      };
+    });
+    const res = await geocodeFboLocation({
+      airport: { ...airport, city: "San Jose", state: "CA" },
+      extraction: { fboName: "Atlantic Aviation", fboAddress: "1659 Airport Blvd, San Jose, CA" },
+      arp: ARP,
+      apiKey: "k",
+      fetchImpl,
+    });
+    expect(res).toMatchObject({ latitude: 37.503, longitude: -122.004 });
+    // Most-specific candidate (name + address) is tried first.
+    expect(calls[0]).toBe("Atlantic Aviation, 1659 Airport Blvd, San Jose, CA");
+  });
+
+  it("falls back to the brand name biased to the field when there's no address", async () => {
+    const fetchImpl = vi.fn(async (url, opts) => {
+      const q = JSON.parse(opts.body).textQuery;
+      expect(q).toBe("Signature Flight Support San Jose CA KXYZ");
+      return { ok: true, json: async () => ({ places: [{ displayName: { text: "Signature" }, location: { latitude: 37.502, longitude: -122.003 } }] }) };
+    });
+    const res = await geocodeFboLocation({
+      airport: { ...airport, city: "San Jose", state: "CA" },
+      extraction: { fboName: "Signature Flight Support" },
+      arp: ARP,
+      apiKey: "k",
+      fetchImpl,
+    });
+    expect(res).toMatchObject({ latitude: 37.502 });
+  });
+
+  it("rejects a geocode that lands on the ARP or off-field, and returns null with nothing to geocode", async () => {
+    const arpEcho = vi.fn(async () => ({ ok: true, json: async () => ({ places: [{ location: { latitude: 37.5, longitude: -122.0 } }] }) }));
+    expect(
+      await geocodeFboLocation({ airport, extraction: { fboAddress: "x" }, arp: ARP, apiKey: "k", fetchImpl: arpEcho })
+    ).toBeNull();
+    expect(
+      await geocodeFboLocation({ airport, extraction: {}, arp: ARP, apiKey: "k", fetchImpl: failFetch })
+    ).toBeNull();
   });
 });
 
@@ -256,6 +317,42 @@ describe("resolveRampCoordinates", () => {
       fetchImpl: makeFetch({}),
     });
     expect(res).toMatchObject({ source: "FBO_MATCH", latitude: SIGNATURE.latitude });
+  });
+
+  it("FBO_GEOCODE: geocodes Gemini's named FBO/address when there's no verified record", async () => {
+    const fetchImpl = makeFetch({ google: { latitude: 37.503, longitude: -122.004, name: "Atlantic Aviation" } });
+    const res = await resolveRampCoordinates({
+      airport: { ...airport, city: "San Jose", state: "CA" },
+      extraction: { locationDescription: "Park at the FBO.", fboName: "Atlantic Aviation", fboAddress: "1659 Airport Blvd, San Jose, CA" },
+      fbos: [],
+      env: { GOOGLE_MAPS_SERVER_API_KEY: "k" },
+      fetchImpl,
+    });
+    expect(res).toMatchObject({ source: "FBO_GEOCODE", latitude: 37.503, longitude: -122.004 });
+  });
+
+  it("prefers a verified FBO match over geocoding, spending no Places call", async () => {
+    const res = await resolveRampCoordinates({
+      airport,
+      extraction: { locationDescription: "Park at Signature.", fboName: "Signature Flight Support", fboAddress: "123 Airport Way" },
+      fbos: [SIGNATURE],
+      env: { GOOGLE_MAPS_SERVER_API_KEY: "k" },
+      fetchImpl: failFetch,
+    });
+    expect(res).toMatchObject({ source: "FBO_MATCH", latitude: SIGNATURE.latitude });
+    expect(failFetch).not.toHaveBeenCalled();
+  });
+
+  it("ramp-first: geocodes the named FBO when the apron can't be located, ahead of GPT-4o", async () => {
+    const fetchImpl = makeFetch({ google: { latitude: 37.503, longitude: -122.004, name: "Atlantic Aviation" } });
+    const res = await resolveRampCoordinates({
+      airport: { ...airport, city: "San Jose", state: "CA" },
+      extraction: { locationDescription: "Transient ramp at Atlantic Aviation.", fboName: "Atlantic Aviation", fboAddress: "1659 Airport Blvd" },
+      fbos: [],
+      env: { GOOGLE_MAPS_SERVER_API_KEY: "k" },
+      fetchImpl,
+    });
+    expect(res).toMatchObject({ source: "FBO_GEOCODE", latitude: 37.503 });
   });
 
   it("Tier 2: generic 'FBO' reference falls back to the nearest known FBO", async () => {
