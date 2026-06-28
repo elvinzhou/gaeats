@@ -5,6 +5,7 @@ import {
   matchFboInText,
   mentionsFbo,
   mentionsTransientRamp,
+  mentionsFuel,
   isEssentiallyArp,
   isPlausibleRamp,
   chooseFboFallback,
@@ -13,6 +14,7 @@ import {
   angularDifference,
   chooseApron,
   fetchOsmAprons,
+  fetchOsmRampFeatures,
   geocodeFboLocation,
   resolveRampCoordinates,
 } from "./ramp-coordinates.js";
@@ -48,12 +50,19 @@ function makeFetch({ openai, google, osm } = {}) {
     }
     if (typeof url === "string" && url.includes("overpass-api.de")) {
       // Overpass returns way/relation centroids under `center` when `out center`
-      // is requested. Default to no aprons when the test didn't stub any.
-      const elements = (osm ?? []).map((a) => ({
-        type: "way",
-        center: { lat: a.latitude, lon: a.longitude },
-        tags: a.name ? { aeroway: "apron", name: a.name } : { aeroway: "apron" },
-      }));
+      // is requested, and node coords under lat/lon. Default to no features when
+      // the test didn't stub any. Each stub entry may set `aeroway` (defaults to
+      // "apron"), `name`/`ref`, and `node: true` for point features.
+      const elements = (osm ?? []).map((a) => {
+        const tags = {
+          aeroway: a.aeroway ?? "apron",
+          ...(a.name ? { name: a.name } : {}),
+          ...(a.ref ? { ref: a.ref } : {}),
+        };
+        return a.node
+          ? { type: "node", lat: a.latitude, lon: a.longitude, tags }
+          : { type: "way", center: { lat: a.latitude, lon: a.longitude }, tags };
+      });
       return { ok: true, json: async () => ({ elements }) };
     }
     throw new Error(`unexpected fetch: ${url}`);
@@ -124,6 +133,13 @@ describe("mentions helpers", () => {
     expect(mentionsTransientRamp("east apron")).toBe(true);
     expect(mentionsTransientRamp("tie-downs available")).toBe(true);
     expect(mentionsTransientRamp("call ahead for parking")).toBe(false);
+  });
+
+  it("detects self-serve fuel references", () => {
+    expect(mentionsFuel("next to the self-serve fuel")).toBe(true);
+    expect(mentionsFuel("park by the fuel island")).toBe(true);
+    expect(mentionsFuel("100LL available on the ramp")).toBe(true);
+    expect(mentionsFuel("call the FBO for parking")).toBe(false);
   });
 });
 
@@ -220,6 +236,51 @@ describe("chooseApron", () => {
     const apronFarS = { name: null, latitude: 37.44, longitude: -122.0 };
     expect(chooseApron({ aprons: [apronFarS, apronS], text: "south ramp", arp: ARP })).toBe(apronS);
   });
+
+  it("prefers a tagged parking stand over a co-located apron centroid", () => {
+    const apron = { name: null, latitude: 37.5061, longitude: -122.0, kind: "apron" };
+    const stand = { name: null, latitude: 37.5059, longitude: -122.0, kind: "parking_position" };
+    // No cardinal/FBO/tag → nearest-ARP fallback, which prefers the stand.
+    expect(chooseApron({ aprons: [apron, stand], text: "on the ramp", arp: ARP })).toBe(stand);
+  });
+
+  it("breaks a cardinal tie toward the more precise parking stand", () => {
+    const apronDueN = { name: null, latitude: 37.506, longitude: -122.0, kind: "apron" };
+    const standDueN = { name: null, latitude: 37.5062, longitude: -122.0, kind: "parking_position" };
+    expect(chooseApron({ aprons: [apronDueN, standDueN], text: "north ramp", arp: ARP })).toBe(standDueN);
+  });
+
+  it("snaps to the apron next to the self-serve fuel when the description names it", () => {
+    const apronEast = { name: null, latitude: 37.5, longitude: -121.99, kind: "apron" };   // ~880 m E
+    const apronFuel = { name: null, latitude: 37.5, longitude: -122.012, kind: "apron" };  // by the fuel
+    const fuel = [{ name: "Self Serve", latitude: 37.5, longitude: -122.013, kind: "fuel" }];
+    expect(
+      chooseApron({ aprons: [apronEast, apronFuel], text: "park by the self-serve fuel", arp: ARP, fuel })
+    ).toBe(apronFuel);
+  });
+
+  it("uses a self-serve fuel island as a proxy when no apron/stand is mapped", () => {
+    const fuel = [{ name: "Self Serve", latitude: 37.498, longitude: -122.0, kind: "fuel" }];
+    expect(chooseApron({ aprons: [], text: "self-serve fuel on the field", arp: ARP, fuel })).toBe(fuel[0]);
+  });
+});
+
+describe("fetchOsmRampFeatures", () => {
+  it("splits parkable candidates from fuel and tags each with its OSM kind", async () => {
+    const fetchImpl = makeFetch({
+      osm: [
+        { ...apronS, aeroway: "apron" },
+        { latitude: 37.501, longitude: -122.001, aeroway: "parking_position", node: true, ref: "GA 3" },
+        { latitude: 37.5005, longitude: -122.0005, aeroway: "fuel", node: true, name: "Self Serve" },
+      ],
+    });
+    const { candidates, fuel } = await fetchOsmRampFeatures({ arp: ARP, fetchImpl });
+    expect(candidates.map((c) => c.kind).sort()).toEqual(["apron", "parking_position"]);
+    // A stand labelled only by `ref` still gets a name.
+    expect(candidates.find((c) => c.kind === "parking_position").name).toBe("GA 3");
+    expect(fuel).toHaveLength(1);
+    expect(fuel[0]).toMatchObject({ kind: "fuel", name: "Self Serve" });
+  });
 });
 
 describe("fetchOsmAprons", () => {
@@ -305,6 +366,42 @@ describe("resolveRampCoordinates", () => {
       fetchImpl,
     });
     expect(res).toMatchObject({ source: "OSM_APRON", latitude: apronS.latitude, longitude: apronS.longitude });
+  });
+
+  it("ramp-first: pins a tagged OSM parking stand, more precise than the apron centroid", async () => {
+    const fetchImpl = makeFetch({
+      osm: [
+        { ...apronN, aeroway: "apron" },
+        { latitude: 37.5062, longitude: -122.0, aeroway: "parking_position", node: true, ref: "Transient" },
+      ],
+    });
+    const res = await resolveRampCoordinates({
+      airport,
+      extraction: { locationDescription: "Transient parking on the north ramp." },
+      fbos: [],
+      env: {},
+      fetchImpl,
+    });
+    expect(res).toMatchObject({ source: "OSM_APRON", latitude: 37.5062 });
+    expect(res.reasoning).toMatch(/parking position/);
+  });
+
+  it("ramp-first: snaps to the apron by the self-serve fuel the description names", async () => {
+    const fetchImpl = makeFetch({
+      osm: [
+        { name: null, latitude: 37.5, longitude: -121.99, aeroway: "apron" },  // east, away from fuel
+        { name: null, latitude: 37.5, longitude: -122.012, aeroway: "apron" }, // by the fuel
+        { latitude: 37.5, longitude: -122.013, aeroway: "fuel", node: true, name: "Self Serve" },
+      ],
+    });
+    const res = await resolveRampCoordinates({
+      airport,
+      extraction: { locationDescription: "Tie-downs by the self-serve fuel." },
+      fbos: [],
+      env: {},
+      fetchImpl,
+    });
+    expect(res).toMatchObject({ source: "OSM_APRON", longitude: -122.012 });
   });
 
   it("ramp-first: falls back to the FBO when the ramp can't be located", async () => {
