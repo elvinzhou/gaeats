@@ -14,13 +14,16 @@
 // in priority order:
 //   1. FBO_MATCH    — the description names an FBO we already have verified
 //                     coordinates for (airport_fbos, sourced from OSM/Google).
-//   2. FBO_FALLBACK — the description references "the FBO" generically and the
+//   2. FBO_GEOCODE  — Gemini named an FBO and/or gave a street address we have
+//                     no verified record for; geocode that name/address (a
+//                     street address pins tightly). Needs GOOGLE_MAPS_SERVER_API_KEY.
+//   3. FBO_FALLBACK — the description references "the FBO" generically and the
 //                     field has a known FBO; snap to it.
-//   3. GOOGLE_PLACES— geocode the described place against Google Places, biased
+//   4. GOOGLE_PLACES— geocode the described place against Google Places, biased
 //                     to the field (optional; needs GOOGLE_MAPS_SERVER_API_KEY).
-//   4. GPT4O        — last-resort estimate, but now ANCHORED with the real FBO
+//   5. GPT4O        — last-resort estimate, but now ANCHORED with the real FBO
 //                     coordinates and hard-instructed not to return the ARP.
-//   5. FBO_NEAREST  — nothing pinned the ramp, but the field has an FBO; an
+//   6. FBO_NEAREST  — nothing pinned the ramp, but the field has an FBO; an
 //                     on-field FBO is still far better than the ARP.
 //
 // Every model/Places result is sanity-checked: anything within ~60 m of the ARP
@@ -120,14 +123,26 @@ export function mentionsTransientRamp(text) {
   return /\b(ramps?|aprons?|tie[-\s]?downs?|tiedowns?)\b/i.test(text ?? "");
 }
 
+/** True when the text points at self-serve fuel (a strong transient-ramp anchor). */
+export function mentionsFuel(text) {
+  return /self[-\s]?serve|fuel\s*(island|pump|farm|dock)|\bavgas\b|100\s?ll|\bfuel\b/i.test(text ?? "");
+}
+
 /** Whether a coordinate is within `thresholdMeters` of the ARP (i.e. "no better than the airport"). */
 export function isEssentiallyArp(coord, arp, thresholdMeters = 60) {
   if (!coord || !arp) return false;
   return haversineMeters(coord, arp) <= thresholdMeters;
 }
 
-/** Whether a coordinate is finite, in-range, and within `maxKm` of the field. */
-export function isPlausibleRamp(coord, arp, maxKm = 8) {
+/**
+ * Whether a coordinate is finite, in-range, and within `maxKm` of the field.
+ *
+ * GA transient parking is essentially always within ~1.5 km of the ARP, so a
+ * tight cap (vs. the original 8 km) is the cheapest way to reject the worst
+ * outliers from the geocode/GPT tiers — a "ramp" 4 km from the field is a bad
+ * match, not a real apron.
+ */
+export function isPlausibleRamp(coord, arp, maxKm = 3) {
   if (!coord) return false;
   const { latitude, longitude } = coord;
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false;
@@ -152,17 +167,47 @@ export function chooseFboFallback(fbos, arp) {
 }
 
 // ---------------------------------------------------------------------------
-// Ramp / apron location (OSM `aeroway=apron`)
+// Ramp location (OSM aeroway features)
 // ---------------------------------------------------------------------------
 //
-// When Gemini says transient parking is "on the ramp", the ramp is a real
-// apron polygon that OpenStreetMap usually maps as `aeroway=apron`. We pull
-// those aprons and pick the one the description points at — by named side
-// (cardinal), by proximity to the named FBO, or by an explicit transient/GA
-// name tag. This is preferred over snapping to an FBO: airports frequently have
-// both, and the transient ramp is the correct answer.
+// When Gemini says transient parking is "on the ramp", that ramp is a real
+// feature in OpenStreetMap. We pull three aeroway feature types and pick the
+// one the description points at:
+//   - `aeroway=apron`            the ramp polygon (we use its centroid)
+//   - `aeroway=parking_position` an individual tagged aircraft stand — far more
+//                                precise than an apron centroid, so preferred
+//   - `aeroway=fuel`             the self-serve fuel island, which on a small
+//                                field sits right at the transient tie-downs
+// Selection is by named side (cardinal), proximity to the named FBO, an
+// explicit transient/GA tag, or the self-serve fuel the description mentions.
+// This is preferred over snapping to an FBO: airports frequently have both,
+// and the transient ramp is the correct answer.
 
 const TRANSIENT_APRON_RE = /transient|visitor|itinerant|general\s+aviation|\bga\b|tie[-\s]?downs?/i;
+
+/** Relative precision of an OSM ramp feature — a tagged stand beats a whole apron. */
+const FEATURE_PRECISION = { parking_position: 2, apron: 1, fuel: 1 };
+function precisionOf(feature) {
+  return FEATURE_PRECISION[feature?.kind] ?? 1;
+}
+
+/** True when an OSM feature's name/ref/tags mark it as transient/visitor/GA. */
+function isTransientTagged(feature) {
+  return (
+    TRANSIENT_APRON_RE.test(feature.name ?? "") ||
+    TRANSIENT_APRON_RE.test(feature.tags?.description ?? "")
+  );
+}
+
+/**
+ * When the field has tagged parking positions, restrict to them — an individual
+ * aircraft stand is a better "park here" point than an apron centroid. Falls
+ * back to the full set when there are none.
+ */
+function preferParking(features) {
+  const stands = features.filter((f) => f.kind === "parking_position");
+  return stands.length ? stands : features;
+}
 
 /** Initial compass bearing from `from` to `to`, in degrees (0=N, 90=E). */
 export function bearingDegrees(from, to) {
@@ -209,57 +254,103 @@ function nearestByHaversine(list, point) {
 }
 
 /**
- * Pick the apron the description refers to.
+ * Pick the ramp feature the description refers to from the OSM candidates
+ * (aprons + parking positions), with self-serve fuel islands as an extra anchor.
  *
- * Priority: (1) named cardinal side relative to the ARP; (2) the apron in front
- * of the named FBO; (3) an apron tagged transient/visitor/GA; (4) the apron by
- * the field's FBO; (5) the apron nearest the ARP.
+ * Priority: (1) named cardinal side relative to the ARP; (2) the feature in
+ * front of the named FBO; (3) a feature tagged transient/visitor/GA; (4) the
+ * feature by the self-serve fuel the description points at; (5) the feature by
+ * the field's FBO; (6) the feature nearest the ARP. Throughout, an individual
+ * tagged parking stand is preferred over a whole-apron centroid.
  *
- * @param {{aprons: Array, text: string, arp: object, matchedFbo?: object|null, fbos?: Array}} args
- * @returns {object|null} the chosen apron, or null
+ * @param {{aprons: Array, text: string, arp: object, matchedFbo?: object|null, fbos?: Array, fuel?: Array}} args
+ * @returns {object|null} the chosen feature, or null
  */
-export function chooseApron({ aprons, text, arp, matchedFbo = null, fbos = [] }) {
-  const valid = (aprons ?? []).filter(
-    (a) => Number.isFinite(a.latitude) && Number.isFinite(a.longitude)
-  );
-  if (valid.length === 0) return null;
+export function chooseApron({ aprons, text, arp, matchedFbo = null, fbos = [], fuel = [] }) {
+  // Only consider features that are actually on/near the field. This stops a
+  // distant apron (an adjacent airport, or the airline ramp on a big field)
+  // from winning purely on compass bearing.
+  const inRange = (f) =>
+    Number.isFinite(f.latitude) && Number.isFinite(f.longitude) && isPlausibleRamp(f, arp);
+  const valid = (aprons ?? []).filter(inRange);
+  const validFuel = (fuel ?? []).filter(inRange);
 
-  // 1. "south ramp" / "northeast tie-downs" → apron most in that direction.
+  if (valid.length === 0) {
+    // No apron/stand mapped, but a self-serve fuel island the description points
+    // at is a fine proxy for a small field's transient tie-downs.
+    if (validFuel.length && mentionsFuel(text)) {
+      return arp ? nearestByHaversine(validFuel, arp) : validFuel[0];
+    }
+    return null;
+  }
+
+  // 1. "south ramp" / "northeast tie-downs" → feature most in that direction.
+  //    Ties on bearing break toward the more precise feature, then the closer one.
   const target = parseCardinalBearing(text);
   if (target != null && arp) {
     return valid.reduce(
       (best, a) => {
         const diff = angularDifference(bearingDegrees(arp, a), target);
-        return diff < best.diff ? { apron: a, diff } : best;
+        if (!best.feature) return { feature: a, diff };
+        if (diff < best.diff - 1e-9) return { feature: a, diff };
+        if (Math.abs(diff - best.diff) <= 1e-9) {
+          if (precisionOf(a) > precisionOf(best.feature)) return { feature: a, diff };
+          if (
+            precisionOf(a) === precisionOf(best.feature) &&
+            haversineMeters(a, arp) < haversineMeters(best.feature, arp)
+          )
+            return { feature: a, diff };
+        }
+        return best;
       },
-      { apron: null, diff: Infinity }
-    ).apron;
+      { feature: null, diff: Infinity }
+    ).feature;
   }
 
-  // 2. A named FBO matched → the apron directly in front of it.
+  // 2. A named FBO matched → the stand/apron directly in front of it.
   if (matchedFbo && Number.isFinite(matchedFbo.latitude)) {
-    return nearestByHaversine(valid, matchedFbo);
+    return nearestByHaversine(preferParking(valid), matchedFbo);
   }
 
-  // 3. An apron explicitly tagged for transient/visitor/GA use.
-  const named = valid.find((a) => TRANSIENT_APRON_RE.test(a.name ?? ""));
-  if (named) return named;
+  // 3. A feature explicitly tagged for transient/visitor/GA use.
+  const tagged = valid.filter(isTransientTagged);
+  if (tagged.length) {
+    return arp ? nearestByHaversine(preferParking(tagged), arp) : preferParking(tagged)[0];
+  }
 
-  // 4. The field has FBOs → the apron next to the FBO nearest the ARP.
+  // 4. The description names self-serve fuel → the stand/apron next to it.
+  if (validFuel.length && mentionsFuel(text)) {
+    const fuelPt = arp ? nearestByHaversine(validFuel, arp) : validFuel[0];
+    return nearestByHaversine(preferParking(valid), fuelPt);
+  }
+
+  // 5. The field has FBOs → the feature next to the FBO nearest the ARP.
   const anchorFbo = chooseFboFallback(fbos, arp);
-  if (anchorFbo) return nearestByHaversine(valid, anchorFbo);
+  if (anchorFbo) return nearestByHaversine(preferParking(valid), anchorFbo);
 
-  // 5. Fallback: the apron nearest the airport reference point.
-  return arp ? nearestByHaversine(valid, arp) : valid[0];
+  // 6. Fallback: the feature nearest the airport reference point.
+  return arp ? nearestByHaversine(preferParking(valid), arp) : valid[0];
 }
 
 /**
- * Fetch `aeroway=apron` polygons near the airport from OSM Overpass.
- * Returns `[{ name, latitude, longitude, tags }]` (centroids). Throws on a
- * non-OK response so the caller can fall through to other tiers.
+ * Fetch the airport's ramp-relevant OSM features near the ARP from Overpass:
+ * `aeroway=apron` (centroids), `aeroway=parking_position` (individual stands),
+ * and `aeroway=fuel` (self-serve fuel islands). Each carries a `kind` from its
+ * aeroway tag, and `name` falls back to the feature's `ref` (stands are often
+ * labelled by ref, not name).
+ *
+ * Returns `{ candidates, fuel }` where `candidates` is the parkable set
+ * (aprons + stands) and `fuel` is the fuel islands. Throws on a non-OK response
+ * so the caller can fall through to other tiers.
  */
-export async function fetchOsmAprons({ arp, fetchImpl = fetch, radius = 3000, attempt = 1 }) {
-  const query = `[out:json][timeout:25];(way["aeroway"="apron"](around:${radius},${arp.latitude},${arp.longitude});relation["aeroway"="apron"](around:${radius},${arp.latitude},${arp.longitude}););out center tags;`;
+export async function fetchOsmRampFeatures({ arp, fetchImpl = fetch, radius = 3000, attempt = 1 }) {
+  const at = `(around:${radius},${arp.latitude},${arp.longitude})`;
+  const query =
+    `[out:json][timeout:25];(` +
+    `way["aeroway"="apron"]${at};relation["aeroway"="apron"]${at};` +
+    `node["aeroway"="parking_position"]${at};way["aeroway"="parking_position"]${at};` +
+    `node["aeroway"="fuel"]${at};way["aeroway"="fuel"]${at};` +
+    `);out center tags;`;
 
   const response = await fetchImpl("https://overpass-api.de/api/interpreter", {
     method: "POST",
@@ -270,20 +361,41 @@ export async function fetchOsmAprons({ arp, fetchImpl = fetch, radius = 3000, at
   // Overpass is shared infrastructure — back off briefly on rate/timeout.
   if ((response.status === 429 || response.status === 504) && attempt < 3) {
     await new Promise((r) => setTimeout(r, attempt * 3000));
-    return fetchOsmAprons({ arp, fetchImpl, radius, attempt: attempt + 1 });
+    return fetchOsmRampFeatures({ arp, fetchImpl, radius, attempt: attempt + 1 });
   }
 
   if (!response.ok) throw new Error(`Overpass HTTP ${response.status}`);
 
   const data = await response.json();
-  return (data.elements ?? [])
+  const features = (data.elements ?? [])
     .map((el) => {
       const latitude = el.center?.lat ?? el.lat;
       const longitude = el.center?.lon ?? el.lon;
       if (latitude == null || longitude == null) return null;
-      return { name: el.tags?.name ?? null, latitude, longitude, tags: el.tags ?? {} };
+      const kind = el.tags?.aeroway ?? "apron";
+      return {
+        name: el.tags?.name ?? el.tags?.ref ?? null,
+        latitude,
+        longitude,
+        kind,
+        tags: el.tags ?? {},
+      };
     })
     .filter(Boolean);
+
+  return {
+    candidates: features.filter((f) => f.kind === "apron" || f.kind === "parking_position"),
+    fuel: features.filter((f) => f.kind === "fuel"),
+  };
+}
+
+/**
+ * Backward-compatible apron+stand fetch. Returns just the parkable candidates
+ * (`[{ name, latitude, longitude, kind, tags }]`); see {@link fetchOsmRampFeatures}.
+ */
+export async function fetchOsmAprons(args) {
+  const { candidates } = await fetchOsmRampFeatures(args);
+  return candidates;
 }
 
 // ---------------------------------------------------------------------------
@@ -326,6 +438,54 @@ export async function geocodeViaGooglePlaces({ query, arp, apiKey, fetchImpl }) 
     longitude: place.location.longitude,
     name: place.displayName?.text ?? null,
   };
+}
+
+/**
+ * Geocode the FBO that Gemini named, interpreting whichever locator it gave us.
+ *
+ * Gemini's transient-parking answer frequently includes the FBO's name and,
+ * when the search results carried it, a full street address. A street address
+ * geocodes to a tight point, so we try those candidates most-specific first:
+ *   1. name + street address  (e.g. "Atlantic Aviation, 1659 Airport Blvd, San Jose")
+ *   2. the bare street address
+ *   3. the brand name biased to the field (e.g. "Signature Flight Support KSJC")
+ *
+ * Each candidate is sanity-checked against the field (plausible distance, not
+ * the ARP). Returns {latitude, longitude, name, reasoning} or null.
+ */
+export async function geocodeFboLocation({ airport, extraction, arp, apiKey, fetchImpl }) {
+  if (!apiKey) return null;
+
+  const name = extraction?.fboName?.trim();
+  const address = extraction?.fboAddress?.trim();
+  const bias = [airport.city, airport.state, airport.code].filter(Boolean).join(" ").trim();
+
+  const candidates = [];
+  if (address && name) candidates.push({ q: `${name}, ${address}`, how: `"${name}" at ${address}` });
+  if (address) candidates.push({ q: address, how: `address ${address}` });
+  if (name) candidates.push({ q: `${name} ${bias}`.trim(), how: `"${name}"` });
+
+  // De-duplicate while preserving the most-specific-first order.
+  const seen = new Set();
+  for (const { q, how } of candidates) {
+    const key = q.toLowerCase();
+    if (!q || seen.has(key)) continue;
+    seen.add(key);
+    try {
+      const g = await geocodeViaGooglePlaces({ query: q, arp, apiKey, fetchImpl });
+      if (g && isPlausibleRamp(g, arp) && !isEssentiallyArp(g, arp)) {
+        return {
+          latitude: g.latitude,
+          longitude: g.longitude,
+          name: g.name ?? null,
+          reasoning: `Geocoded FBO ${how}${g.name ? ` → "${g.name}"` : ""}`,
+        };
+      }
+    } catch {
+      // Try the next, less-specific candidate.
+    }
+  }
+  return null;
 }
 
 /**
@@ -428,6 +588,27 @@ async function googlePlacesTier({ airport, arp, extraction, env, fetchImpl }) {
   return null;
 }
 
+/** FBO name/address geocode tier — returns a result or null (never throws). */
+async function fboGeocodeTier({ airport, arp, extraction, env, fetchImpl }) {
+  if (!env.GOOGLE_MAPS_SERVER_API_KEY) return null;
+  if (!extraction?.fboName && !extraction?.fboAddress) return null;
+  try {
+    const g = await geocodeFboLocation({
+      airport,
+      extraction,
+      arp,
+      apiKey: env.GOOGLE_MAPS_SERVER_API_KEY,
+      fetchImpl,
+    });
+    if (g) {
+      return { latitude: g.latitude, longitude: g.longitude, source: "FBO_GEOCODE", reasoning: g.reasoning };
+    }
+  } catch {
+    // ignore — caller falls through to the next tier
+  }
+  return null;
+}
+
 /** Anchored GPT-4o tier — returns a result or null (never throws). ARP-echoes rejected. */
 async function gpt4oTier({ airport, arp, extraction, fbos, aprons, env, fetchImpl }) {
   if (!env.OPENAI_API_KEY || !extraction?.locationDescription) return null;
@@ -471,8 +652,8 @@ function fboFallbackTier({ fbos, arp, source = "FBO_NEAREST", reasonPrefix = "Ne
  * about the FBO, it snaps to the FBO.
  *
  * @param {object} args
- * @param {{code: string, name: string, latitude: number, longitude: number}} args.airport
- * @param {{notes?: string, locationDescription?: string, fboName?: string}} args.extraction  Gemini output
+ * @param {{code: string, name: string, city?: string, state?: string, latitude: number, longitude: number}} args.airport
+ * @param {{notes?: string, locationDescription?: string, fboName?: string, fboAddress?: string}} args.extraction  Gemini output
  * @param {Array<{name: string, latitude: number, longitude: number}>} [args.fbos]  Known FBOs (airport_fbos)
  * @param {{OPENAI_API_KEY?: string, GOOGLE_MAPS_SERVER_API_KEY?: string}} [args.env]
  * @param {typeof fetch} [args.fetchImpl]
@@ -487,8 +668,9 @@ export async function resolveRampCoordinates({
 }) {
   const arp = { latitude: Number(airport.latitude), longitude: Number(airport.longitude) };
   // fboName (when Gemini supplies it) and locationDescription carry the strongest
-  // location signal; notes is included so a brand mentioned only in prose still matches.
-  const text = [extraction?.fboName, extraction?.locationDescription, extraction?.notes]
+  // location signal; fboAddress and notes are included so a brand or place
+  // mentioned only there still matches.
+  const text = [extraction?.fboName, extraction?.fboAddress, extraction?.locationDescription, extraction?.notes]
     .filter(Boolean)
     .join(" ");
 
@@ -506,35 +688,47 @@ export async function resolveRampCoordinates({
   // ramp itself before considering the FBO (an airport may have both, and the
   // transient ramp is the correct answer).
   if (mentionsTransientRamp(text)) {
-    let aprons = [];
+    let candidates = [];
+    let fuel = [];
     try {
-      aprons = await fetchOsmAprons({ arp, fetchImpl });
+      ({ candidates, fuel } = await fetchOsmRampFeatures({ arp, fetchImpl }));
     } catch {
-      aprons = [];
+      candidates = [];
+      fuel = [];
     }
 
-    const apron = chooseApron({ aprons, text, arp, matchedFbo: fboMatch?.fbo ?? null, fbos });
+    const apron = chooseApron({ aprons: candidates, text, arp, matchedFbo: fboMatch?.fbo ?? null, fbos, fuel });
     if (apron && isPlausibleRamp(apron, arp)) {
+      const label =
+        apron.kind === "parking_position" ? "parking position" :
+        apron.kind === "fuel" ? "self-serve fuel" : "apron";
       return {
         latitude: apron.latitude,
         longitude: apron.longitude,
         source: "OSM_APRON",
-        reasoning: apron.name ? `OSM apron "${apron.name}"` : "OSM apron matching description",
+        reasoning: apron.name ? `OSM ${label} "${apron.name}"` : `OSM ${label} matching description`,
       };
     }
 
+    // Once the ramp itself can't be pinned, prefer real FBO data — a verified
+    // match, then Gemini's own name/address geocoded — over a generic
+    // description geocode or a GPT-4o estimate. The FBO is a reasonable proxy
+    // for "the ramp by the FBO".
     return (
-      (await googlePlacesTier({ airport, arp, extraction, env, fetchImpl })) ??
-      (await gpt4oTier({ airport, arp, extraction, fbos, aprons, env, fetchImpl })) ??
-      // The FBO is a reasonable proxy for "the ramp by the FBO" once the apron
-      // itself can't be pinned.
       fboMatchResult ??
+      (await fboGeocodeTier({ airport, arp, extraction, env, fetchImpl })) ??
+      (await googlePlacesTier({ airport, arp, extraction, env, fetchImpl })) ??
+      (await gpt4oTier({ airport, arp, extraction, fbos, aprons: candidates, env, fetchImpl })) ??
       fboFallbackTier({ fbos, arp })
     );
   }
 
   // FBO-FIRST — parking is described at the FBO, with no distinct ramp.
   if (fboMatchResult) return fboMatchResult;
+  // Gemini named an FBO/address but we have no verified record for it → geocode
+  // what it gave us before resorting to a generic search or a GPT-4o guess.
+  const fboGeocoded = await fboGeocodeTier({ airport, arp, extraction, env, fetchImpl });
+  if (fboGeocoded) return fboGeocoded;
   if (mentionsFbo(text)) {
     const generic = fboFallbackTier({
       fbos,

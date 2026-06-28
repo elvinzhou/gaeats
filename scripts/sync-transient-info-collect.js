@@ -126,6 +126,9 @@ try {
 
       console.log(`  ${label}: ${extraction.confidence} — "${extraction.notes.slice(0, 100)}"`);
       console.log(`    location: ${extraction.locationDescription ?? "(none)"}`);
+      if (extraction.fboName || extraction.fboAddress) {
+        console.log(`    fbo: ${extraction.fboName ?? "(unnamed)"}${extraction.fboAddress ? ` — ${extraction.fboAddress}` : ""}`);
+      }
 
       if (extraction.confidence === "HIGH" && extraction.locationDescription) {
         try {
