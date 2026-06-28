@@ -10,6 +10,7 @@ import { DirectionsPanel } from "./DirectionsPanel";
 import AirportPanel from "./AirportPanel";
 import { useUnits } from "~/hooks/useUnits";
 import { MARKER_COLORS, getMarkerColor } from "~/utils/markerColors";
+import { airportMarkerPosition } from "~/utils/airportPosition";
 import type { Poi, Airport } from "~/types/models";
 
 export interface POI {
@@ -135,6 +136,11 @@ function MarkerWithTooltip({ poi, isHovered, onMouseEnter, onMouseLeave, onClick
             }}
           >
             <p style={{ margin: 0, fontWeight: 600, fontSize: 13, color: "#111" }}>{poi.title}</p>
+            {poi.type === "airport" && (poi.data as Airport).rampLatitude != null && (
+              <p style={{ margin: "2px 0 0", fontSize: 11, color: "#399E97" }}>
+                📍 Pin shows transient ramp
+              </p>
+            )}
             {poi.type !== "airport" && (poi.data as Poi).externalRating != null && (
               <p style={{ margin: "2px 0 0", fontSize: 11, color: "#666" }}>
                 ⭐ {(poi.data as Poi).externalRating!.toFixed(1)} / 5.0
@@ -217,7 +223,7 @@ function MapController({
 
         const newPOIs: POI[] = data.airports.map((a) => ({
           id: a.id,
-          position: { lat: a.latitude, lng: a.longitude },
+          position: airportMarkerPosition(a),
           title: `${a.code} - ${a.name}`,
           type: "airport" as const,
           data: a,
