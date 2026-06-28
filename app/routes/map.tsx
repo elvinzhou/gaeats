@@ -26,6 +26,7 @@ import {
   findRestaurantsNearby,
 } from "~/utils/geospatial.server";
 import { listAllAirports } from "~/utils/postgis.server";
+import { airportMarkerPosition } from "~/utils/airportPosition";
 import type { POI } from "~/components/GoogleMapComponent";
 
 // Lazy load the Google Maps component (client-side only)
@@ -100,7 +101,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
         const airportPOIs: POI[] = airports.map((a) => ({
           id: a.id,
-          position: { lat: a.latitude, lng: a.longitude },
+          position: airportMarkerPosition(a),
           title: `${a.code} - ${a.name}`,
           type: "airport" as const,
           data: a,
@@ -122,7 +123,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
       const airportPOIs: POI[] = airports.map((a) => ({
         id: a.id,
-        position: { lat: a.latitude, lng: a.longitude },
+        position: airportMarkerPosition(a),
         title: `${a.code} - ${a.name}`,
         type: "airport" as const,
         data: a as any,
@@ -164,7 +165,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
     const airportPOIs: POI[] = airports.map((a) => ({
       id: a.id,
-      position: { lat: a.latitude, lng: a.longitude },
+      position: airportMarkerPosition(a),
       title: `${a.code} - ${a.name}`,
       type: "airport" as const,
       data: a,
